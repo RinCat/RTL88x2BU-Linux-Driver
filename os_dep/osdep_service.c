@@ -2187,7 +2187,12 @@ static int isFileReadable(const char *path, u32 *sz)
 		ret = PTR_ERR(fp);
 	else {
 		oldfs = get_fs();
-		set_fs(KERNEL_DS);
+        #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0))
+		    set_fs(KERNEL_DS);
+        #else
+		    set_fs(get_ds());
+        #endif
+
 
 		if (1 != readFile(fp, &buf, 1))
 			ret = PTR_ERR(fp);
@@ -2225,7 +2230,11 @@ static int retriveFromFile(const char *path, u8 *buf, u32 sz)
 			RTW_INFO("%s openFile path:%s fp=%p\n", __FUNCTION__, path , fp);
 
 			oldfs = get_fs();
-			set_fs(KERNEL_DS);
+            #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0))
+                set_fs(KERNEL_DS);
+            #else
+                set_fs(get_ds());
+            #endif
 			ret = readFile(fp, buf, sz);
 			set_fs(oldfs);
 			closeFile(fp);
@@ -2260,7 +2269,11 @@ static int storeToFile(const char *path, u8 *buf, u32 sz)
 			RTW_INFO("%s openFile path:%s fp=%p\n", __FUNCTION__, path , fp);
 
 			oldfs = get_fs();
-			set_fs(KERNEL_DS);
+            #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0))
+                set_fs(KERNEL_DS);
+            #else
+                set_fs(get_ds());
+            #endif
 			ret = writeFile(fp, buf, sz);
 			set_fs(oldfs);
 			closeFile(fp);

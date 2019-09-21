@@ -318,13 +318,13 @@ void _iqk_restore_rf_8822b(struct dm_struct *dm, u32 *backup_rf_reg,
 	odm_set_rf_reg(dm, RF_PATH_B, RF_0xef, MASK20BITS, 0x0);
 	/*0xdf[4]=0*/
 	_iqk_rf_set_check_8822b(dm, RF_PATH_A, 0xdf,
-				RF_backup[0][RF_PATH_A] & (~BIT(4)));
+				RF_backup[0][RF_PATH_A] & (!BIT(4)));
 	_iqk_rf_set_check_8822b(dm, RF_PATH_B, 0xdf,
-				RF_backup[0][RF_PATH_B] & (~BIT(4)));
+				RF_backup[0][RF_PATH_B] & (!BIT(4)));
 
 #if 0
-	/*odm_set_rf_reg(dm, RF_PATH_A, RF_0xdf, MASK20BITS, RF_backup[0][RF_PATH_A] & (~BIT(4)));*/
-	/*odm_set_rf_reg(dm, RF_PATH_B, RF_0xdf, MASK20BITS, RF_backup[0][RF_PATH_B] & (~BIT(4)));*/
+	/*odm_set_rf_reg(dm, RF_PATH_A, RF_0xdf, MASK20BITS, RF_backup[0][RF_PATH_A] & (!BIT(4)));*/
+	/*odm_set_rf_reg(dm, RF_PATH_B, RF_0xdf, MASK20BITS, RF_backup[0][RF_PATH_B] & (!BIT(4)));*/
 #endif
 
 	for (i = 1; i < RF_REG_NUM_8822B; i++) {

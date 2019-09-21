@@ -443,11 +443,11 @@ void _iqk_reload_iqk_setting_8822b(struct dm_struct *dm, u8 ch,
 				odm_write_4byte(dm, 0x1bd8, data);
 			}
 			if (idx == 0) {
-				report = ~(iqk->iqk_fail_report[ch][path][idx]);
+				report = !(iqk->iqk_fail_report[ch][path][idx]);
 				odm_set_bb_reg(dm, iqk_apply[path],
 					       BIT(0), report);
 			} else {
-				report = ~(iqk->iqk_fail_report[ch][path][idx]);
+				report = !(iqk->iqk_fail_report[ch][path][idx]);
 				odm_set_bb_reg(dm, iqk_apply[path],
 					       BIT(10), report);
 			}
@@ -528,7 +528,7 @@ void _iqk_rf_setting_8822b(struct dm_struct *dm)
 		/*0xdf:B11 = 1,B4 = 0, B1 = 1*/
 		tmp = odm_get_rf_reg(dm, (enum rf_path)path,
 				     RF_0xdf, MASK20BITS);
-		tmp = (tmp & (~BIT(4))) | BIT(1) | BIT(11);
+		tmp = (tmp & (!BIT(4))) | BIT(1) | BIT(11);
 		_iqk_rf_set_check_8822b(dm, (enum rf_path)path, 0xdf, tmp);
 #if 0
 		/*odm_set_rf_reg(dm, (enum rf_path)path, RF_0xdf, MASK20BITS, tmp);*/

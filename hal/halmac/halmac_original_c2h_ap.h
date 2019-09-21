@@ -27,6 +27,7 @@
 #define CMD_ID_C2H_RA_PARA_RPT 0X0E
 #define CMD_ID_C2H_CUR_CHANNEL 0X10
 #define CMD_ID_C2H_GPIO_WAKEUP 0X14
+#define CMD_ID_C2H_DROPID_RPT 0X2D
 #define C2H_GET_CMD_ID(c2h_pkt) GET_C2H_FIELD(c2h_pkt + 0X00, 0, 8)
 #define C2H_SET_CMD_ID(c2h_pkt, value)                                         \
 	SET_C2H_FIELD_CLR(c2h_pkt + 0X00, 0, 8, value)
@@ -608,5 +609,42 @@
 #define C2H_GPIO_WAKEUP_SET_TRIGGER(c2h_pkt, value)                            \
 	SET_C2H_FIELD_CLR(c2h_pkt + 0X0C, 24, 8, value)
 #define C2H_GPIO_WAKEUP_SET_TRIGGER_NO_CLR(c2h_pkt, value)                     \
+	SET_C2H_FIELD_NO_CLR(c2h_pkt + 0X0C, 24, 8, value)
+#define C2H_DROPID_RPT_GET_CMD_ID(c2h_pkt) GET_C2H_FIELD(c2h_pkt + 0X00, 0, 8)
+#define C2H_DROPID_RPT_SET_CMD_ID(c2h_pkt, value)                              \
+	SET_C2H_FIELD_CLR(c2h_pkt + 0X00, 0, 8, value)
+#define C2H_DROPID_RPT_SET_CMD_ID_NO_CLR(c2h_pkt, value)                       \
+	SET_C2H_FIELD_NO_CLR(c2h_pkt + 0X00, 0, 8, value)
+#define C2H_DROPID_RPT_GET_SEQ(c2h_pkt) GET_C2H_FIELD(c2h_pkt + 0X00, 8, 8)
+#define C2H_DROPID_RPT_SET_SEQ(c2h_pkt, value)                                 \
+	SET_C2H_FIELD_CLR(c2h_pkt + 0X00, 8, 8, value)
+#define C2H_DROPID_RPT_SET_SEQ_NO_CLR(c2h_pkt, value)                          \
+	SET_C2H_FIELD_NO_CLR(c2h_pkt + 0X00, 8, 8, value)
+#define C2H_DROPID_RPT_GET_DROPIDBIT(c2h_pkt)                                  \
+	GET_C2H_FIELD(c2h_pkt + 0X00, 16, 4)
+#define C2H_DROPID_RPT_SET_DROPIDBIT(c2h_pkt, value)                           \
+	SET_C2H_FIELD_CLR(c2h_pkt + 0X00, 16, 4, value)
+#define C2H_DROPID_RPT_SET_DROPIDBIT_NO_CLR(c2h_pkt, value)                    \
+	SET_C2H_FIELD_NO_CLR(c2h_pkt + 0X00, 16, 4, value)
+#define C2H_DROPID_RPT_GET_CURDROPID(c2h_pkt)                                  \
+	GET_C2H_FIELD(c2h_pkt + 0X00, 20, 2)
+#define C2H_DROPID_RPT_SET_CURDROPID(c2h_pkt, value)                           \
+	SET_C2H_FIELD_CLR(c2h_pkt + 0X00, 20, 2, value)
+#define C2H_DROPID_RPT_SET_CURDROPID_NO_CLR(c2h_pkt, value)                    \
+	SET_C2H_FIELD_NO_CLR(c2h_pkt + 0X00, 20, 2, value)
+#define C2H_DROPID_RPT_GET_MACID(c2h_pkt) GET_C2H_FIELD(c2h_pkt + 0X04, 0, 8)
+#define C2H_DROPID_RPT_SET_MACID(c2h_pkt, value)                               \
+	SET_C2H_FIELD_CLR(c2h_pkt + 0X04, 0, 8, value)
+#define C2H_DROPID_RPT_SET_MACID_NO_CLR(c2h_pkt, value)                        \
+	SET_C2H_FIELD_NO_CLR(c2h_pkt + 0X04, 0, 8, value)
+#define C2H_DROPID_RPT_GET_LEN(c2h_pkt) GET_C2H_FIELD(c2h_pkt + 0X0C, 16, 8)
+#define C2H_DROPID_RPT_SET_LEN(c2h_pkt, value)                                 \
+	SET_C2H_FIELD_CLR(c2h_pkt + 0X0C, 16, 8, value)
+#define C2H_DROPID_RPT_SET_LEN_NO_CLR(c2h_pkt, value)                          \
+	SET_C2H_FIELD_NO_CLR(c2h_pkt + 0X0C, 16, 8, value)
+#define C2H_DROPID_RPT_GET_TRIGGER(c2h_pkt) GET_C2H_FIELD(c2h_pkt + 0X0C, 24, 8)
+#define C2H_DROPID_RPT_SET_TRIGGER(c2h_pkt, value)                             \
+	SET_C2H_FIELD_CLR(c2h_pkt + 0X0C, 24, 8, value)
+#define C2H_DROPID_RPT_SET_TRIGGER_NO_CLR(c2h_pkt, value)                      \
 	SET_C2H_FIELD_NO_CLR(c2h_pkt + 0X0C, 24, 8, value)
 #endif

@@ -30,6 +30,7 @@ enum ANDROID_WIFI_CMD {
 	ANDROID_WIFI_CMD_BTCOEXSCAN_START,
 	ANDROID_WIFI_CMD_BTCOEXSCAN_STOP,
 	ANDROID_WIFI_CMD_BTCOEXMODE,
+	ANDROID_WIFI_CMD_SETSUSPENDMODE,
 	ANDROID_WIFI_CMD_SETSUSPENDOPT,
 	ANDROID_WIFI_CMD_P2P_DEV_ADDR,
 	ANDROID_WIFI_CMD_SETFWPATH,
@@ -93,11 +94,11 @@ int wifi_set_power(int on, unsigned long msec);
 int wifi_get_mac_addr(unsigned char *buf);
 void *wifi_get_country_code(char *ccode);
 #else
-static int rtw_android_wifictrl_func_add(void)
+static inline int rtw_android_wifictrl_func_add(void)
 {
 	return 0;
 }
-static void rtw_android_wifictrl_func_del(void) {}
+static inline void rtw_android_wifictrl_func_del(void) {}
 #endif /* defined(RTW_ENABLE_WIFI_CONTROL_FUNC) */
 
 #ifdef CONFIG_GPIO_WAKEUP

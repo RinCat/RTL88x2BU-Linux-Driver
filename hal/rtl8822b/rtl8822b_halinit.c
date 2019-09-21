@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- * Copyright(c) 2015 - 2017 Realtek Corporation.
+ * Copyright(c) 2015 - 2018 Realtek Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
@@ -34,6 +34,8 @@ void rtl8822b_init_hal_spec(PADAPTER adapter)
 	hal_spec->sec_cap = SEC_CAP_CHK_BMC;
 	hal_spec->rfpath_num_2g = 2;
 	hal_spec->rfpath_num_5g = 2;
+	hal_spec->txgi_max = 63;
+	hal_spec->txgi_pdbm = 2;
 	hal_spec->max_tx_cnt = 2;
 	hal_spec->tx_nss_num = 2;
 	hal_spec->rx_nss_num = 2;
@@ -48,7 +50,10 @@ void rtl8822b_init_hal_spec(PADAPTER adapter)
 			    | WL_FUNC_TDLS
 			    ;
 
+	hal_spec->rx_tsf_filter = 1;
+
 	hal_spec->pg_txpwr_saddr = 0x10;
+	hal_spec->pg_txgi_diff_factor = 1;
 
 	hal_spec->hci_type = 0;
 
@@ -103,16 +108,16 @@ void rtl8822b_power_off(PADAPTER adapter)
 	if (bMacPwrCtrlOn == _FALSE)
 		goto out;
 
+	bMacPwrCtrlOn = _FALSE;
+	rtw_hal_set_hwreg(adapter, HW_VAR_APFM_ON_MAC, &bMacPwrCtrlOn);
+
+	GET_HAL_DATA(adapter)->bFWReady = _FALSE;
+
 	err = rtw_halmac_poweroff(d);
 	if (err) {
 		RTW_ERR("%s: Power OFF Fail!!\n", __FUNCTION__);
 		goto out;
 	}
-
-	bMacPwrCtrlOn = _FALSE;
-	rtw_hal_set_hwreg(adapter, HW_VAR_APFM_ON_MAC, &bMacPwrCtrlOn);
-
-	GET_HAL_DATA(adapter)->bFWReady = _FALSE;
 
 out:
 	return;
@@ -192,10 +197,12 @@ void rtl8822b_init_misc(PADAPTER adapter)
 	PHAL_DATA_TYPE hal;
 	u8 v8 = 0;
 	u32 v32 = 0;
+#ifdef RTW_AMPDU_AGG_RETRY_AND_NEW
+	u32 ctrl;
+#endif /* RTW_AMPDU_AGG_RETRY_AND_NEW */
 
 
 	hal = GET_HAL_DATA(adapter);
-
 
 	/*
 	 * Sync driver status and hardware setting
@@ -216,8 +223,9 @@ void rtl8822b_init_misc(PADAPTER adapter)
 			if (iface) {
 				iface->registrypriv.wireless_mode = WIRELESS_MODE_5G;
 				iface->registrypriv.channel = 149;
-
+#ifdef CONFIG_80211N_HT
 				iface->registrypriv.stbc_cap &= ~(BIT0 | BIT4);
+#endif /* CONFIG_80211N_HT */
 			}
 		}
 	}
@@ -245,7 +253,31 @@ void rtl8822b_init_misc(PADAPTER adapter)
 		rtw_read32(adapter, REG_FWHW_TXQ_CTRL_8822B) | BIT_EN_QUEUE_RPT_8822B(BIT(4)));
 #endif /* CONFIG_XMIT_ACK */
 
-	rtw_write8(adapter, REG_TIMER0_SRC_SEL_8822B, rtw_read8(adapter, REG_TIMER0_SRC_SEL_8822B) & ~BIT(6));
+#ifdef CONFIG_TCP_CSUM_OFFLOAD_RX
+	rtw_hal_rcr_add(adapter, BIT_TCPOFLD_EN_8822B);
+#endif /* CONFIG_TCP_CSUM_OFFLOAD_RX*/
+
+#ifdef RTW_AMPDU_AGG_RETRY_AND_NEW
+	v32 = rtw_read32(adapter, REG_FWHW_TXQ_CTRL_8822B);
+	ctrl = v32;
+	/* Enable AMPDU aggregation mode with retry MPDUs and new MPDUs */
+	v32 &= ~BIT_EN_RTY_BK_8822B;
+	/* Don't agg if retry packet rate fall back */
+#define BIT_EN_RTY_BK_COD_8822B	(BIT(2)	<< 24) /* 0x423[2] */
+	v32 |= BIT_EN_RTY_BK_COD_8822B;
+	if (v32 != ctrl)
+		rtw_write32(adapter, REG_FWHW_TXQ_CTRL_8822B, v32);
+
+	RTW_INFO("%s: AMPDU agg retry with new/break when rate fall back: "
+		 "%s / %s\n", __FUNCTION__,
+		 (v32 & BIT_EN_RTY_BK_8822B) ? "false" : "true",
+		 (v32 & BIT_EN_RTY_BK_COD_8822B) ? "true" : "false");
+#endif /* RTW_AMPDU_AGG_RETRY_AND_NEW */
+
+#ifdef CONFIG_LPS_PWR_TRACKING
+	rtl8822b_set_fw_thermal_rpt_cmd(adapter, _TRUE, hal->eeprom_thermal_meter + THERMAL_DIFF_TH);
+#endif
+
 }
 
 u32 rtl8822b_init(PADAPTER adapter)
@@ -264,15 +296,21 @@ u32 rtl8822b_init(PADAPTER adapter)
 	rtl8822b_phy_bf_init(adapter);
 #endif
 
+#ifdef CONFIG_FW_MULTI_PORT_SUPPORT
+	/*HW / FW init*/
+	rtw_hal_set_default_port_id_cmd(adapter, 0);
+#endif
+
 #ifdef CONFIG_BT_COEXIST
 	/* Init BT hw config. */
-	if (_TRUE == hal->EEPROMBluetoothCoexist)
+	if (_TRUE == hal->EEPROMBluetoothCoexist) {
 		rtw_btcoex_HAL_Initialize(adapter, _FALSE);
-	else
-		rtw_btcoex_wifionly_hw_config(adapter);
-#else /* CONFIG_BT_COEXIST */
-	rtw_btcoex_wifionly_hw_config(adapter);
+		#ifdef CONFIG_FW_MULTI_PORT_SUPPORT
+		rtw_hal_set_wifi_btc_port_id_cmd(adapter);
+		#endif
+	} else
 #endif /* CONFIG_BT_COEXIST */
+		rtw_btcoex_wifionly_hw_config(adapter);
 
 	rtl8822b_init_misc(adapter);
 
@@ -306,9 +344,6 @@ void rtl8822b_init_default_value(PADAPTER adapter)
 
 
 	hal = GET_HAL_DATA(adapter);
-
-	if (adapter->registrypriv.wireless_mode == WIRELESS_MODE_MAX)
-		adapter->registrypriv.wireless_mode = WIRELESS_MODE_24G | WIRELESS_MODE_5G;
 
 	/* init default value */
 	hal->fw_ractrl = _FALSE;

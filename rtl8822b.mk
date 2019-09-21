@@ -6,33 +6,6 @@ ifeq ($(CONFIG_MP_INCLUDED), y)
 #CONFIG_MP_VHT_HW_TX_MODE = y
 endif
 
-_HAL_HALMAC_FILES +=	hal/halmac/halmac_api.o
-
-_HAL_HALMAC_FILES +=	hal/halmac/halmac_88xx/halmac_bb_rf_88xx.o \
-			hal/halmac/halmac_88xx/halmac_cfg_wmac_88xx.o \
-			hal/halmac/halmac_88xx/halmac_common_88xx.o \
-			hal/halmac/halmac_88xx/halmac_efuse_88xx.o \
-			hal/halmac/halmac_88xx/halmac_flash_88xx.o \
-			hal/halmac/halmac_88xx/halmac_fw_88xx.o \
-			hal/halmac/halmac_88xx/halmac_gpio_88xx.o \
-			hal/halmac/halmac_88xx/halmac_init_88xx.o \
-			hal/halmac/halmac_88xx/halmac_mimo_88xx.o \
-			hal/halmac/halmac_88xx/halmac_pcie_88xx.o \
-			hal/halmac/halmac_88xx/halmac_sdio_88xx.o \
-			hal/halmac/halmac_88xx/halmac_usb_88xx.o
-
-_HAL_HALMAC_FILES +=	hal/halmac/halmac_88xx/halmac_8822b/halmac_cfg_wmac_8822b.o \
-			hal/halmac/halmac_88xx/halmac_8822b/halmac_common_8822b.o \
-			hal/halmac/halmac_88xx/halmac_8822b/halmac_gpio_8822b.o \
-			hal/halmac/halmac_88xx/halmac_8822b/halmac_init_8822b.o \
-			hal/halmac/halmac_88xx/halmac_8822b/halmac_pcie_8822b.o \
-			hal/halmac/halmac_88xx/halmac_8822b/halmac_phy_8822b.o \
-			hal/halmac/halmac_88xx/halmac_8822b/halmac_pwr_seq_8822b.o \
-			hal/halmac/halmac_88xx/halmac_8822b/halmac_sdio_8822b.o \
-			hal/halmac/halmac_88xx/halmac_8822b/halmac_usb_8822b.o
-
-_HAL_INTFS_FILES +=	hal/hal_halmac.o
-
 _HAL_INTFS_FILES +=	hal/rtl8822b/rtl8822b_halinit.o \
 			hal/rtl8822b/rtl8822b_mac.o \
 			hal/rtl8822b/rtl8822b_cmd.o \
@@ -74,7 +47,7 @@ _HAL_INTFS_FILES +=	hal/rtl8822b/$(HCI_NAME)/rtl8822bs_halinit.o \
 _HAL_INTFS_FILES +=hal/efuse/rtl8822b/HalEfuseMask8822B_SDIO.o
 endif
 
-_HAL_INTFS_FILES += $(_HAL_HALMAC_FILES)
+include $(src)/halmac.mk
 
 _BTC_FILES += hal/btc/halbtc8822bwifionly.o
 ifeq ($(CONFIG_BT_COEXIST), y)

@@ -419,6 +419,50 @@ u32 cck_swing_table_ch1_ch14_8710b[CCK_TABLE_SIZE_8710B] = {
 	0x7FF,
 };
 
+/* Winnita ADD 20170828 PathA 0xAB4[10:0],PathB 0xAB4[21:11]*/
+u32 cck_swing_table_ch1_ch14_8192f[CCK_TABLE_SIZE_8192F] = {
+	0x0CD,			 /*0 ,    -20dB*/
+	0x0D9,
+	0x0E6,
+	0x0F3,
+	0x102,
+	0x111,
+	0x121,
+	0x132,
+	0x144,
+	0x158,
+	0x16C,
+	0x182,
+	0x198,
+	0x1B1,
+	0x1CA,
+	0x1E5,
+	0x202,
+	0x221,
+	0x241,
+	0x263,		/*19*/
+	0x287,		/*20*/
+	0x2AE,		/*21*/
+	0x2D6,		/*22*/
+	0x301,		/*23*/
+	0x32F,		/*24*/
+	0x35F,		/*25*/
+	0x392,		/*26*/
+	0x3C9,		/*27*/
+	0x402,		/*28*/
+	0x43F,		/*29*/
+	0x47F,		/*30*/
+	0x4C3,		/*31*/
+	0x50C,		/*32*/
+	0x558,		/*33*/
+	0x5A9,		/*34*/
+	0x5FF,		/*35*/
+	0x65A,		/*36*/
+	0x6BA,
+	0x720,
+	0x78C,
+	0x7FF,
+};
 
 u32 tx_scaling_table_jaguar[TXSCALE_TABLE_SIZE] = {
 	0x081, /* 0,  -12.0dB */
@@ -483,30 +527,34 @@ get_swing_index(
 	void		*adapter = dm->adapter;
 	HAL_DATA_TYPE	*hal_data = GET_HAL_DATA(((PADAPTER)adapter));
 	u8			i = 0;
-	u32			bb_swing;
-	u32			swing_table_size;
-	u32			*swing_table;
+	u32			bb_swing, table_value;
 
 	if (dm->support_ic_type == ODM_RTL8188E || dm->support_ic_type == ODM_RTL8723B ||
-	    dm->support_ic_type == ODM_RTL8192E || dm->support_ic_type == ODM_RTL8188F || dm->support_ic_type == ODM_RTL8703B || dm->support_ic_type == ODM_RTL8723D || dm->support_ic_type == ODM_RTL8710B) {
+	    dm->support_ic_type == ODM_RTL8192E || dm->support_ic_type == ODM_RTL8188F || 
+	    dm->support_ic_type == ODM_RTL8703B || dm->support_ic_type == ODM_RTL8723D || 
+	    dm->support_ic_type == ODM_RTL8192F || dm->support_ic_type == ODM_RTL8710B ||
+	    dm->support_ic_type == ODM_RTL8821) {
 		bb_swing = odm_get_bb_reg(dm, REG_OFDM_0_XA_TX_IQ_IMBALANCE, 0xFFC00000);
 
-		swing_table = ofdm_swing_table_new;
-		swing_table_size = OFDM_TABLE_SIZE;
+		for (i = 0; i < OFDM_TABLE_SIZE; i++) {
+			table_value = ofdm_swing_table_new[i];
+
+			if (table_value >= 0x100000)
+				table_value >>= 22;
+			if (bb_swing == table_value)
+				break;
+		}
 	} else {
-		bb_swing = PHY_GetTxBBSwing_8812A((PADAPTER)adapter, hal_data->CurrentBandType, RF_PATH_A);
-		swing_table = tx_scaling_table_jaguar;
-		swing_table_size = TXSCALE_TABLE_SIZE;
+		bb_swing = PHY_GetTxBBSwing_8812A(adapter, hal_data->CurrentBandType, RF_PATH_A);
+
+		for (i = 0; i < TXSCALE_TABLE_SIZE; i++) {
+			table_value = tx_scaling_table_jaguar[i];
+
+			if (bb_swing == table_value)
+				break;
+		}
 	}
 
-	for (i = 0; i < swing_table_size; ++i) {
-		u32 table_value = swing_table[i];
-
-		if (table_value >= 0x100000)
-			table_value >>= 22;
-		if (bb_swing == table_value)
-			break;
-	}
 	return i;
 }
 
@@ -615,7 +663,8 @@ odm_txpowertracking_thermal_meter_init(
 	if (cali_info->default_bb_swing_index_flag != true) {
 		/*The index of "0 dB" in SwingTable.*/
 		if (dm->support_ic_type == ODM_RTL8188E || dm->support_ic_type == ODM_RTL8723B ||
-		    dm->support_ic_type == ODM_RTL8192E || dm->support_ic_type == ODM_RTL8703B) {
+		    dm->support_ic_type == ODM_RTL8192E || dm->support_ic_type == ODM_RTL8703B ||
+		    dm->support_ic_type == ODM_RTL8821) {
 			cali_info->default_ofdm_index = (default_swing_index >= OFDM_TABLE_SIZE) ? 30 : default_swing_index;
 			cali_info->default_cck_index = (default_cck_swing_index >= CCK_TABLE_SIZE) ? 20 : default_cck_swing_index;
 		} else if (dm->support_ic_type == ODM_RTL8188F) {          /*add by Mingzhi.Guo  2015-03-23*/
@@ -627,6 +676,10 @@ odm_txpowertracking_thermal_meter_init(
 			/* JJ ADD 20161014 */
 		} else if (dm->support_ic_type == ODM_RTL8710B) {			
 			cali_info->default_ofdm_index = 28;					/*OFDM: -1dB*/
+			cali_info->default_cck_index = 28;					/*CCK:   -6dB*/
+		/*Winnita add 20170828*/
+		} else if (dm->support_ic_type == ODM_RTL8192F) {			
+			cali_info->default_ofdm_index = 30;					/*OFDM: 0dB*/
 			cali_info->default_cck_index = 28;					/*CCK:   -6dB*/
 		} else {
 			cali_info->default_ofdm_index = (default_swing_index >= TXSCALE_TABLE_SIZE) ? 24 : default_swing_index;
@@ -785,18 +838,20 @@ odm_txpowertracking_thermal_meter_check(
 	}
 
 	if (!tm_trigger) {
-		if (IS_HARDWARE_TYPE_8188E(adapter) || IS_HARDWARE_TYPE_JAGUAR(adapter) || IS_HARDWARE_TYPE_8192E(adapter) ||
-		    IS_HARDWARE_TYPE_8723B(adapter) || IS_HARDWARE_TYPE_8814A(adapter) || IS_HARDWARE_TYPE_8188F(adapter) || IS_HARDWARE_TYPE_8703B(adapter)
+		if (IS_HARDWARE_TYPE_8188E(adapter) || IS_HARDWARE_TYPE_JAGUAR(adapter) || IS_HARDWARE_TYPE_8192E(adapter) || IS_HARDWARE_TYPE_8192F(adapter)
+		    ||IS_HARDWARE_TYPE_8723B(adapter) || IS_HARDWARE_TYPE_8814A(adapter) || IS_HARDWARE_TYPE_8188F(adapter) || IS_HARDWARE_TYPE_8703B(adapter)
 		    || IS_HARDWARE_TYPE_8822B(adapter) || IS_HARDWARE_TYPE_8723D(adapter) || IS_HARDWARE_TYPE_8821C(adapter) || IS_HARDWARE_TYPE_8710B(adapter))/* JJ ADD 20161014 */
-			PHY_SetRFReg((PADAPTER)adapter, RF_PATH_A, RF_T_METER_88E, BIT(17) | BIT(16), 0x03);
+			PHY_SetRFReg(adapter, RF_PATH_A, RF_T_METER_88E, BIT(17) | BIT(16), 0x03);
 		else
-			PHY_SetRFReg((PADAPTER)adapter, RF_PATH_A, RF_T_METER, RFREGOFFSETMASK, 0x60);
+			PHY_SetRFReg(adapter, RF_PATH_A, RF_T_METER, RFREGOFFSETMASK, 0x60);
 
 		RT_TRACE(COMP_POWER_TRACKING, DBG_LOUD, ("Trigger Thermal Meter!!\n"));
 
 		tm_trigger = 1;
 		return;
-	} else {
+	} else if (IS_HARDWARE_TYPE_8822C(adapter) || IS_HARDWARE_TYPE_8814B(adapter))
+		return;
+	else {
 		RT_TRACE(COMP_POWER_TRACKING, DBG_LOUD, ("Schedule TxPowerTracking direct call!!\n"));
 		odm_txpowertracking_direct_call(adapter);
 		tm_trigger = 0;

@@ -18,7 +18,7 @@
 #include "../halmac_init_88xx.h"
 #include "../halmac_common_88xx.h"
 
-#if HALMAC_8822B_SUPPORT
+#if (HALMAC_8822B_SUPPORT && HALMAC_USB_SUPPORT)
 
 /**
  * mac_pwr_switch_usb_8822b() - switch mac power
@@ -118,7 +118,7 @@ phy_cfg_usb_8822b(struct halmac_adapter *adapter,
 	if (status != HALMAC_RET_SUCCESS)
 		return status;
 
-	status = parse_intf_phy_88xx(adapter, usb3_phy_8822b, pltfm,
+	status = parse_intf_phy_88xx(adapter, usb3_phy_param_8822b, pltfm,
 				     HAL_INTF_PHY_USB3);
 
 	if (status != HALMAC_RET_SUCCESS)
@@ -156,4 +156,4 @@ intf_tun_usb_8822b(struct halmac_adapter *adapter)
 	return HALMAC_RET_SUCCESS;
 }
 
-#endif /* HALMAC_8822B_SUPPORT*/
+#endif /* HALMAC_8822B_SUPPORT */

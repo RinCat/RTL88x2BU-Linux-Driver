@@ -34,10 +34,15 @@
  */
 
 #define CONFIG_IEEE80211_BAND_5GHZ 1
-#define CONFIG_80211N_HT	1
-#ifdef CONFIG_80211N_HT
-	#define CONFIG_80211AC_VHT 1
+#define CONFIG_80211N_HT
+#define CONFIG_80211AC_VHT
+#ifdef CONFIG_80211AC_VHT
+	#ifndef CONFIG_80211N_HT
+		#define CONFIG_80211N_HT
+	#endif
+#endif
 
+#ifdef CONFIG_80211AC_VHT
 	#define CONFIG_BEAMFORMING
 #endif
 
@@ -82,7 +87,7 @@
 #endif /* CONFIG_SUPPORT_USB_INT */
 
 #ifdef CONFIG_POWER_SAVING
-	/* #define CONFIG_IPS	1 */
+	#define CONFIG_IPS	1
 	#ifdef CONFIG_IPS
 	/* #define CONFIG_IPS_LEVEL_2 1*/ /*enable this to set default IPS mode to IPS_LEVEL_2*/
 	#define CONFIG_IPS_CHECK_IN_WD /* Do IPS Check in WatchDog.	*/
@@ -92,12 +97,12 @@
 
 	#define CONFIG_LPS	1
 	#if defined(CONFIG_LPS)
-		/* #define CONFIG_LPS_LCLK	1 */
+		#define CONFIG_LPS_LCLK	1
 	#endif
 
 	#ifdef CONFIG_LPS_LCLK
 		#ifdef CONFIG_POWER_SAVING
-			#define CONFIG_XMIT_THREAD_MODE
+			/* #define CONFIG_XMIT_THREAD_MODE */
 		#endif /* CONFIG_POWER_SAVING */
 		#ifndef CONFIG_SUPPORT_USB_INT
 			#define LPS_RPWM_WAIT_MS 300
@@ -300,8 +305,7 @@
 #endif
 
 #define	RTL8188E_EARLY_MODE_PKT_NUM_10	0
-
-#define CONFIG_ATTEMPT_TO_FIX_AP_BEACON_ERROR
+/*#define CONFIG_CUSTOMER01_SMART_ANTENNA */
 
 /*
  * Debug Related Config
@@ -312,6 +316,7 @@
 
 #define DBG_CONFIG_ERROR_DETECT
 
+/* #define CONFIG_DIS_UPHY */
 /*
 #define DBG_CONFIG_ERROR_DETECT_INT
 #define DBG_CONFIG_ERROR_RESET

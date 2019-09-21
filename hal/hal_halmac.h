@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- * Copyright(c) 2015 - 2017 Realtek Corporation.
+ * Copyright(c) 2015 - 2018 Realtek Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
@@ -152,6 +152,7 @@ int rtw_halmac_set_bcn_ctrl(struct dvobj_priv *d, enum _hw_port hwport, struct r
 int rtw_halmac_set_aid(struct dvobj_priv *d, enum _hw_port hwport, u16 aid);
 int rtw_halmac_set_bandwidth(struct dvobj_priv *d, u8 channel, u8 pri_ch_idx, u8 bw);
 int rtw_halmac_set_edca(struct dvobj_priv *d, u8 queue, u8 aifs, u8 cw, u16 txop);
+int rtw_halmac_set_rts_full_bw(struct dvobj_priv *d, u8 enable);
 
 /* Functions */
 int rtw_halmac_poweron(struct dvobj_priv *);
@@ -196,6 +197,10 @@ int rtw_halmac_iqk(struct dvobj_priv *d, u8 clear, u8 segment);
 int rtw_halmac_cfg_phy_para(struct dvobj_priv *d, struct rtw_phy_parameter *para);
 int rtw_halmac_led_cfg(struct dvobj_priv *d, u8 enable, u8 mode);
 void rtw_halmac_led_switch(struct dvobj_priv *d, u8 on);
+int rtw_halmac_bt_wake_cfg(struct dvobj_priv *d, u8 enable);
+#ifdef CONFIG_PNO_SUPPORT
+int rtw_halmac_pno_scanoffload(struct dvobj_priv *d, u32 enable);
+#endif
 
 #ifdef CONFIG_SDIO_HCI
 int rtw_halmac_query_tx_page_num(struct dvobj_priv *);

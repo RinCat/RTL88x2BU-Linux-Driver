@@ -314,7 +314,7 @@
 	{HALMAC_SW_IO, HALMAC_GPIO15, HALMAC_GPIO_IN_OUT, \
 	 0x40, BIT(1) | BIT(0), 0}
 
-const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO0_8822B[] = {
+static const struct halmac_gpio_pimux_list PINMUX_LIST_GPIO0_8822B[] = {
 	GPIO0_BT_GPIO0_8822B,
 	GPIO0_BT_ACT_8822B,
 	GPIO0_WL_ACT_8822B,
@@ -324,7 +324,7 @@ const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO0_8822B[] = {
 	GPIO0_SW_IO_8822B
 };
 
-const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO1_8822B[] = {
+static const struct halmac_gpio_pimux_list PINMUX_LIST_GPIO1_8822B[] = {
 	GPIO1_BT_GPIO1_8822B,
 	GPIO1_BT_3DD_SYNC_A_8822B,
 	GPIO1_WL_CK_8822B,
@@ -335,7 +335,7 @@ const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO1_8822B[] = {
 	GPIO1_SW_IO_8822B
 };
 
-const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO2_8822B[] = {
+static const struct halmac_gpio_pimux_list PINMUX_LIST_GPIO2_8822B[] = {
 	GPIO2_BT_GPIO2_8822B,
 	GPIO2_WL_STATE_8822B,
 	GPIO2_BT_STATE_8822B,
@@ -346,7 +346,7 @@ const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO2_8822B[] = {
 	GPIO2_SW_IO_8822B
 };
 
-const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO3_8822B[] = {
+static const struct halmac_gpio_pimux_list PINMUX_LIST_GPIO3_8822B[] = {
 	GPIO3_BT_GPIO3_8822B,
 	GPIO3_WL_PRI_8822B,
 	GPIO3_BT_PRI_8822B,
@@ -357,7 +357,7 @@ const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO3_8822B[] = {
 	GPIO3_SW_IO_8822B
 };
 
-const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO4_8822B[] = {
+static const struct halmac_gpio_pimux_list PINMUX_LIST_GPIO4_8822B[] = {
 	GPIO4_BT_SPI_D0_8822B,
 	GPIO4_WL_SPI_D0_8822B,
 	GPIO4_SDIO_INT_8822B,
@@ -369,7 +369,7 @@ const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO4_8822B[] = {
 	GPIO4_SW_IO_8822B
 };
 
-const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO5_8822B[] = {
+static const struct halmac_gpio_pimux_list PINMUX_LIST_GPIO5_8822B[] = {
 	GPIO5_BT_SPI_D1_8822B,
 	GPIO5_WL_SPI_D1_8822B,
 	GPIO5_JTAG_TDI_8822B,
@@ -380,7 +380,7 @@ const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO5_8822B[] = {
 	GPIO5_SW_IO_8822B
 };
 
-const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO6_8822B[] = {
+static const struct halmac_gpio_pimux_list PINMUX_LIST_GPIO6_8822B[] = {
 	GPIO6_BT_SPI_D2_8822B,
 	GPIO6_WL_SPI_D2_8822B,
 	GPIO6_EEDO_8822B,
@@ -394,7 +394,7 @@ const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO6_8822B[] = {
 	GPIO6_SW_IO_8822B
 };
 
-const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO7_8822B[] = {
+static const struct halmac_gpio_pimux_list PINMUX_LIST_GPIO7_8822B[] = {
 	GPIO7_BT_SPI_D3_8822B,
 	GPIO7_WL_SPI_D3_8822B,
 	GPIO7_EEDI_8822B,
@@ -407,45 +407,45 @@ const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO7_8822B[] = {
 	GPIO7_SW_IO_8822B
 };
 
-const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO8_8822B[] = {
+static const struct halmac_gpio_pimux_list PINMUX_LIST_GPIO8_8822B[] = {
 	GPIO8_WL_EXT_WOL_8822B,
 	GPIO8_WL_LED_8822B,
 	GPIO8_SW_IO_8822B
 };
 
-const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO9_8822B[] = {
+static const struct halmac_gpio_pimux_list PINMUX_LIST_GPIO9_8822B[] = {
 	GPIO9_DIS_WL_N_8822B,
 	GPIO9_WL_EXT_WOL_8822B,
 	GPIO9_USCTS0_8822B,
 	GPIO9_SW_IO_8822B
 };
 
-const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO10_8822B[] = {
+static const struct halmac_gpio_pimux_list PINMUX_LIST_GPIO10_8822B[] = {
 	GPIO10_SW_IO_8822B
 };
 
-const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO11_8822B[] = {
+static const struct halmac_gpio_pimux_list PINMUX_LIST_GPIO11_8822B[] = {
 	GPIO11_DIS_BT_N_8822B,
 	GPIO11_USOUT0_8822B,
 	GPIO11_SW_IO_8822B
 };
 
-const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO12_8822B[] = {
+static const struct halmac_gpio_pimux_list PINMUX_LIST_GPIO12_8822B[] = {
 	GPIO12_USIN0_8822B,
 	GPIO12_SW_IO_8822B
 };
 
-const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO13_8822B[] = {
+static const struct halmac_gpio_pimux_list PINMUX_LIST_GPIO13_8822B[] = {
 	GPIO13_BT_WAKE_8822B,
 	GPIO13_SW_IO_8822B
 };
 
-const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO14_8822B[] = {
+static const struct halmac_gpio_pimux_list PINMUX_LIST_GPIO14_8822B[] = {
 	GPIO14_UART_WAKE_8822B,
 	GPIO14_SW_IO_8822B
 };
 
-const struct halmac_gpio_pimux_list PIMUX_LIST_GPIO15_8822B[] = {
+static const struct halmac_gpio_pimux_list PINMUX_LIST_GPIO15_8822B[] = {
 	GPIO15_EXT_XTAL_8822B,
 	GPIO15_SW_IO_8822B
 };
@@ -497,6 +497,10 @@ pinmux_get_func_8822b(struct halmac_adapter *adapter,
 		break;
 	case HALMAC_GPIO_FUNC_SDIO_INT:
 		*enable = (cur_func == HALMAC_SDIO_INT) ? 1 : 0;
+		break;
+	case HALMAC_GPIO_FUNC_BT_HOST_WAKE1:
+	case HALMAC_GPIO_FUNC_BT_DEV_WAKE1:
+		*enable = (cur_func == HALMAC_GPIO13_14_WL_CTRL_EN) ? 1 : 0;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_0:
 	case HALMAC_GPIO_FUNC_SW_IO_1:
@@ -630,9 +634,13 @@ pinmux_free_func_8822b(struct halmac_adapter *adapter,
 		info->sw_io_12 = 0;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_13:
+	case HALMAC_GPIO_FUNC_BT_DEV_WAKE1:
+		info->bt_dev_wake = 0;
 		info->sw_io_13 = 0;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_14:
+	case HALMAC_GPIO_FUNC_BT_HOST_WAKE1:
+		info->bt_host_wake = 0;
 		info->sw_io_14 = 0;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_15:
@@ -656,85 +664,87 @@ get_pinmux_list_8822b(struct halmac_adapter *adapter,
 {
 	switch (gpio_func) {
 	case HALMAC_GPIO_FUNC_SW_IO_0:
-		*list = PIMUX_LIST_GPIO0_8822B;
-		*list_size = ARRAY_SIZE(PIMUX_LIST_GPIO0_8822B);
+		*list = PINMUX_LIST_GPIO0_8822B;
+		*list_size = ARRAY_SIZE(PINMUX_LIST_GPIO0_8822B);
 		*gpio_id = HALMAC_GPIO0;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_1:
-		*list = PIMUX_LIST_GPIO1_8822B;
-		*list_size = ARRAY_SIZE(PIMUX_LIST_GPIO1_8822B);
+		*list = PINMUX_LIST_GPIO1_8822B;
+		*list_size = ARRAY_SIZE(PINMUX_LIST_GPIO1_8822B);
 		*gpio_id = HALMAC_GPIO1;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_2:
-		*list = PIMUX_LIST_GPIO2_8822B;
-		*list_size = ARRAY_SIZE(PIMUX_LIST_GPIO2_8822B);
+		*list = PINMUX_LIST_GPIO2_8822B;
+		*list_size = ARRAY_SIZE(PINMUX_LIST_GPIO2_8822B);
 		*gpio_id = HALMAC_GPIO2;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_3:
-		*list = PIMUX_LIST_GPIO3_8822B;
-		*list_size = ARRAY_SIZE(PIMUX_LIST_GPIO3_8822B);
+		*list = PINMUX_LIST_GPIO3_8822B;
+		*list_size = ARRAY_SIZE(PINMUX_LIST_GPIO3_8822B);
 		*gpio_id = HALMAC_GPIO3;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_4:
 	case HALMAC_GPIO_FUNC_SDIO_INT:
-		*list = PIMUX_LIST_GPIO4_8822B;
-		*list_size = ARRAY_SIZE(PIMUX_LIST_GPIO4_8822B);
+		*list = PINMUX_LIST_GPIO4_8822B;
+		*list_size = ARRAY_SIZE(PINMUX_LIST_GPIO4_8822B);
 		*gpio_id = HALMAC_GPIO4;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_5:
-		*list = PIMUX_LIST_GPIO5_8822B;
-		*list_size = ARRAY_SIZE(PIMUX_LIST_GPIO5_8822B);
+		*list = PINMUX_LIST_GPIO5_8822B;
+		*list_size = ARRAY_SIZE(PINMUX_LIST_GPIO5_8822B);
 		*gpio_id = HALMAC_GPIO5;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_6:
-		*list = PIMUX_LIST_GPIO6_8822B;
-		*list_size = ARRAY_SIZE(PIMUX_LIST_GPIO6_8822B);
+		*list = PINMUX_LIST_GPIO6_8822B;
+		*list_size = ARRAY_SIZE(PINMUX_LIST_GPIO6_8822B);
 		*gpio_id = HALMAC_GPIO6;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_7:
-		*list = PIMUX_LIST_GPIO7_8822B;
-		*list_size = ARRAY_SIZE(PIMUX_LIST_GPIO7_8822B);
+		*list = PINMUX_LIST_GPIO7_8822B;
+		*list_size = ARRAY_SIZE(PINMUX_LIST_GPIO7_8822B);
 		*gpio_id = HALMAC_GPIO7;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_8:
 	case HALMAC_GPIO_FUNC_WL_LED:
-		*list = PIMUX_LIST_GPIO8_8822B;
-		*list_size = ARRAY_SIZE(PIMUX_LIST_GPIO8_8822B);
+		*list = PINMUX_LIST_GPIO8_8822B;
+		*list_size = ARRAY_SIZE(PINMUX_LIST_GPIO8_8822B);
 		*gpio_id = HALMAC_GPIO8;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_9:
-		*list = PIMUX_LIST_GPIO9_8822B;
-		*list_size = ARRAY_SIZE(PIMUX_LIST_GPIO9_8822B);
+		*list = PINMUX_LIST_GPIO9_8822B;
+		*list_size = ARRAY_SIZE(PINMUX_LIST_GPIO9_8822B);
 		*gpio_id = HALMAC_GPIO9;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_10:
-		*list = PIMUX_LIST_GPIO10_8822B;
-		*list_size = ARRAY_SIZE(PIMUX_LIST_GPIO10_8822B);
+		*list = PINMUX_LIST_GPIO10_8822B;
+		*list_size = ARRAY_SIZE(PINMUX_LIST_GPIO10_8822B);
 		*gpio_id = HALMAC_GPIO10;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_11:
-		*list = PIMUX_LIST_GPIO11_8822B;
-		*list_size = ARRAY_SIZE(PIMUX_LIST_GPIO11_8822B);
+		*list = PINMUX_LIST_GPIO11_8822B;
+		*list_size = ARRAY_SIZE(PINMUX_LIST_GPIO11_8822B);
 		*gpio_id = HALMAC_GPIO11;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_12:
-		*list = PIMUX_LIST_GPIO12_8822B;
-		*list_size = ARRAY_SIZE(PIMUX_LIST_GPIO12_8822B);
+		*list = PINMUX_LIST_GPIO12_8822B;
+		*list_size = ARRAY_SIZE(PINMUX_LIST_GPIO12_8822B);
 		*gpio_id = HALMAC_GPIO12;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_13:
-		*list = PIMUX_LIST_GPIO13_8822B;
-		*list_size = ARRAY_SIZE(PIMUX_LIST_GPIO13_8822B);
+	case HALMAC_GPIO_FUNC_BT_DEV_WAKE1:
+		*list = PINMUX_LIST_GPIO13_8822B;
+		*list_size = ARRAY_SIZE(PINMUX_LIST_GPIO13_8822B);
 		*gpio_id = HALMAC_GPIO13;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_14:
-		*list = PIMUX_LIST_GPIO14_8822B;
-		*list_size = ARRAY_SIZE(PIMUX_LIST_GPIO14_8822B);
+	case HALMAC_GPIO_FUNC_BT_HOST_WAKE1:
+		*list = PINMUX_LIST_GPIO14_8822B;
+		*list_size = ARRAY_SIZE(PINMUX_LIST_GPIO14_8822B);
 		*gpio_id = HALMAC_GPIO14;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_15:
-		*list = PIMUX_LIST_GPIO15_8822B;
-		*list_size = ARRAY_SIZE(PIMUX_LIST_GPIO15_8822B);
+		*list = PINMUX_LIST_GPIO15_8822B;
+		*list_size = ARRAY_SIZE(PINMUX_LIST_GPIO15_8822B);
 		*gpio_id = HALMAC_GPIO15;
 		break;
 	default:
@@ -786,8 +796,12 @@ chk_pinmux_valid_8822b(struct halmac_adapter *adapter,
 			status = HALMAC_RET_PINMUX_USED;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_8:
-	case HALMAC_GPIO_FUNC_WL_LED:
 		if (info->sw_io_8 == 1 || info->wl_led == 1)
+			status = HALMAC_RET_PINMUX_USED;
+		break;
+	case HALMAC_GPIO_FUNC_WL_LED:
+		if (info->sw_io_8 == 1 || info->wl_led == 1 ||
+		    info->bt_dev_wake == 1 || info->bt_host_wake == 1)
 			status = HALMAC_RET_PINMUX_USED;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_9:
@@ -807,11 +821,21 @@ chk_pinmux_valid_8822b(struct halmac_adapter *adapter,
 			status = HALMAC_RET_PINMUX_USED;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_13:
-		if (info->sw_io_13 == 1)
+		if (info->sw_io_13 == 1 || info->bt_dev_wake == 1)
+			status = HALMAC_RET_PINMUX_USED;
+		break;
+	case HALMAC_GPIO_FUNC_BT_DEV_WAKE1:
+		if (info->sw_io_13 == 1 || info->bt_dev_wake == 1 ||
+		    info->wl_led == 1)
 			status = HALMAC_RET_PINMUX_USED;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_14:
-		if (info->sw_io_14 == 1)
+		if (info->sw_io_14 == 1 || info->bt_host_wake == 1)
+			status = HALMAC_RET_PINMUX_USED;
+		break;
+	case HALMAC_GPIO_FUNC_BT_HOST_WAKE1:
+		if (info->sw_io_14 == 1 || info->bt_host_wake == 1 ||
+		    info->wl_led == 1)
 			status = HALMAC_RET_PINMUX_USED;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_15:

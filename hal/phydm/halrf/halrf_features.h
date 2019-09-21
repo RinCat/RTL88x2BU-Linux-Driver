@@ -23,21 +23,21 @@
  *
  *****************************************************************************/
 
-#ifndef	__HALRF_FEATURES_H__
-#define __HALRF_FEATURES
+#ifndef __HALRF_FEATURES_H__
+#define __HALRF_FEATURES_H__
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
 
-	#define	CONFIG_HALRF_POWERTRACKING	1
+#define CONFIG_HALRF_POWERTRACKING 1
 
 #elif (DM_ODM_SUPPORT_TYPE == ODM_AP)
 
-	#define	CONFIG_HALRF_POWERTRACKING	1
+#define CONFIG_HALRF_POWERTRACKING 1
 
 #elif (DM_ODM_SUPPORT_TYPE == ODM_CE)
 
-	#define	CONFIG_HALRF_POWERTRACKING	1
+#define CONFIG_HALRF_POWERTRACKING 1
 
 #endif
 
-#endif
+#endif /*#ifndef __HALRF_FEATURES_H__*/

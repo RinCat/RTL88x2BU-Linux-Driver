@@ -34,18 +34,6 @@ enum halmac_ret_status
 mount_api_88xx(struct halmac_adapter *adapter);
 
 enum halmac_ret_status
-pre_init_system_cfg_88xx(struct halmac_adapter *adapter);
-
-enum halmac_ret_status
-init_system_cfg_88xx(struct halmac_adapter *adapter);
-
-enum halmac_ret_status
-init_edca_cfg_88xx(struct halmac_adapter *adapter);
-
-enum halmac_ret_status
-init_wmac_cfg_88xx(struct halmac_adapter *adapter);
-
-enum halmac_ret_status
 init_mac_cfg_88xx(struct halmac_adapter *adapter, enum halmac_trx_mode mode);
 
 enum halmac_ret_status

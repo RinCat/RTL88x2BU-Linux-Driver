@@ -25,6 +25,9 @@ dump_efuse_map_88xx(struct halmac_adapter *adapter,
 		    enum halmac_efuse_read_cfg cfg);
 
 enum halmac_ret_status
+eeprom_parser_88xx(struct halmac_adapter *adapter, u8 *phy_map, u8 *log_map);
+
+enum halmac_ret_status
 dump_efuse_map_bt_88xx(struct halmac_adapter *adapter,
 		       enum halmac_efuse_bank bank, u32 size, u8 *map);
 

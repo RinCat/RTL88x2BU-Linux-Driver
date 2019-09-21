@@ -273,6 +273,10 @@ pinmux_switch_88xx(struct halmac_adapter *adapter,
 	case HALMAC_GPIO_FUNC_SDIO_INT:
 		switch_func = HALMAC_SDIO_INT;
 		break;
+	case HALMAC_GPIO_FUNC_BT_HOST_WAKE1:
+	case HALMAC_GPIO_FUNC_BT_DEV_WAKE1:
+		switch_func = HALMAC_GPIO13_14_WL_CTRL_EN;
+		break;
 	case HALMAC_GPIO_FUNC_SW_IO_0:
 	case HALMAC_GPIO_FUNC_SW_IO_1:
 	case HALMAC_GPIO_FUNC_SW_IO_2:
@@ -351,6 +355,12 @@ pinmux_record_88xx(struct halmac_adapter *adapter,
 		break;
 	case HALMAC_GPIO_FUNC_SDIO_INT:
 		adapter->pinmux_info.sdio_int = val;
+		break;
+	case HALMAC_GPIO_FUNC_BT_HOST_WAKE1:
+		adapter->pinmux_info.bt_host_wake = val;
+		break;
+	case HALMAC_GPIO_FUNC_BT_DEV_WAKE1:
+		adapter->pinmux_info.bt_dev_wake = val;
 		break;
 	case HALMAC_GPIO_FUNC_SW_IO_0:
 		adapter->pinmux_info.sw_io_0 = val;

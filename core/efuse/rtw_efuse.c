@@ -62,7 +62,7 @@ BOOLEAN efuse_IsMasked(PADAPTER pAdapter, u16 Offset)
 	if (pAdapter->registrypriv.boffefusemask)
 		return FALSE;
 
-#if DEV_BUS_TYPE == RT_USB_INTERFACE
+#ifdef CONFIG_USB_HCI
 #if defined(CONFIG_RTL8188E)
 	if (IS_HARDWARE_TYPE_8188E(pAdapter))
 		return (IS_MASKED(8188E, _MUSB, Offset)) ? TRUE : FALSE;
@@ -99,6 +99,10 @@ BOOLEAN efuse_IsMasked(PADAPTER pAdapter, u16 Offset)
 	if (IS_HARDWARE_TYPE_8188F(pAdapter))
 		return (IS_MASKED(8188F, _MUSB, Offset)) ? TRUE : FALSE;
 #endif
+#if defined(CONFIG_RTL8188GTV)
+	if (IS_HARDWARE_TYPE_8188GTV(pAdapter))
+		return (IS_MASKED(8188GTV, _MUSB, Offset)) ? TRUE : FALSE;
+#endif
 #if defined(CONFIG_RTL8822B)
 	if (IS_HARDWARE_TYPE_8822B(pAdapter))
 		return (IS_MASKED(8822B, _MUSB, Offset)) ? TRUE : FALSE;
@@ -107,13 +111,22 @@ BOOLEAN efuse_IsMasked(PADAPTER pAdapter, u16 Offset)
 	if (IS_HARDWARE_TYPE_8723D(pAdapter))
 		return (IS_MASKED(8723D, _MUSB, Offset)) ? TRUE : FALSE;
 #endif
-
+#if defined(CONFIG_RTL8710B)
+	if (IS_HARDWARE_TYPE_8710B(pAdapter))
+		return (IS_MASKED(8710B, _MUSB, Offset)) ? TRUE : FALSE;
+#endif
 #if defined(CONFIG_RTL8821C)
 	if (IS_HARDWARE_TYPE_8821CU(pAdapter))
 		return (IS_MASKED(8821C, _MUSB, Offset)) ? TRUE : FALSE;
 #endif
 
-#elif DEV_BUS_TYPE == RT_PCI_INTERFACE
+#if defined(CONFIG_RTL8192F)
+	if (IS_HARDWARE_TYPE_8192FU(pAdapter))
+		return (IS_MASKED(8192F, _MUSB, Offset)) ? TRUE : FALSE;
+#endif
+#endif /*CONFIG_USB_HCI*/
+
+#ifdef CONFIG_PCI_HCI
 #if defined(CONFIG_RTL8188E)
 	if (IS_HARDWARE_TYPE_8188E(pAdapter))
 		return (IS_MASKED(8188E, _MPCIE, Offset)) ? TRUE : FALSE;
@@ -147,7 +160,13 @@ BOOLEAN efuse_IsMasked(PADAPTER pAdapter, u16 Offset)
 		return (IS_MASKED(8821C, _MPCIE, Offset)) ? TRUE : FALSE;
 #endif
 
-#elif DEV_BUS_TYPE == RT_SDIO_INTERFACE
+#if defined(CONFIG_RTL8192F)
+	if (IS_HARDWARE_TYPE_8192FE(pAdapter))
+		return (IS_MASKED(8192F, _MPCIE, Offset)) ? TRUE : FALSE;
+#endif
+#endif /*CONFIG_PCI_HCI*/
+
+#ifdef CONFIG_SDIO_HCI
 #ifdef CONFIG_RTL8188E_SDIO
 	if (IS_HARDWARE_TYPE_8188E(pAdapter))
 		return (IS_MASKED(8188E, _MSDIO, Offset)) ? TRUE : FALSE;
@@ -156,9 +175,13 @@ BOOLEAN efuse_IsMasked(PADAPTER pAdapter, u16 Offset)
 	if (IS_HARDWARE_TYPE_8723BS(pAdapter))
 		return (IS_MASKED(8723B, _MSDIO, Offset)) ? TRUE : FALSE;
 #endif
-#ifdef CONFIG_RTL8188F_SDIO
+#ifdef CONFIG_RTL8188F
 	if (IS_HARDWARE_TYPE_8188F(pAdapter))
 		return (IS_MASKED(8188F, _MSDIO, Offset)) ? TRUE : FALSE;
+#endif
+#ifdef CONFIG_RTL8188GTV
+	if (IS_HARDWARE_TYPE_8188GTV(pAdapter))
+		return (IS_MASKED(8188GTV, _MSDIO, Offset)) ? TRUE : FALSE;
 #endif
 #ifdef CONFIG_RTL8192E
 	if (IS_HARDWARE_TYPE_8192ES(pAdapter))
@@ -176,7 +199,11 @@ BOOLEAN efuse_IsMasked(PADAPTER pAdapter, u16 Offset)
 	if (IS_HARDWARE_TYPE_8822B(pAdapter))
 		return (IS_MASKED(8822B, _MSDIO, Offset)) ? TRUE : FALSE;
 #endif
+#if defined(CONFIG_RTL8192F)
+	if (IS_HARDWARE_TYPE_8192FS(pAdapter))
+		return (IS_MASKED(8192F, _MSDIO, Offset)) ? TRUE : FALSE;
 #endif
+#endif /*CONFIG_SDIO_HCI*/
 
 	return FALSE;
 }
@@ -185,7 +212,7 @@ void rtw_efuse_mask_array(PADAPTER pAdapter, u8 *pArray)
 {
 	PHAL_DATA_TYPE pHalData = GET_HAL_DATA(pAdapter);
 
-#if DEV_BUS_TYPE == RT_USB_INTERFACE
+#ifdef CONFIG_USB_HCI
 #if defined(CONFIG_RTL8188E)
 	if (IS_HARDWARE_TYPE_8188E(pAdapter))
 		GET_MASK_ARRAY(8188E, _MUSB, pArray);
@@ -214,6 +241,10 @@ void rtw_efuse_mask_array(PADAPTER pAdapter, u8 *pArray)
 	if (IS_HARDWARE_TYPE_8188F(pAdapter))
 		GET_MASK_ARRAY(8188F, _MUSB, pArray);
 #endif
+#if defined(CONFIG_RTL8188GTV)
+	if (IS_HARDWARE_TYPE_8188GTV(pAdapter))
+		GET_MASK_ARRAY(8188GTV, _MUSB, pArray);
+#endif
 #if defined(CONFIG_RTL8814A)
 	if (IS_HARDWARE_TYPE_8814A(pAdapter))
 		GET_MASK_ARRAY(8814A, _MUSB, pArray);
@@ -226,9 +257,13 @@ void rtw_efuse_mask_array(PADAPTER pAdapter, u8 *pArray)
 	if (IS_HARDWARE_TYPE_8821CU(pAdapter))
 		GET_MASK_ARRAY(8821C, _MUSB, pArray);
 #endif
+#if defined(CONFIG_RTL8192F)
+	if (IS_HARDWARE_TYPE_8192FU(pAdapter))
+		GET_MASK_ARRAY(8192F, _MUSB, pArray);
+#endif
+#endif /*CONFIG_USB_HCI*/
 
-
-#elif DEV_BUS_TYPE == RT_PCI_INTERFACE
+#ifdef CONFIG_PCI_HCI
 #if defined(CONFIG_RTL8188E)
 	if (IS_HARDWARE_TYPE_8188E(pAdapter))
 		GET_MASK_ARRAY(8188E, _MPCIE, pArray);
@@ -261,9 +296,13 @@ void rtw_efuse_mask_array(PADAPTER pAdapter, u8 *pArray)
 	if (IS_HARDWARE_TYPE_8821CE(pAdapter))
 		GET_MASK_ARRAY(8821C, _MPCIE, pArray);
 #endif
+#if defined(CONFIG_RTL8192F)
+	if (IS_HARDWARE_TYPE_8192FE(pAdapter))
+		GET_MASK_ARRAY(8192F, _MPCIE, pArray);
+#endif
+#endif /*CONFIG_PCI_HCI*/
 
-
-#elif DEV_BUS_TYPE == RT_SDIO_INTERFACE
+#ifdef CONFIG_SDIO_HCI
 #if defined(CONFIG_RTL8188E)
 	if (IS_HARDWARE_TYPE_8188E(pAdapter))
 		GET_MASK_ARRAY(8188E, _MSDIO, pArray);
@@ -275,6 +314,10 @@ void rtw_efuse_mask_array(PADAPTER pAdapter, u8 *pArray)
 #if defined(CONFIG_RTL8188F)
 	if (IS_HARDWARE_TYPE_8188F(pAdapter))
 		GET_MASK_ARRAY(8188F, _MSDIO, pArray);
+#endif
+#if defined(CONFIG_RTL8188GTV)
+	if (IS_HARDWARE_TYPE_8188GTV(pAdapter))
+		GET_MASK_ARRAY(8188GTV, _MSDIO, pArray);
 #endif
 #if defined(CONFIG_RTL8192E)
 	if (IS_HARDWARE_TYPE_8192ES(pAdapter))
@@ -292,14 +335,18 @@ void rtw_efuse_mask_array(PADAPTER pAdapter, u8 *pArray)
 	if (IS_HARDWARE_TYPE_8822B(pAdapter))
 		GET_MASK_ARRAY(8822B , _MSDIO, pArray);
 #endif
-#endif /*#elif DEV_BUS_TYPE == RT_SDIO_INTERFACE*/
+#if defined(CONFIG_RTL8192F)
+	if (IS_HARDWARE_TYPE_8192FS(pAdapter))
+		GET_MASK_ARRAY(8192F, _MSDIO, pArray);
+#endif
+#endif /*CONFIG_SDIO_HCI*/
 }
 
 u16 rtw_get_efuse_mask_arraylen(PADAPTER pAdapter)
 {
 	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(pAdapter);
 
-#if DEV_BUS_TYPE == RT_USB_INTERFACE
+#ifdef CONFIG_USB_HCI
 #if defined(CONFIG_RTL8188E)
 	if (IS_HARDWARE_TYPE_8188E(pAdapter))
 		return GET_MASK_ARRAY_LEN(8188E, _MUSB);
@@ -328,6 +375,10 @@ u16 rtw_get_efuse_mask_arraylen(PADAPTER pAdapter)
 	if (IS_HARDWARE_TYPE_8188F(pAdapter))
 		return GET_MASK_ARRAY_LEN(8188F, _MUSB);
 #endif
+#if defined(CONFIG_RTL8188GTV)
+	if (IS_HARDWARE_TYPE_8188GTV(pAdapter))
+		return GET_MASK_ARRAY_LEN(8188GTV, _MUSB);
+#endif
 #if defined(CONFIG_RTL8814A)
 	if (IS_HARDWARE_TYPE_8814A(pAdapter))
 		return GET_MASK_ARRAY_LEN(8814A, _MUSB);
@@ -340,9 +391,13 @@ u16 rtw_get_efuse_mask_arraylen(PADAPTER pAdapter)
 	if (IS_HARDWARE_TYPE_8821CU(pAdapter))
 		return GET_MASK_ARRAY_LEN(8821C, _MUSB);
 #endif
+#if defined(CONFIG_RTL8192F)
+	if (IS_HARDWARE_TYPE_8192FU(pAdapter))
+		return GET_MASK_ARRAY_LEN(8192F, _MUSB);
+#endif
+#endif /*CONFIG_USB_HCI*/
 
-
-#elif DEV_BUS_TYPE == RT_PCI_INTERFACE
+#ifdef CONFIG_PCI_HCI
 #if defined(CONFIG_RTL8188E)
 	if (IS_HARDWARE_TYPE_8188E(pAdapter))
 		return GET_MASK_ARRAY_LEN(8188E, _MPCIE);
@@ -375,9 +430,13 @@ u16 rtw_get_efuse_mask_arraylen(PADAPTER pAdapter)
 	if (IS_HARDWARE_TYPE_8821CE(pAdapter))
 		return GET_MASK_ARRAY_LEN(8821C, _MPCIE);
 #endif
+#if defined(CONFIG_RTL8192F)
+	if (IS_HARDWARE_TYPE_8192FE(pAdapter))
+		return GET_MASK_ARRAY_LEN(8192F, _MPCIE);
+#endif
+#endif /*CONFIG_PCI_HCI*/
 
-
-#elif DEV_BUS_TYPE == RT_SDIO_INTERFACE
+#ifdef CONFIG_SDIO_HCI
 #if defined(CONFIG_RTL8188E)
 	if (IS_HARDWARE_TYPE_8188E(pAdapter))
 		return GET_MASK_ARRAY_LEN(8188E, _MSDIO);
@@ -389,6 +448,10 @@ u16 rtw_get_efuse_mask_arraylen(PADAPTER pAdapter)
 #if defined(CONFIG_RTL8188F)
 	if (IS_HARDWARE_TYPE_8188F(pAdapter))
 		return GET_MASK_ARRAY_LEN(8188F, _MSDIO);
+#endif
+#if defined(CONFIG_RTL8188GTV)
+	if (IS_HARDWARE_TYPE_8188GTV(pAdapter))
+		return GET_MASK_ARRAY_LEN(8188GTV, _MSDIO);
 #endif
 #if defined(CONFIG_RTL8192E)
 	if (IS_HARDWARE_TYPE_8192ES(pAdapter))
@@ -406,7 +469,11 @@ u16 rtw_get_efuse_mask_arraylen(PADAPTER pAdapter)
 	if (IS_HARDWARE_TYPE_8822B(pAdapter))
 		return GET_MASK_ARRAY_LEN(8822B, _MSDIO);
 #endif
+#if defined(CONFIG_RTL8192F)
+	if (IS_HARDWARE_TYPE_8192FS(pAdapter))
+		return GET_MASK_ARRAY_LEN(8192F, _MSDIO);
 #endif
+#endif/*CONFIG_SDIO_HCI*/
 	return 0;
 }
 
@@ -577,7 +644,7 @@ void rtw_efuse_analyze(PADAPTER	padapter, u8 Type, u8 Fake)
 	for (bank = startBank; bank <= endBank; bank++) {
 		if (!hal_EfuseSwitchToBank(padapter, bank, bPseudoTest)) {
 			RTW_INFO("EFUSE_SwitchToBank() Fail!!\n");
-			return;
+			goto out_free_buffer;
 		}
 
 		eFuse_Addr = bank * EFUSE_MAX_BANK_SIZE;
@@ -586,7 +653,7 @@ void rtw_efuse_analyze(PADAPTER	padapter, u8 Type, u8 Fake)
 
 		if (efuseHeader == 0xFF && bank == startBank && Fake != TRUE) {
 			RTW_INFO("Non-PGed Efuse\n");
-			return;
+			goto out_free_buffer;
 		}
 		RTW_INFO("EFUSE_REAL_CONTENT_LEN = %d\n", maprawlen);
 
@@ -719,6 +786,8 @@ void rtw_efuse_analyze(PADAPTER	padapter, u8 Type, u8 Fake)
 			);
 		}
 	_RTW_PRINT_SEL(RTW_DBGDUMP, "\n");
+
+out_free_buffer:
 	if (eFuseWord)
 		rtw_mfree((u8 *)eFuseWord, EFUSE_MAX_SECTION_NUM * (EFUSE_MAX_WORD_UNIT * 2));
 }
@@ -1997,6 +2066,14 @@ efuse_OneByteRead(
 		return bResult;
 	}
 
+#ifdef CONFIG_RTL8710B
+	/* <20171208, Peter>, Dont do the following write16(0x34) */
+	if (IS_HARDWARE_TYPE_8710B(pAdapter)) {
+		bResult = pAdapter->hal_func.efuse_indirect_read4(pAdapter, addr, data);
+		return bResult;
+	}
+#endif
+
 	if (IS_HARDWARE_TYPE_8723B(pAdapter) ||
 	    (IS_HARDWARE_TYPE_8192E(pAdapter) && (!IS_A_CUT(pHalData->version_id))) ||
 	    (IS_VENDOR_8188E_I_CUT_SERIES(pAdapter)) || (IS_CHIP_VENDOR_SMIC(pHalData->version_id))
@@ -2687,31 +2764,6 @@ EFUSE_ShadowWrite(
 
 }	/* EFUSE_ShadowWrite */
 
-VOID
-Efuse_InitSomeVar(
-	IN		PADAPTER	pAdapter
-);
-VOID
-Efuse_InitSomeVar(
-	IN		PADAPTER	pAdapter
-)
-{
-	u8 i;
-
-	_rtw_memset((PVOID)&fakeEfuseContent[0], 0xff, EFUSE_MAX_HW_SIZE);
-	_rtw_memset((PVOID)&fakeEfuseInitMap[0], 0xff, EFUSE_MAX_MAP_LEN);
-	_rtw_memset((PVOID)&fakeEfuseModifiedMap[0], 0xff, EFUSE_MAX_MAP_LEN);
-
-	for (i = 0; i < EFUSE_MAX_BT_BANK; i++)
-		_rtw_memset((PVOID)&BTEfuseContent[i][0], EFUSE_MAX_HW_SIZE, 0xff);
-	_rtw_memset((PVOID)&BTEfuseInitMap[0], 0xff, EFUSE_BT_MAX_MAP_LEN);
-	_rtw_memset((PVOID)&BTEfuseModifiedMap[0], 0xff, EFUSE_BT_MAX_MAP_LEN);
-
-	for (i = 0; i < EFUSE_MAX_BT_BANK; i++)
-		_rtw_memset((PVOID)&fakeBTEfuseContent[i][0], 0xff, EFUSE_MAX_HW_SIZE);
-	_rtw_memset((PVOID)&fakeBTEfuseInitMap[0], 0xff, EFUSE_BT_MAX_MAP_LEN);
-	_rtw_memset((PVOID)&fakeBTEfuseModifiedMap[0], 0xff, EFUSE_BT_MAX_MAP_LEN);
-}
 #endif /* !RTW_HALMAC */
 /*-----------------------------------------------------------------------------
  * Function:	efuse_ShadowRead1Byte

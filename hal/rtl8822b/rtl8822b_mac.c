@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- * Copyright(c) 2015 - 2017 Realtek Corporation.
+ * Copyright(c) 2015 - 2018 Realtek Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
@@ -214,3 +214,63 @@ u32 rtl8822b_get_rx_desc_size(struct _ADAPTER *a)
 
 	return size;
 }
+
+/*
+ * _rx_report - Get/Reset RX counter report
+ * @a:		struct _ADAPTER*
+ * @type:	rx report type
+ * @reset:	reset counter or not
+ *		0: read counter and don't reset counter
+ *		1: reset counter only
+ *
+ * Get/Reset RX (error) report counter from hardware.
+ *
+ * Rteurn counter when reset==0, otherwise always return 0.
+ */
+u16 _rx_report(struct _ADAPTER *a, enum rx_rpt_type type, u8 reset)
+{
+	u32 sel = 0;
+	u16 counter = 0;
+
+
+	/* Rx packet counter report selection */
+	sel = BIT_RXERR_RPT_SEL_V1_3_0_8822B(type);
+	if (type & BIT(4))
+		sel |= BIT_RXERR_RPT_SEL_V1_4_8822B;
+
+	if (reset)
+		sel |= BIT_RXERR_RPT_RST_8822B;
+
+	rtw_write8(a, REG_RXERR_RPT_8822B + 3, (sel >> 24) & 0xFF);
+
+	if (!reset)
+		counter = rtw_read16(a, REG_RXERR_RPT_8822B);
+
+	return counter;
+}
+
+/**
+ * rtl8822b_rx_report_get - Get RX counter report
+ * @a:		struct _ADAPTER*
+ * @type:	rx report type
+ *
+ * Get RX (error) report counter from hardware.
+ *
+ * Rteurn counter for specific rx report.
+ */
+u16 rtl8822b_rx_report_get(struct _ADAPTER *a, enum rx_rpt_type type)
+{
+	return _rx_report(a, type, 0);
+}
+
+/**
+ * rtl8822b_rx_report_reset - Reset RX counter report
+ * @a:		struct _ADAPTER*
+ *
+ * Reset RX (error) report counter of hardware.
+ */
+void rtl8822b_rx_report_reset(struct _ADAPTER *a, enum rx_rpt_type type)
+{
+	_rx_report(a, type, 1);
+}
+

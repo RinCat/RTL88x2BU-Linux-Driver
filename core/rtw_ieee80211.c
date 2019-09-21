@@ -127,6 +127,19 @@ int rtw_get_bit_value_from_ieee_value(u8 val)
 	}
 	return 0;
 }
+uint rtw_get_cckrate_size(u8 *rate, u32 rate_length)
+{
+	int i = 0;
+	while(i < rate_length){
+		RTW_DBG("%s, rate[%d]=%u\n", __FUNCTION__, i, rate[i]);
+		if (((rate[i] & 0x7f) == 2) || ((rate[i] & 0x7f) == 4) ||
+			((rate[i] & 0x7f) == 11)  || ((rate[i] & 0x7f) == 22))
+			i++;
+		else
+			break;
+	}
+	return i;
+}
 
 uint	rtw_is_cckrates_included(u8 *rate)
 {
@@ -381,6 +394,52 @@ exit:
 	return ret;
 }
 
+ /* Returns:  remove size OR  _FAIL: not updated*/
+int rtw_remove_ie_g_rate(u8 *ie, uint *ie_len, uint offset, u8 eid)
+{
+	int ret = _FAIL;
+	u8 *tem_target_ie;
+	u8 *target_ie;
+	u32 target_ielen,temp_target_ielen,cck_rate_size,rm_size;
+	u8 *start;
+	uint search_len;
+	u8 *remain_ies;
+	uint remain_len;
+	if (!ie || !ie_len || *ie_len <= offset)
+		goto exit;
+
+	start = ie + offset;
+	search_len = *ie_len - offset;
+
+	while (1) {
+		tem_target_ie=rtw_get_ie(start,eid,&temp_target_ielen,search_len);
+		
+		/*if(tem_target_ie)
+			RTW_INFO("%s, tem_target_ie=%u\n", __FUNCTION__,*tem_target_ie);*/
+		if (tem_target_ie && temp_target_ielen) {
+			cck_rate_size = rtw_get_cckrate_size((tem_target_ie+2), temp_target_ielen);
+			rm_size = temp_target_ielen - cck_rate_size;
+			RTW_DBG("%s,cck_rate_size=%u rm_size=%u\n", __FUNCTION__, cck_rate_size, rm_size);
+			temp_target_ielen=temp_target_ielen + 2;/*org size of  Supposrted Rates(include id + length)*/
+			/*RTW_INFO("%s, temp_target_ielen=%u\n", __FUNCTION__,temp_target_ielen);*/
+			remain_ies = tem_target_ie + temp_target_ielen;
+			remain_len = search_len - (remain_ies - start);
+			target_ielen=cck_rate_size;/*discount g mode rate 6, 9 12,18Mbps,id , length*/
+			*(tem_target_ie+1)=target_ielen;/*set new length to Supposrted Rates*/
+			target_ie=tem_target_ie+target_ielen + 2;/*set target ie to address of rate 6Mbps */
+	
+			_rtw_memmove(target_ie, remain_ies, remain_len);
+			*ie_len = *ie_len - rm_size;
+			ret = rm_size;
+
+			start = target_ie;
+			search_len = remain_len;
+		} else
+			break;
+	}
+exit:
+	return ret;
+}
 void rtw_set_supported_rate(u8 *SupportedRates, uint mode)
 {
 
@@ -496,7 +555,7 @@ int rtw_generate_ie(struct registry_priv *pregistrypriv)
 
 #ifdef CONFIG_80211N_HT
 	/* HT Cap. */
-	if (((pregistrypriv->wireless_mode & WIRELESS_11_5N) || (pregistrypriv->wireless_mode & WIRELESS_11_24N))
+	if (is_supported_ht(pregistrypriv->wireless_mode)
 	    && (pregistrypriv->ht_enable == _TRUE)) {
 		/* todo: */
 	}
@@ -677,7 +736,6 @@ int rtw_parse_wpa_ie(u8 *wpa_ie, int wpa_ie_len, int *group_cipher, int *pairwis
 
 int rtw_rsne_info_parse(const u8 *ie, uint ie_len, struct rsne_info *info)
 {
-	int i;
 	const u8 *pos = ie;
 	u16 cnt;
 
@@ -819,7 +877,7 @@ exit:
 int rtw_get_wapi_ie(u8 *in_ie, uint in_len, u8 *wapi_ie, u16 *wapi_len)
 {
 	int len = 0;
-	u8 authmode, i;
+	u8 authmode;
 	uint	cnt;
 	u8 wapi_oui1[4] = {0x0, 0x14, 0x72, 0x01};
 	u8 wapi_oui2[4] = {0x0, 0x14, 0x72, 0x02};
@@ -862,7 +920,7 @@ int rtw_get_wapi_ie(u8 *in_ie, uint in_len, u8 *wapi_ie, u16 *wapi_len)
 
 int rtw_get_sec_ie(u8 *in_ie, uint in_len, u8 *rsn_ie, u16 *rsn_len, u8 *wpa_ie, u16 *wpa_len)
 {
-	u8 authmode, sec_idx, i;
+	u8 authmode, sec_idx;
 	u8 wpa_oui[4] = {0x0, 0x50, 0xf2, 0x01};
 	uint	cnt;
 
@@ -1543,10 +1601,6 @@ void dump_ht_cap_ie_content(void *sel, const u8 *buf, u32 buf_len)
 
 void dump_ht_cap_ie(void *sel, const u8 *ie, u32 ie_len)
 {
-	const u8 *pos = ie;
-	u16 id;
-	u16 len;
-
 	const u8 *ht_cap_ie;
 	sint ht_cap_ielen;
 
@@ -1580,10 +1634,6 @@ void dump_ht_op_ie_content(void *sel, const u8 *buf, u32 buf_len)
 
 void dump_ht_op_ie(void *sel, const u8 *ie, u32 ie_len)
 {
-	const u8 *pos = ie;
-	u16 id;
-	u16 len;
-
 	const u8 *ht_op_ie;
 	sint ht_op_ielen;
 
@@ -1841,7 +1891,7 @@ u32 rtw_get_p2p_merged_ies_len(u8 *in_ie, u32 in_len)
 	PNDIS_802_11_VARIABLE_IEs	pIE;
 	u8 OUI[4] = { 0x50, 0x6f, 0x9a, 0x09 };
 	int i = 0;
-	int j = 0, len = 0;
+	int len = 0;
 
 	while (i < in_len) {
 		pIE = (PNDIS_802_11_VARIABLE_IEs)(in_ie + i);

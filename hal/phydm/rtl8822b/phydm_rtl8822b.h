@@ -23,39 +23,37 @@
  *
  *****************************************************************************/
 #if (RTL8822B_SUPPORT == 1)
-#ifndef	__ODM_RTL8822B_H__
+#ifndef __ODM_RTL8822B_H__
 #define __ODM_RTL8822B_H__
 
 #ifdef DYN_ANT_WEIGHTING_SUPPORT
-void
-phydm_dynamic_ant_weighting_8822b(
-	void		*dm_void
-);
+void phydm_dynamic_ant_weighting_8822b(void *dm_void);
 #endif
 
-void
-phydm_1rcca_setting(
-	struct 	dm_struct		*dm,
-	boolean	enable_1rcca
-);
+#ifdef CONFIG_MCC_DM
+#ifdef DYN_ANT_WEIGHTING_SUPPORT
+void phydm_dynamic_ant_weighting_mcc_8822b(void *dm_void);
+#endif /*#ifdef DYN_ANT_WEIGHTING_SUPPORT*/
+void phydm_fill_mcccmd( void *dm_void, u8 regid, u16 reg_add,	u8 val0,	u8 val1);
+u8 phydm_check(void *dm_void);
+void phydm_mcc_init (void *dm_void);
+void phydm_mcc_switch(void *dm_void);
+#endif /*#ifdef CONFIG_MCC_DM*/
 
-void
-phydm_somlrxhp_setting(
-	struct 	dm_struct		*dm,
-	boolean switch_soml
-);
 
-void
-phydm_hwsetting_8822b(
-	struct dm_struct		*dm
-);
+void phydm_1rcca_setting(struct dm_struct *dm, boolean enable_1rcca);
 
-void
-phydm_config_tx2path_8822b(
-	struct dm_struct		*dm,
-	enum wireless_set			wireless_mode,
-	boolean					is_tx2_path
-);
+void phydm_somlrxhp_setting(struct dm_struct *dm, boolean switch_soml);
 
-#endif	/* #define __ODM_RTL8822B_H__ */
+#ifdef CONFIG_DYNAMIC_BYPASS
+void phydm_pw_sat_8822b(struct dm_struct *dm, u8 rssi_value);
+#endif
+
+void phydm_hwsetting_8822b(struct dm_struct *dm);
+
+void phydm_config_tx2path_8822b(struct dm_struct *dm,
+				enum wireless_set wireless_mode,
+				boolean is_tx2_path);
+
+#endif /* @#define __ODM_RTL8822B_H__ */
 #endif

@@ -555,7 +555,7 @@ void rtw_rson_scan_cmd_hdl(_adapter *padapter, int op)
 								RTW_INFO("change to widi listen\n");
 							}
 #endif /* CONFIG_INTEL_WIDI */
-							rtw_free_assoc_resources(padapter, 1);
+							rtw_free_assoc_resources(padapter, _TRUE);
 							rtw_indicate_disconnect(padapter, 0, _FALSE);
 						} else
 							pmlmepriv->to_join = _TRUE;

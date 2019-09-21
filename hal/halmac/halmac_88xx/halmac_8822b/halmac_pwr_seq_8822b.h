@@ -21,7 +21,7 @@
 
 #if HALMAC_8822B_SUPPORT
 
-#define HALMAC_8822B_PWR_SEQ_VER  "V24"
+#define HALMAC_8822B_PWR_SEQ_VER  "V30"
 
 extern struct halmac_wlan_pwr_cfg *card_en_flow_8822b[];
 extern struct halmac_wlan_pwr_cfg *card_dis_flow_8822b[];

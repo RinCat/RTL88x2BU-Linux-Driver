@@ -23,121 +23,118 @@
  *
  *****************************************************************************/
 
-/*Image2HeaderVersion: R3 1.0*/
+/*Image2HeaderVersion: R3 1.4.5*/
 #if (RTL8822B_SUPPORT == 1)
 #ifndef __INC_MP_BB_HW_IMG_8822B_H
 #define __INC_MP_BB_HW_IMG_8822B_H
 
+/******************************************************************************
+ *                           agc_tab.TXT
+ ******************************************************************************/
+
+/* tc: Test Chip, mp: mp Chip*/
+void
+odm_read_and_config_mp_8822b_agc_tab(struct dm_struct *dm);
+u32 odm_get_version_mp_8822b_agc_tab(void);
 
 /******************************************************************************
-*                           agc_tab.TXT
-******************************************************************************/
+ *                           phy_reg.TXT
+ ******************************************************************************/
 
+/* tc: Test Chip, mp: mp Chip*/
 void
-odm_read_and_config_mp_8822b_agc_tab(/* tc: Test Chip, mp: mp Chip*/
-	struct	dm_struct *dm
-);
-u32	odm_get_version_mp_8822b_agc_tab(void);
+odm_read_and_config_mp_8822b_phy_reg(struct dm_struct *dm);
+u32 odm_get_version_mp_8822b_phy_reg(void);
 
 /******************************************************************************
-*                           phy_reg.TXT
-******************************************************************************/
+ *                           phy_reg_pg.TXT
+ ******************************************************************************/
 
+/* tc: Test Chip, mp: mp Chip*/
 void
-odm_read_and_config_mp_8822b_phy_reg(/* tc: Test Chip, mp: mp Chip*/
-	struct	dm_struct *dm
-);
-u32	odm_get_version_mp_8822b_phy_reg(void);
+odm_read_and_config_mp_8822b_phy_reg_pg(struct dm_struct *dm);
+u32 odm_get_version_mp_8822b_phy_reg_pg(void);
 
 /******************************************************************************
-*                           phy_reg_pg.TXT
-******************************************************************************/
+ *                           phy_reg_pg_type12.TXT
+ ******************************************************************************/
 
+/* tc: Test Chip, mp: mp Chip*/
 void
-odm_read_and_config_mp_8822b_phy_reg_pg(/* tc: Test Chip, mp: mp Chip*/
-	struct	dm_struct *dm
-);
-u32	odm_get_version_mp_8822b_phy_reg_pg(void);
+odm_read_and_config_mp_8822b_phy_reg_pg_type12(struct dm_struct *dm);
+u32 odm_get_version_mp_8822b_phy_reg_pg_type12(void);
 
 /******************************************************************************
-*                           phy_reg_pg_type12.TXT
-******************************************************************************/
+ *                           phy_reg_pg_type15.TXT
+ ******************************************************************************/
 
+/* tc: Test Chip, mp: mp Chip*/
 void
-odm_read_and_config_mp_8822b_phy_reg_pg_type12(/* tc: Test Chip, mp: mp Chip*/
-	struct	dm_struct *dm
-);
-u32	odm_get_version_mp_8822b_phy_reg_pg_type12(void);
+odm_read_and_config_mp_8822b_phy_reg_pg_type15(struct dm_struct *dm);
+u32 odm_get_version_mp_8822b_phy_reg_pg_type15(void);
 
 /******************************************************************************
-*                           phy_reg_pg_type15.TXT
-******************************************************************************/
+ *                           phy_reg_pg_type16.TXT
+ ******************************************************************************/
 
+/* tc: Test Chip, mp: mp Chip*/
 void
-odm_read_and_config_mp_8822b_phy_reg_pg_type15(/* tc: Test Chip, mp: mp Chip*/
-	struct	dm_struct *dm
-);
-u32	odm_get_version_mp_8822b_phy_reg_pg_type15(void);
+odm_read_and_config_mp_8822b_phy_reg_pg_type16(struct dm_struct *dm);
+u32 odm_get_version_mp_8822b_phy_reg_pg_type16(void);
 
 /******************************************************************************
-*                           phy_reg_pg_type16.TXT
-******************************************************************************/
+ *                           phy_reg_pg_type17.TXT
+ ******************************************************************************/
 
+/* tc: Test Chip, mp: mp Chip*/
 void
-odm_read_and_config_mp_8822b_phy_reg_pg_type16(/* tc: Test Chip, mp: mp Chip*/
-	struct	dm_struct *dm
-);
-u32	odm_get_version_mp_8822b_phy_reg_pg_type16(void);
+odm_read_and_config_mp_8822b_phy_reg_pg_type17(struct dm_struct *dm);
+u32 odm_get_version_mp_8822b_phy_reg_pg_type17(void);
 
 /******************************************************************************
-*                           phy_reg_pg_type17.TXT
-******************************************************************************/
+ *                           phy_reg_pg_type18.TXT
+ ******************************************************************************/
 
+/* tc: Test Chip, mp: mp Chip*/
 void
-odm_read_and_config_mp_8822b_phy_reg_pg_type17(/* tc: Test Chip, mp: mp Chip*/
-	struct	dm_struct *dm
-);
-u32	odm_get_version_mp_8822b_phy_reg_pg_type17(void);
+odm_read_and_config_mp_8822b_phy_reg_pg_type18(struct dm_struct *dm);
+u32 odm_get_version_mp_8822b_phy_reg_pg_type18(void);
 
 /******************************************************************************
-*                           phy_reg_pg_type2.TXT
-******************************************************************************/
+ *                           phy_reg_pg_type2.TXT
+ ******************************************************************************/
 
+/* tc: Test Chip, mp: mp Chip*/
 void
-odm_read_and_config_mp_8822b_phy_reg_pg_type2(/* tc: Test Chip, mp: mp Chip*/
-	struct	dm_struct *dm
-);
-u32	odm_get_version_mp_8822b_phy_reg_pg_type2(void);
+odm_read_and_config_mp_8822b_phy_reg_pg_type2(struct dm_struct *dm);
+u32 odm_get_version_mp_8822b_phy_reg_pg_type2(void);
 
 /******************************************************************************
-*                           phy_reg_pg_type3.TXT
-******************************************************************************/
+ *                           phy_reg_pg_type3.TXT
+ ******************************************************************************/
 
+/* tc: Test Chip, mp: mp Chip*/
 void
-odm_read_and_config_mp_8822b_phy_reg_pg_type3(/* tc: Test Chip, mp: mp Chip*/
-	struct	dm_struct *dm
-);
-u32	odm_get_version_mp_8822b_phy_reg_pg_type3(void);
+odm_read_and_config_mp_8822b_phy_reg_pg_type3(struct dm_struct *dm);
+u32 odm_get_version_mp_8822b_phy_reg_pg_type3(void);
 
 /******************************************************************************
-*                           phy_reg_pg_type4.TXT
-******************************************************************************/
+ *                           phy_reg_pg_type4.TXT
+ ******************************************************************************/
 
+/* tc: Test Chip, mp: mp Chip*/
 void
-odm_read_and_config_mp_8822b_phy_reg_pg_type4(/* tc: Test Chip, mp: mp Chip*/
-	struct	dm_struct *dm
-);
-u32	odm_get_version_mp_8822b_phy_reg_pg_type4(void);
+odm_read_and_config_mp_8822b_phy_reg_pg_type4(struct dm_struct *dm);
+u32 odm_get_version_mp_8822b_phy_reg_pg_type4(void);
 
 /******************************************************************************
-*                           phy_reg_pg_type5.TXT
-******************************************************************************/
+ *                           phy_reg_pg_type5.TXT
+ ******************************************************************************/
 
+/* tc: Test Chip, mp: mp Chip*/
 void
-odm_read_and_config_mp_8822b_phy_reg_pg_type5(/* tc: Test Chip, mp: mp Chip*/
-	struct	dm_struct *dm
-);
-u32	odm_get_version_mp_8822b_phy_reg_pg_type5(void);
+odm_read_and_config_mp_8822b_phy_reg_pg_type5(struct dm_struct *dm);
+u32 odm_get_version_mp_8822b_phy_reg_pg_type5(void);
 
 #endif
 #endif /* end of HWIMG_SUPPORT*/

@@ -18,7 +18,7 @@
 
 #include "../halmac_api.h"
 
-#if HALMAC_88XX_SUPPORT
+#if (HALMAC_88XX_SUPPORT && HALMAC_USB_SUPPORT)
 
 enum halmac_ret_status
 init_usb_cfg_88xx(struct halmac_adapter *adapter);

@@ -151,6 +151,58 @@ extern u8 RSN_CIPHER_SUITE_WRAP[];
 extern u8 RSN_CIPHER_SUITE_CCMP[];
 extern u8 RSN_CIPHER_SUITE_WEP104[];
 
+/* IEEE 802.11i */
+#define PMKID_LEN 16
+#define PMK_LEN 32
+#define PMK_LEN_SUITE_B_192 48
+#define PMK_LEN_MAX 48
+#define WPA_REPLAY_COUNTER_LEN 8
+#define WPA_NONCE_LEN 32
+#define WPA_KEY_RSC_LEN 8
+#define WPA_GMK_LEN 32
+#define WPA_GTK_MAX_LEN 32
+
+/* IEEE 802.11, 8.5.2 EAPOL-Key frames */
+#define WPA_KEY_INFO_TYPE_MASK ((u16) (BIT(0) | BIT(1) | BIT(2)))
+#define WPA_KEY_INFO_TYPE_AKM_DEFINED 0
+#define WPA_KEY_INFO_TYPE_HMAC_MD5_RC4 BIT(0)
+#define WPA_KEY_INFO_TYPE_HMAC_SHA1_AES BIT(1)
+#define WPA_KEY_INFO_TYPE_AES_128_CMAC 3
+#define WPA_KEY_INFO_KEY_TYPE BIT(3) /* 1 = Pairwise, 0 = Group key */
+/* bit4..5 is used in WPA, but is reserved in IEEE 802.11i/RSN */
+#define WPA_KEY_INFO_KEY_INDEX_MASK (BIT(4) | BIT(5))
+#define WPA_KEY_INFO_KEY_INDEX_SHIFT 4
+#define WPA_KEY_INFO_INSTALL BIT(6) /* pairwise */
+#define WPA_KEY_INFO_TXRX BIT(6) /* group */
+#define WPA_KEY_INFO_ACK BIT(7)
+#define WPA_KEY_INFO_MIC BIT(8)
+#define WPA_KEY_INFO_SECURE BIT(9)
+#define WPA_KEY_INFO_ERROR BIT(10)
+#define WPA_KEY_INFO_REQUEST BIT(11)
+#define WPA_KEY_INFO_ENCR_KEY_DATA BIT(12) /* IEEE 802.11i/RSN only */
+#define WPA_KEY_INFO_SMK_MESSAGE BIT(13)
+
+struct ieee802_1x_hdr {
+	u8 version;
+	u8 type;
+	u16 length;
+	/* followed by length octets of data */
+};
+
+struct wpa_eapol_key {
+	u8 type;
+	/* Note: key_info, key_length, and key_data_length are unaligned */
+	u8 key_info[2]; /* big endian */
+	u8 key_length[2]; /* big endian */
+	u8 replay_counter[WPA_REPLAY_COUNTER_LEN];
+	u8 key_nonce[WPA_NONCE_LEN];
+	u8 key_iv[16];
+	u8 key_rsc[WPA_KEY_RSC_LEN];
+	u8 key_id[8]; /* Reserved in IEEE 802.11i/RSN */
+	u8 key_mic[16];
+	u8 key_data_length[2]; /* big endian */
+	/* followed by key_data_length bytes of key_data */
+};
 
 typedef enum _RATEID_IDX_ {
 	RATEID_IDX_BGN_40M_2SS = 0,
@@ -1985,6 +2037,7 @@ u8 *rtw_set_ie_secondary_ch_offset(u8 *buf, u32 *buf_len, u8 secondary_ch_offset
 u8 *rtw_set_ie_mesh_ch_switch_parm(u8 *buf, u32 *buf_len, u8 ttl, u8 flags, u16 reason, u16 precedence);
 
 u8 *rtw_get_ie(const u8 *pbuf, sint index, sint *len, sint limit);
+int rtw_remove_ie_g_rate(u8 *ie, uint *ie_len, uint offset, u8 eid);
 u8 *rtw_get_ie_ex(const u8 *in_ie, uint in_len, u8 eid, const u8 *oui, u8 oui_len, u8 *ie, uint *ielen);
 int rtw_ies_remove_ie(u8 *ies, uint *ies_len, uint offset, u8 eid, u8 *oui, u8 oui_len);
 
@@ -2091,7 +2144,7 @@ int rtw_get_bit_value_from_ieee_value(u8 val);
 uint	rtw_is_cckrates_included(u8 *rate);
 
 uint	rtw_is_cckratesonly_included(u8 *rate);
-
+uint rtw_get_cckrate_size(u8 *rate,u32 rate_length);
 int rtw_check_network_type(unsigned char *rate, int ratelen, int channel);
 
 void rtw_get_bcn_info(struct wlan_network *pnetwork);

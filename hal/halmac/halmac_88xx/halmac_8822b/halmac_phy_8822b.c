@@ -14,6 +14,12 @@
  ******************************************************************************/
 
 #include "../../halmac_type.h"
+#if HALMAC_USB_SUPPORT
+#include "halmac_usb_8822b.h"
+#endif
+#if HALMAC_PCIE_SUPPORT
+#include "halmac_pcie_8822b.h"
+#endif
 
 /**
  * ============ip sel item list============
@@ -39,7 +45,7 @@ struct halmac_intf_phy_para usb2_phy_param_8822b[] = {
 	 HALMAC_INTF_PHY_PLATFORM_ALL},
 };
 
-struct halmac_intf_phy_para usb3_phy_8822b[] = {
+struct halmac_intf_phy_para usb3_phy_param_8822b[] = {
 	/* {offset, value, ip sel, cut mask, platform mask} */
 	{0x0001, 0xA841,
 	 HALMAC_IP_INTF_PHY,
@@ -147,4 +153,4 @@ struct halmac_intf_phy_para pcie_gen2_phy_param_8822b[] = {
 	 HALMAC_INTF_PHY_PLATFORM_ALL},
 };
 
-#endif /* HALMAC_8822B_SUPPORT*/
+#endif /* HALMAC_8822B_SUPPORT */

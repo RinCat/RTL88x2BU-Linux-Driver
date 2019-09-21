@@ -13,39 +13,14 @@
  *
  *****************************************************************************/
 
-//============================================================
-// include files
-//============================================================
+/*@===========================================================
+ * include files
+ *============================================================
+ */
 #include "mp_precomp.h"
 #include "phydm_precomp.h"
 
-
 #if (DM_ODM_SUPPORT_TYPE & ODM_WIN)
-
-#if 0
-u32 _sqrt(u64 n)
-{
-	u64	ans = 0, q = 0; 
-	s64	i;
-
-	/*for (i = sizeof(n) * 8 - 2; i > -1; i = i - 2) {*/
-	for (i = 8 * 8 - 2; i > -1; i = i - 2) {
-		q = (q << 2) | ((n & (3 << i)) >> i); 
-		if (q >= ((ans << 2) | 1)) 
-		{ 
-			q = q - ((ans << 2) | 1); 
-			ans = (ans << 1) | 1; 
-		} 
-		else 
-			ans = ans << 1; 
-	}
-	DbgPrint("ans=0x%x\n", ans);
-
-	return (u32)ans; 
-}
-#endif
-
-
 
 u64 _sqrt(u64 x)
 {
@@ -68,36 +43,37 @@ u64 _sqrt(u64 x)
 	return j;
 }
 
-
-
-u32
-halrf_get_psd_data(
-	struct	dm_struct	*dm,
-	u32	point
-	)
+u32 halrf_get_psd_data(
+	struct dm_struct *dm,
+	u32 point)
 {
-	struct _hal_rf_			*rf = &(dm->rf_table);
-	struct _halrf_psd_data	*psd = &(rf->halrf_psd_data);
+	struct _hal_rf_ *rf = &(dm->rf_table);
+	struct _halrf_psd_data *psd = &(rf->halrf_psd_data);
 	u32 psd_val = 0, psd_reg, psd_report, psd_point, psd_start, i, delay_time;
 
 #if (DEV_BUS_TYPE == RT_USB_INTERFACE) || (DEV_BUS_TYPE == RT_SDIO_INTERFACE)
-	if (psd->average == 0)
-		delay_time = 100;
-	else
-		delay_time = 0;
-#else
-	if (psd->average == 0)
-		delay_time = 1000;
-	else
-		delay_time = 100;
+	if (dm->support_interface == ODM_ITRF_USB || dm->support_interface == ODM_ITRF_SDIO) {
+		if (psd->average == 0)
+			delay_time = 100;
+		else
+			delay_time = 0;
+	}
+#endif
+#if (DEV_BUS_TYPE == RT_PCI_INTERFACE)
+	if (dm->support_interface == ODM_ITRF_PCIE) {
+		if (psd->average == 0)
+			delay_time = 1000;
+		else
+			delay_time = 100;
+	}
 #endif
 
 	if (dm->support_ic_type & (ODM_RTL8812 | ODM_RTL8821 | ODM_RTL8814A | ODM_RTL8822B | ODM_RTL8821C)) {
-		psd_reg = 0x910;
-		psd_report = 0xf44;
+		psd_reg = R_0x910;
+		psd_report = R_0xf44;
 	} else {
-		psd_reg = 0x808;
-		psd_report = 0x8b4;
+		psd_reg = R_0x808;
+		psd_report = R_0x8b4;
 	}
 
 	if (dm->support_ic_type & ODM_RTL8710B) {
@@ -109,12 +85,12 @@ halrf_get_psd_data(
 	}
 
 	psd_val = odm_get_bb_reg(dm, psd_reg, MASKDWORD);
-		
+
 	psd_val &= psd_point;
 	psd_val |= point;
 
 	odm_set_bb_reg(dm, psd_reg, MASKDWORD, psd_val);
-	
+
 	psd_val |= psd_start;
 
 	odm_set_bb_reg(dm, psd_reg, MASKDWORD, psd_val);
@@ -127,41 +103,40 @@ halrf_get_psd_data(
 	if (dm->support_ic_type & (ODM_RTL8821C | ODM_RTL8710B)) {
 		psd_val &= MASKL3BYTES;
 		psd_val = psd_val / 32;
-	} else
+	} else {
 		psd_val &= MASKLWORD;
+	}
 
 	return psd_val;
 }
 
-
-
-void
-halrf_psd(
-	struct	dm_struct	*dm,
-	u32	point,
-	u32	start_point,
-	u32	stop_point,
-	u32	average
-	)
+void halrf_psd(
+	struct dm_struct *dm,
+	u32 point,
+	u32 start_point,
+	u32 stop_point,
+	u32 average)
 {
-	struct _hal_rf_			*rf = &(dm->rf_table);
-	struct _halrf_psd_data	*psd = &(rf->halrf_psd_data);
-	
+	struct _hal_rf_ *rf = &(dm->rf_table);
+	struct _halrf_psd_data *psd = &(rf->halrf_psd_data);
+
 	u32 i = 0, j = 0, k = 0;
-	u32 psd_reg, avg_org, point_temp, average_tmp;
+	u32 psd_reg, avg_org, point_temp, average_tmp, mode;
 	u64 data_tatal = 0, data_temp[64] = {0};
 
 	psd->buf_size = 256;
 
-	if (average == 0)
+	mode = average >> 16;
+	
+	if (mode == 1)
+		average_tmp = average & 0xffff;
+	else if (mode == 2)
 		average_tmp = 1;
-	else
-		average_tmp = average;
 
 	if (dm->support_ic_type & (ODM_RTL8812 | ODM_RTL8821 | ODM_RTL8814A | ODM_RTL8822B | ODM_RTL8821C))
-		psd_reg = 0x910;
+		psd_reg = R_0x910;
 	else
-		psd_reg = 0x808;
+		psd_reg = R_0x808;
 
 #if 0
 	dbg_print("[PSD]point=%d, start_point=%d, stop_point=%d, average=%d, average_tmp=%d, buf_size=%d\n",
@@ -170,14 +145,13 @@ halrf_psd(
 
 	for (i = 0; i < psd->buf_size; i++)
 		psd->psd_data[i] = 0;
-	
+
 	if (dm->support_ic_type & ODM_RTL8710B)
 		avg_org = odm_get_bb_reg(dm, psd_reg, 0x30000);
 	else
 		avg_org = odm_get_bb_reg(dm, psd_reg, 0x3000);
 
-	if (average != 0)
-	{
+	if (mode == 1) {
 		if (dm->support_ic_type & ODM_RTL8710B)
 			odm_set_bb_reg(dm, psd_reg, 0x30000, 0x1);
 		else
@@ -198,12 +172,12 @@ halrf_psd(
 	i = start_point;
 	while (i < stop_point) {
 		data_tatal = 0;
-	
+
 		if (i >= point)
 			point_temp = i - point;
 		else
 			point_temp = i;
-		
+
 		for (k = 0; k < average_tmp; k++) {
 			data_temp[k] = halrf_get_psd_data(dm, point_temp);
 			data_tatal = data_tatal + (data_temp[k] * data_temp[k]);
@@ -211,11 +185,13 @@ halrf_psd(
 #if 0
 			if ((k % 20) == 0)
 				dbg_print("\n ");
-			
+
 			dbg_print("0x%x ", data_temp[k]);
 #endif
 		}
+#if 0
 		/*dbg_print("\n");*/
+#endif
 
 		data_tatal = ((data_tatal * 100) / average_tmp);
 		psd->psd_data[j] = (u32)_sqrt(data_tatal);
@@ -228,7 +204,7 @@ halrf_psd(
 	for (i = 0; i < psd->buf_size; i++) {
 		if ((i % 20) == 0)
 			dbg_print("\n ");
-			
+
 		dbg_print("0x%x ", psd->psd_data[i]);
 	}
 	dbg_print("\n\n");
@@ -240,40 +216,175 @@ halrf_psd(
 		odm_set_bb_reg(dm, psd_reg, 0x3000, avg_org);
 }
 
+u32 halrf_get_iqk_psd_data(
+	struct dm_struct *dm,
+	u32 point)
+{
+	struct _hal_rf_ *rf = &(dm->rf_table);
+	struct _halrf_psd_data *psd = &(rf->halrf_psd_data);
+	u32 psd_val, psd_val1, psd_val2, psd_point, i, delay_time;
+
+#if (DEV_BUS_TYPE == RT_USB_INTERFACE) || (DEV_BUS_TYPE == RT_SDIO_INTERFACE)
+	if (dm->support_interface == ODM_ITRF_USB || dm->support_interface == ODM_ITRF_SDIO) {
+		delay_time = 0;
+	}
+#endif
+#if (DEV_BUS_TYPE == RT_PCI_INTERFACE)
+	if (dm->support_interface == ODM_ITRF_PCIE) {
+		delay_time = 150;
+	}
+#endif
+	psd_point = odm_get_bb_reg(dm, R_0x1b2c, MASKDWORD);
+
+	psd_point &= 0xF000FFFF;
+
+	point &= 0xFFF;
+
+	psd_point = psd_point | (point << 16);
+
+	odm_set_bb_reg(dm, R_0x1b2c, MASKDWORD, psd_point);
+
+	odm_set_bb_reg(dm, R_0x1b34, MASKDWORD, 0x1);
+
+	odm_set_bb_reg(dm, R_0x1b34, MASKDWORD, 0x0);
+
+	for (i = 0; i < delay_time; i++)
+		ODM_delay_us(1);
+
+	odm_set_bb_reg(dm, R_0x1bd4, MASKDWORD, 0x00250001);
+
+	psd_val1 = odm_get_bb_reg(dm, R_0x1bfc, MASKDWORD);
+
+	psd_val1 = (psd_val1 & 0x07FF0000) >> 16;
+
+	odm_set_bb_reg(dm, R_0x1bd4, MASKDWORD, 0x002e0001);
+
+	psd_val2 = odm_get_bb_reg(dm, R_0x1bfc, MASKDWORD);
+
+	psd_val = (psd_val1 << 21) + (psd_val2 >> 11);
+
+	return psd_val;
+}
+
+void halrf_iqk_psd(
+	struct dm_struct *dm,
+	u32 point,
+	u32 start_point,
+	u32 stop_point,
+	u32 average)
+{
+	struct _hal_rf_ *rf = &(dm->rf_table);
+	struct _halrf_psd_data *psd = &(rf->halrf_psd_data);
+
+	u32 i = 0, j = 0, k = 0;
+	u32 psd_reg, avg_org, point_temp, average_tmp, mode;
+	u64 data_tatal = 0, data_temp[64] = {0};
+	s32 point_8814B;
+
+	psd->buf_size = 256;
+
+	mode = average >> 16;
+	
+	if (mode == 1)
+		average_tmp = average & 0xffff;
+	else if (mode == 2) {
+		if (dm->support_ic_type & ODM_RTL8814B)
+			average_tmp = average & 0xffff;
+		else
+			average_tmp = 1;
+	}
+#if 0
+	DbgPrint("[PSD]point=%d, start_point=%d, stop_point=%d, average=0x%x, average_tmp=%d, buf_size=%d, mode=%d\n",
+		point, start_point, stop_point, average, average_tmp, psd->buf_size, mode);
+#endif
+
+	for (i = 0; i < psd->buf_size; i++)
+		psd->psd_data[i] = 0;
+
+	i = start_point;
+	while (i < stop_point) {
+		data_tatal = 0;
+
+		if (i >= point)
+			point_temp = i - point;
+		else
+		{
+			if (dm->support_ic_type & ODM_RTL8814B)
+			{
+				point_8814B = i -point -1;
+				point_temp = point_8814B & 0xfff;
+			}
+			else
+				point_temp = i;
+		}
+
+		for (k = 0; k < average_tmp; k++) {
+			data_temp[k] = halrf_get_iqk_psd_data(dm, point_temp);
+			/*data_tatal = data_tatal + (data_temp[k] * data_temp[k]);*/
+			data_tatal = data_tatal + data_temp[k];
+
+#if 0
+			if ((k % 20) == 0)
+				DbgPrint("\n ");
+
+			DbgPrint("0x%x ", data_temp[k]);
+#endif
+		}
+
+		/*data_tatal = ((data_tatal * 100) / average_tmp);*/
+		/*psd->psd_data[j] = (u32)_sqrt(data_tatal);*/
+
+		psd->psd_data[j] = (u32)((data_tatal * 10) / average_tmp);
+
+		i++;
+		j++;
+	}
+
+#if 0
+	DbgPrint("\n [iqk psd]psd result:\n");
+
+	for (i = 0; i < psd->buf_size; i++) {
+		if ((i % 20) == 0)
+			DbgPrint("\n ");
+
+		DbgPrint("0x%x ", psd->psd_data[i]);
+	}
+	DbgPrint("\n\n");
+#endif
+}
 
 
 enum rt_status
 halrf_psd_init(
-	struct	dm_struct	*dm
-	)
+	struct dm_struct *dm)
 {
-	enum rt_status	ret_status = RT_STATUS_SUCCESS;
-	struct _hal_rf_			*rf = &(dm->rf_table);
-	struct _halrf_psd_data	*psd = &(rf->halrf_psd_data);
+	enum rt_status ret_status = RT_STATUS_SUCCESS;
+	struct _hal_rf_ *rf = &(dm->rf_table);
+	struct _halrf_psd_data *psd = &(rf->halrf_psd_data);
 
-	if (psd->psd_progress)
+	if (psd->psd_progress) {
 		ret_status = RT_STATUS_PENDING;
-	else {
+	} else {
 		psd->psd_progress = 1;
-		halrf_psd(dm, psd->point, psd->start_point, psd->stop_point, psd->average);
+		if (dm->support_ic_type & (ODM_RTL8822C | ODM_RTL8814B))
+			halrf_iqk_psd(dm, psd->point, psd->start_point, psd->stop_point, psd->average);
+		else
+			halrf_psd(dm, psd->point, psd->start_point, psd->stop_point, psd->average);
 		psd->psd_progress = 0;
 	}
 
 	return ret_status;
 }
 
-
-
 enum rt_status
 halrf_psd_query(
-	struct	dm_struct	*dm,
-	u32		*outbuf,
-	u32		buf_size
-	)
+	struct dm_struct *dm,
+	u32 *outbuf,
+	u32 buf_size)
 {
-	enum rt_status	ret_status = RT_STATUS_SUCCESS;
-	struct _hal_rf_			*rf = &(dm->rf_table);
-	struct _halrf_psd_data	*psd = &(rf->halrf_psd_data);
+	enum rt_status ret_status = RT_STATUS_SUCCESS;
+	struct _hal_rf_ *rf = &(dm->rf_table);
+	struct _halrf_psd_data *psd = &(rf->halrf_psd_data);
 
 	if (psd->psd_progress)
 		ret_status = RT_STATUS_PENDING;
@@ -283,31 +394,28 @@ halrf_psd_query(
 	return ret_status;
 }
 
-
-
 enum rt_status
 halrf_psd_init_query(
-	struct	dm_struct	*dm,
-	u32		*outbuf,
-	u32		point,
-	u32		start_point,
-	u32		stop_point,
-	u32		average,
-	u32		buf_size
-	)
+	struct dm_struct *dm,
+	u32 *outbuf,
+	u32 point,
+	u32 start_point,
+	u32 stop_point,
+	u32 average,
+	u32 buf_size)
 {
-	enum rt_status	ret_status = RT_STATUS_SUCCESS;
-	struct _hal_rf_			*rf = &(dm->rf_table);
-	struct _halrf_psd_data	*psd = &(rf->halrf_psd_data);
+	enum rt_status ret_status = RT_STATUS_SUCCESS;
+	struct _hal_rf_ *rf = &(dm->rf_table);
+	struct _halrf_psd_data *psd = &(rf->halrf_psd_data);
 
 	psd->point = point;
 	psd->start_point = start_point;
 	psd->stop_point = stop_point;
 	psd->average = average;
 
-	if (psd->psd_progress)
+	if (psd->psd_progress) {
 		ret_status = RT_STATUS_PENDING;
-	else {
+	} else {
 		psd->psd_progress = 1;
 		halrf_psd(dm, psd->point, psd->start_point, psd->stop_point, psd->average);
 		PlatformMoveMemory(outbuf, psd->psd_data, 0x400);
@@ -317,5 +425,4 @@ halrf_psd_init_query(
 	return ret_status;
 }
 
-#endif	/*#if (DM_ODM_SUPPORT_TYPE & ODM_WIN)*/
-
+#endif /*#if (DM_ODM_SUPPORT_TYPE & ODM_WIN)*/

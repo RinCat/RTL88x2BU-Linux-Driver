@@ -144,6 +144,26 @@ void hal_btcoex_wifionly_scan_notify(PADAPTER padapter)
 #endif
 }
 
+void hal_btcoex_wifionly_connect_notify(PADAPTER padapter)
+{
+	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(padapter);
+	u8 is_5g = _FALSE;
+
+	if (pHalData->current_band_type == BAND_ON_5G)
+		is_5g = _TRUE;
+
+	if (IS_HARDWARE_TYPE_8822B(padapter)) {
+#ifdef CONFIG_RTL8822B
+		ex_hal8822b_wifi_only_connectnotify(&GLBtCoexistWifiOnly, is_5g);
+#endif
+	}
+
+#ifdef CONFIG_RTL8821C
+	else if (IS_HARDWARE_TYPE_8821C(padapter))
+		ex_hal8821c_wifi_only_connectnotify(&GLBtCoexistWifiOnly, is_5g);
+#endif
+}
+
 void hal_btcoex_wifionly_hw_config(PADAPTER padapter)
 {
 	struct wifi_only_cfg *pwifionlycfg = &GLBtCoexistWifiOnly;

@@ -485,46 +485,22 @@
 	LE_BITS_TO_4BYTE(h2c_pkt + 0X04, 8, 8)
 #define SET_PWR_MODE_SET_PWR_STATE(h2c_pkt, value)                             \
 	SET_BITS_TO_LE_4BYTE(h2c_pkt + 0X04, 8, 8, value)
-#define SET_PWR_MODE_GET_LOW_POWER_RX_BCN(h2c_pkt)                             \
-	LE_BITS_TO_4BYTE(h2c_pkt + 0X04, 16, 1)
-#define SET_PWR_MODE_SET_LOW_POWER_RX_BCN(h2c_pkt, value)                      \
-	SET_BITS_TO_LE_4BYTE(h2c_pkt + 0X04, 16, 1, value)
-#define SET_PWR_MODE_GET_ANT_AUTO_SWITCH(h2c_pkt)                              \
-	LE_BITS_TO_4BYTE(h2c_pkt + 0X04, 17, 1)
-#define SET_PWR_MODE_SET_ANT_AUTO_SWITCH(h2c_pkt, value)                       \
-	SET_BITS_TO_LE_4BYTE(h2c_pkt + 0X04, 17, 1, value)
-#define SET_PWR_MODE_GET_PS_ALLOW_BT_HIGH_PRIORITY(h2c_pkt)                    \
-	LE_BITS_TO_4BYTE(h2c_pkt + 0X04, 18, 1)
-#define SET_PWR_MODE_SET_PS_ALLOW_BT_HIGH_PRIORITY(h2c_pkt, value)             \
-	SET_BITS_TO_LE_4BYTE(h2c_pkt + 0X04, 18, 1, value)
-#define SET_PWR_MODE_GET_PROTECT_BCN(h2c_pkt)                                  \
-	LE_BITS_TO_4BYTE(h2c_pkt + 0X04, 19, 1)
-#define SET_PWR_MODE_SET_PROTECT_BCN(h2c_pkt, value)                           \
-	SET_BITS_TO_LE_4BYTE(h2c_pkt + 0X04, 19, 1, value)
-#define SET_PWR_MODE_GET_SILENCE_PERIOD(h2c_pkt)                               \
-	LE_BITS_TO_4BYTE(h2c_pkt + 0X04, 20, 1)
-#define SET_PWR_MODE_SET_SILENCE_PERIOD(h2c_pkt, value)                        \
-	SET_BITS_TO_LE_4BYTE(h2c_pkt + 0X04, 20, 1, value)
-#define SET_PWR_MODE_GET_FAST_BT_CONNECT(h2c_pkt)                              \
-	LE_BITS_TO_4BYTE(h2c_pkt + 0X04, 21, 1)
-#define SET_PWR_MODE_SET_FAST_BT_CONNECT(h2c_pkt, value)                       \
-	SET_BITS_TO_LE_4BYTE(h2c_pkt + 0X04, 21, 1, value)
-#define SET_PWR_MODE_GET_TWO_ANTENNA_EN(h2c_pkt)                               \
-	LE_BITS_TO_4BYTE(h2c_pkt + 0X04, 22, 1)
-#define SET_PWR_MODE_SET_TWO_ANTENNA_EN(h2c_pkt, value)                        \
-	SET_BITS_TO_LE_4BYTE(h2c_pkt + 0X04, 22, 1, value)
-#define SET_PWR_MODE_GET_ADOPT_USER_SETTING(h2c_pkt)                           \
-	LE_BITS_TO_4BYTE(h2c_pkt + 0X04, 24, 1)
-#define SET_PWR_MODE_SET_ADOPT_USER_SETTING(h2c_pkt, value)                    \
-	SET_BITS_TO_LE_4BYTE(h2c_pkt + 0X04, 24, 1, value)
-#define SET_PWR_MODE_GET_DRV_BCN_EARLY_SHIFT(h2c_pkt)                          \
-	LE_BITS_TO_4BYTE(h2c_pkt + 0X04, 25, 3)
-#define SET_PWR_MODE_SET_DRV_BCN_EARLY_SHIFT(h2c_pkt, value)                   \
-	SET_BITS_TO_LE_4BYTE(h2c_pkt + 0X04, 25, 3, value)
-#define SET_PWR_MODE_GET_DRV_BCN_EARLY_SHIFT2(h2c_pkt)                         \
-	LE_BITS_TO_4BYTE(h2c_pkt + 0X04, 28, 4)
-#define SET_PWR_MODE_SET_DRV_BCN_EARLY_SHIFT2(h2c_pkt, value)                  \
-	SET_BITS_TO_LE_4BYTE(h2c_pkt + 0X04, 28, 4, value)
+#define SET_PWR_MODE_GET_RSVD_NOUSED(h2c_pkt)                                  \
+	LE_BITS_TO_4BYTE(h2c_pkt + 0X04, 16, 8)
+#define SET_PWR_MODE_SET_RSVD_NOUSED(h2c_pkt, value)                           \
+	SET_BITS_TO_LE_4BYTE(h2c_pkt + 0X04, 16, 8, value)
+#define SET_PWR_MODE_GET_BCN_RECEIVING_TIME(h2c_pkt)                           \
+	LE_BITS_TO_4BYTE(h2c_pkt + 0X04, 24, 5)
+#define SET_PWR_MODE_SET_BCN_RECEIVING_TIME(h2c_pkt, value)                    \
+	SET_BITS_TO_LE_4BYTE(h2c_pkt + 0X04, 24, 5, value)
+#define SET_PWR_MODE_GET_BCN_LISTEN_INTERVAL(h2c_pkt)                          \
+	LE_BITS_TO_4BYTE(h2c_pkt + 0X04, 29, 2)
+#define SET_PWR_MODE_SET_BCN_LISTEN_INTERVAL(h2c_pkt, value)                   \
+	SET_BITS_TO_LE_4BYTE(h2c_pkt + 0X04, 29, 2, value)
+#define SET_PWR_MODE_GET_ADOPT_BCN_RECEIVING_TIME(h2c_pkt)                     \
+	LE_BITS_TO_4BYTE(h2c_pkt + 0X04, 31, 1)
+#define SET_PWR_MODE_SET_ADOPT_BCN_RECEIVING_TIME(h2c_pkt, value)              \
+	SET_BITS_TO_LE_4BYTE(h2c_pkt + 0X04, 31, 1, value)
 #define PS_TUNING_PARA_GET_CMD_ID(h2c_pkt)                                     \
 	LE_BITS_TO_4BYTE(h2c_pkt + 0X00, 0, 5)
 #define PS_TUNING_PARA_SET_CMD_ID(h2c_pkt, value)                              \

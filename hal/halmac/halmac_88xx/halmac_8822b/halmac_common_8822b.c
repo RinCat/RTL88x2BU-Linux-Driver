@@ -50,6 +50,10 @@ get_hw_value_8822b(struct halmac_adapter *adapter, enum halmac_hw_id hw_id,
 	case HALMAC_HW_FW_MAX_SIZE:
 		*(u32 *)value = WLAN_FW_MAX_SIZE_8822B;
 		break;
+	case HALMAC_HW_SDIO_INT_LAT:
+		break;
+	case HALMAC_HW_SDIO_CLK_CNT:
+		break;
 	default:
 		return HALMAC_RET_PARA_NOT_SUPPORT;
 	}
@@ -94,13 +98,15 @@ set_hw_value_8822b(struct halmac_adapter *adapter, enum halmac_hw_id hw_id,
 	case HALMAC_HW_RXGCK_FIFO:
 		break;
 	case HALMAC_HW_RX_IGNORE:
-		cfg_rx_ignore_8822b(adapter,
-				    (struct halmac_mac_rx_ignore_cfg *)value);
 		break;
 	case HALMAC_HW_LDO25_EN:
 		cfg_ldo25_8822b(adapter, *(u8 *)value);
 		break;
 	case HALMAC_HW_PCIE_REF_AUTOK:
+		break;
+	case HALMAC_HW_SDIO_WT_EN:
+		break;
+	case HALMAC_HW_SDIO_CLK_MONITOR:
 		break;
 	default:
 		return HALMAC_RET_PARA_NOT_SUPPORT;
@@ -122,8 +128,8 @@ set_hw_value_8822b(struct halmac_adapter *adapter, enum halmac_hw_id hw_id,
 enum halmac_ret_status
 fill_txdesc_check_sum_8822b(struct halmac_adapter *adapter, u8 *txdesc)
 {
-	u16 chksum = 0;
-	u16 *data = (u16 *)NULL;
+	__le16 chksum = 0;
+	__le16 *data;
 	u32 i;
 
 	if (!txdesc) {
@@ -131,12 +137,12 @@ fill_txdesc_check_sum_8822b(struct halmac_adapter *adapter, u8 *txdesc)
 		return HALMAC_RET_NULL_POINTER;
 	}
 
-	if (adapter->tx_desc_checksum != _TRUE)
+	if (adapter->tx_desc_checksum != 1)
 		PLTFM_MSG_TRACE("[TRACE]chksum disable");
 
 	SET_TX_DESC_TXDESC_CHECKSUM(txdesc, 0x0000);
 
-	data = (u16 *)(txdesc);
+	data = (__le16 *)(txdesc);
 
 	/* HW clculates only 32byte */
 	for (i = 0; i < 8; i++)
@@ -144,9 +150,7 @@ fill_txdesc_check_sum_8822b(struct halmac_adapter *adapter, u8 *txdesc)
 
 	/* *(data + 2 * i) & *(data + (2 * i + 1) have endain issue*/
 	/* Process eniadn issue after checksum calculation */
-	chksum = rtk_le16_to_cpu(chksum);
-
-	SET_TX_DESC_TXDESC_CHECKSUM(txdesc, chksum);
+	SET_TX_DESC_TXDESC_CHECKSUM(txdesc, rtk_le16_to_cpu(chksum));
 
 	return HALMAC_RET_SUCCESS;
 }
@@ -159,7 +163,7 @@ cfg_ldo25_8822b(struct halmac_adapter *adapter, u8 enable)
 
 	value8 = HALMAC_REG_R8(REG_LDO_EFUSE_CTRL + 3);
 
-	if (enable == _TRUE)
+	if (enable == 1)
 		HALMAC_REG_W8(REG_LDO_EFUSE_CTRL + 3, (u8)(value8 | BIT(7)));
 	else
 		HALMAC_REG_W8(REG_LDO_EFUSE_CTRL + 3, (u8)(value8 & ~BIT(7)));

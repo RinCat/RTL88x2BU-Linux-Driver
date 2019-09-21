@@ -65,12 +65,14 @@ void halwifionly_phy_set_rf_reg(PVOID pwifionlyContext, enum rf_path eRFPath, u3
 void halwifionly_phy_set_bb_reg(PVOID pwifionlyContext, u32 RegAddr, u32 BitMask, u32 Data);
 void hal_btcoex_wifionly_switchband_notify(PADAPTER padapter);
 void hal_btcoex_wifionly_scan_notify(PADAPTER padapter);
+void hal_btcoex_wifionly_connect_notify(PADAPTER padapter);
 void hal_btcoex_wifionly_hw_config(PADAPTER padapter);
 void hal_btcoex_wifionly_initlizevariables(PADAPTER padapter);
 void hal_btcoex_wifionly_AntInfoSetting(PADAPTER padapter);
 #else
 #define hal_btcoex_wifionly_switchband_notify(padapter)
 #define hal_btcoex_wifionly_scan_notify(padapter)
+#define hal_btcoex_wifionly_connect_notify(padapter)
 #define hal_btcoex_wifionly_hw_config(padapter)
 #define hal_btcoex_wifionly_initlizevariables(padapter)
 #define hal_btcoex_wifionly_AntInfoSetting(padapter)

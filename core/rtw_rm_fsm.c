@@ -656,8 +656,8 @@ static int rm_state_do_meas(struct rm_obj *prm, enum RM_EV_ID evid)
 	case RM_EV_start_meas:
 		if (prm->q.action_code == RM_ACT_RADIO_MEAS_REQ) {
 			/* resotre measurement start time */
-			rtw_hal_get_hwreg(padapter, HW_VAR_TSF, (u8 *)&val64);
-			prm->meas_start_time = val64;
+			prm->meas_start_time = rtw_hal_get_tsftr_by_port(padapter
+									, rtw_hal_get_port(padapter));
 
 			switch (prm->q.m_type) {
 			case bcn_req:
@@ -741,8 +741,8 @@ static int rm_state_do_meas(struct rm_obj *prm, enum RM_EV_ID evid)
 	case RM_EV_state_out:
 		rm_cancel_clock(prm);
 		/* resotre measurement end time */
-		rtw_hal_get_hwreg(padapter, HW_VAR_TSF, (u8 *)&val64);
-		_rtw_memcpy(&prm->meas_end_time, (char *)&val64, sizeof(u64));
+		prm->meas_end_time = rtw_hal_get_tsftr_by_port(padapter
+								, rtw_hal_get_port(padapter));
 
 		val8 = 0; /* Disable free run counter */
 		rtw_hal_set_hwreg(padapter, HW_VAR_FREECNT, &val8);

@@ -1071,7 +1071,7 @@ static u8 _bfer_set_entry_gid(PADAPTER adapter, u8 *addr, u8 *gid, u8 *position)
 	struct beamformer_entry bfer;
 
 	memset(&bfer, 0, sizeof(bfer));
-	memcpy(bfer.mac_addr, addr, 6);
+	memcpy(bfer.mac_addr, addr, ETH_ALEN);
 
 	/* Parsing Membership Status Array */
 	memcpy(bfer.gid_valid, gid, 8);
@@ -3047,7 +3047,7 @@ void	beamforming_wk_hdl(_adapter *padapter, u8 type, u8 *pbuf)
 		struct sta_info	*psta = (PVOID)pbuf;
 		u16			staIdx = psta->cmn.mac_id;
 
-		beamforming_enter(pDM_Odm, staIdx);
+		beamforming_enter(pDM_Odm, staIdx, adapter_mac_addr(psta->padapter));
 		break;
 	}
 	case BEAMFORMING_CTRL_LEAVE:

@@ -37,7 +37,6 @@ cfg_drv_info_8822b(struct halmac_adapter *adapter,
 	u8 value8;
 	u32 value32;
 	struct halmac_api *api = (struct halmac_api *)adapter->halmac_api;
-	struct halmac_mac_rx_ignore_cfg cfg;
 
 	PLTFM_MSG_TRACE("[TRACE]%s ===>\n", __func__);
 	PLTFM_MSG_TRACE("[TRACE]drv info = %d\n", drv_info);
@@ -48,28 +47,24 @@ cfg_drv_info_8822b(struct halmac_adapter *adapter,
 		phy_status_en = 0;
 		sniffer_en = 0;
 		plcp_hdr_en = 0;
-		cfg.hdr_chk_en = _FALSE;
 		break;
 	case HALMAC_DRV_INFO_PHY_STATUS:
 		drv_info_size = 4;
 		phy_status_en = 1;
 		sniffer_en = 0;
 		plcp_hdr_en = 0;
-		cfg.hdr_chk_en = _FALSE;
 		break;
 	case HALMAC_DRV_INFO_PHY_SNIFFER:
 		drv_info_size = 5; /* phy status 4byte, sniffer info 1byte */
 		phy_status_en = 1;
 		sniffer_en = 1;
 		plcp_hdr_en = 0;
-		cfg.hdr_chk_en = _FALSE;
 		break;
 	case HALMAC_DRV_INFO_PHY_PLCP:
 		drv_info_size = 6; /* phy status 4byte, plcp header 2byte */
 		phy_status_en = 1;
 		sniffer_en = 0;
 		plcp_hdr_en = 1;
-		cfg.hdr_chk_en = _FALSE;
 		break;
 	default:
 		return HALMAC_RET_SW_CASE_NOT_SUPPORT;
@@ -78,8 +73,6 @@ cfg_drv_info_8822b(struct halmac_adapter *adapter,
 	if (adapter->txff_alloc.rx_fifo_exp_mode !=
 	    HALMAC_RX_FIFO_EXPANDING_MODE_DISABLE)
 		drv_info_size = RX_DESC_DUMMY_SIZE_8822B >> 3;
-
-	api->halmac_set_hw_value(adapter, HALMAC_HW_RX_IGNORE, &cfg);
 
 	HALMAC_REG_W8(REG_RX_DRVINFO_SZ, drv_info_size);
 
@@ -127,22 +120,6 @@ void
 cfg_rx_ignore_8822b(struct halmac_adapter *adapter,
 		    struct halmac_mac_rx_ignore_cfg *cfg)
 {
-	u8 value8;
-	struct halmac_api *api = (struct halmac_api *)adapter->halmac_api;
-
-	PLTFM_MSG_TRACE("[TRACE]%s ===>\n", __func__);
-
-	value8 = HALMAC_REG_R8(REG_BBPSF_CTRL);
-
-	/*mac header check enable*/
-	if (cfg->hdr_chk_en == _TRUE)
-		value8 |= BIT_BBPSF_MHCHKEN | BIT_BBPSF_MPDUCHKEN;
-	else
-		value8 &= ~(BIT_BBPSF_MHCHKEN) & (~(BIT_BBPSF_MPDUCHKEN));
-
-	HALMAC_REG_W8(REG_BBPSF_CTRL, value8);
-
-	PLTFM_MSG_TRACE("[TRACE]%s <===\n", __func__);
 }
 
 enum halmac_ret_status

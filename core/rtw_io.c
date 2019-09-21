@@ -419,8 +419,12 @@ u32 _rtw_write_port_and_wait(_adapter *adapter, u32 addr, u32 cnt, u8 *pmem, int
 
 	ret = _rtw_write_port(adapter, addr, cnt, pmem);
 
-	if (ret == _SUCCESS)
+	if (ret == _SUCCESS) {
 		ret = rtw_sctx_wait(&sctx, __func__);
+
+		if (ret != _SUCCESS)
+			pxmitbuf->sctx = NULL;
+	}
 
 	return ret;
 }

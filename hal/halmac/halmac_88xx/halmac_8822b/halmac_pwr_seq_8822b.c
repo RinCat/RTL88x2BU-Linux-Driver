@@ -17,7 +17,7 @@
 
 #if HALMAC_8822B_SUPPORT
 
-struct halmac_wlan_pwr_cfg TRANS_CARDDIS_TO_CARDEMU_8822B[] = {
+static struct halmac_wlan_pwr_cfg TRANS_CARDDIS_TO_CARDEMU_8822B[] = {
 	/* { offset, cut_msk, interface_msk, base|cmd, msk, value } */
 	{0x0086,
 	 HALMAC_PWR_CUT_ALL_MSK,
@@ -56,7 +56,7 @@ struct halmac_wlan_pwr_cfg TRANS_CARDDIS_TO_CARDEMU_8822B[] = {
 	 HALMAC_PWR_CMD_END, 0, 0},
 };
 
-struct halmac_wlan_pwr_cfg TRANS_CARDEMU_TO_ACT_8822B[] = {
+static struct halmac_wlan_pwr_cfg TRANS_CARDEMU_TO_ACT_8822B[] = {
 	/* { offset, cut_msk, interface_msk, base|cmd, msk, value } */
 	{0x0012,
 	 HALMAC_PWR_CUT_ALL_MSK,
@@ -190,7 +190,7 @@ struct halmac_wlan_pwr_cfg TRANS_CARDEMU_TO_ACT_8822B[] = {
 	 HALMAC_PWR_CMD_END, 0, 0},
 };
 
-struct halmac_wlan_pwr_cfg TRANS_ACT_TO_CARDEMU_8822B[] = {
+static struct halmac_wlan_pwr_cfg TRANS_ACT_TO_CARDEMU_8822B[] = {
 	/* { offset, cut_msk, interface_msk, base|cmd, msk, value } */
 	{0x0003,
 	 HALMAC_PWR_CUT_ALL_MSK,
@@ -264,7 +264,7 @@ struct halmac_wlan_pwr_cfg TRANS_ACT_TO_CARDEMU_8822B[] = {
 	 HALMAC_PWR_CMD_END, 0, 0},
 };
 
-struct halmac_wlan_pwr_cfg TRANS_CARDEMU_TO_CARDDIS_8822B[] = {
+static struct halmac_wlan_pwr_cfg TRANS_CARDEMU_TO_CARDDIS_8822B[] = {
 	/* { offset, cut_msk, interface_msk, base|cmd, msk, value } */
 	{0x0005,
 	 HALMAC_PWR_CUT_ALL_MSK,
@@ -281,11 +281,6 @@ struct halmac_wlan_pwr_cfg TRANS_CARDEMU_TO_CARDDIS_8822B[] = {
 	 HALMAC_PWR_INTF_ALL_MSK,
 	 HALMAC_PWR_ADDR_MAC,
 	 HALMAC_PWR_CMD_WRITE, BIT(5), 0},
-	{0x0005,
-	 HALMAC_PWR_CUT_ALL_MSK,
-	 HALMAC_PWR_INTF_USB_MSK | HALMAC_PWR_INTF_SDIO_MSK,
-	 HALMAC_PWR_ADDR_MAC,
-	 HALMAC_PWR_CMD_WRITE, BIT(3) | BIT(4), BIT(3)},
 	{0x0005,
 	 HALMAC_PWR_CUT_ALL_MSK,
 	 HALMAC_PWR_INTF_PCI_MSK,
@@ -340,7 +335,12 @@ struct halmac_wlan_pwr_cfg TRANS_CARDEMU_TO_CARDDIS_8822B[] = {
 	 HALMAC_PWR_CUT_ALL_MSK,
 	 HALMAC_PWR_INTF_ALL_MSK,
 	 HALMAC_PWR_ADDR_MAC,
-	 HALMAC_PWR_CMD_WRITE, BIT(7), 0},
+	 HALMAC_PWR_CMD_WRITE, BIT(7) | BIT(6), 0},
+	{0x0005,
+	 HALMAC_PWR_CUT_ALL_MSK,
+	 HALMAC_PWR_INTF_USB_MSK | HALMAC_PWR_INTF_SDIO_MSK,
+	 HALMAC_PWR_ADDR_MAC,
+	 HALMAC_PWR_CMD_WRITE, BIT(3) | BIT(4), BIT(3)},
 	{0x0086,
 	 HALMAC_PWR_CUT_ALL_MSK,
 	 HALMAC_PWR_INTF_SDIO_MSK,
@@ -399,7 +399,7 @@ struct halmac_wlan_pwr_cfg *card_dis_flow_8822b[] = {
 
 #if HALMAC_PLATFORM_TESTPROGRAM
 
-struct halmac_wlan_pwr_cfg TRANS_CARDEMU_TO_SUS_8822B[] = {
+static struct halmac_wlan_pwr_cfg TRANS_CARDEMU_TO_SUS_8822B[] = {
 	/* { offset, cut_msk, interface_msk, base|cmd, msk, value } */
 	{0x0005,
 	 HALMAC_PWR_CUT_ALL_MSK,
@@ -438,8 +438,18 @@ struct halmac_wlan_pwr_cfg TRANS_CARDEMU_TO_SUS_8822B[] = {
 	 HALMAC_PWR_CMD_END, 0, 0},
 };
 
-struct halmac_wlan_pwr_cfg TRANS_SUS_TO_CARDEMU_8822B[] = {
+static struct halmac_wlan_pwr_cfg TRANS_SUS_TO_CARDEMU_8822B[] = {
 	/* { offset, cut_msk, interface_msk, base|cmd, msk, value } */
+	{0xFF0A,
+	 HALMAC_PWR_CUT_ALL_MSK,
+	 HALMAC_PWR_INTF_USB_MSK,
+	 HALMAC_PWR_ADDR_MAC,
+	 HALMAC_PWR_CMD_WRITE, 0xFF, 0},
+	{0xFF0B,
+	 HALMAC_PWR_CUT_ALL_MSK,
+	 HALMAC_PWR_INTF_USB_MSK,
+	 HALMAC_PWR_ADDR_MAC,
+	 HALMAC_PWR_CMD_WRITE, 0xFF, 0},
 	{0x0005,
 	 HALMAC_PWR_CUT_ALL_MSK,
 	 HALMAC_PWR_INTF_ALL_MSK,
@@ -467,7 +477,7 @@ struct halmac_wlan_pwr_cfg TRANS_SUS_TO_CARDEMU_8822B[] = {
 	 HALMAC_PWR_CMD_END, 0, 0},
 };
 
-struct halmac_wlan_pwr_cfg TRANS_CARDEMU_TO_PDN_8822B[] = {
+static struct halmac_wlan_pwr_cfg TRANS_CARDEMU_TO_PDN_8822B[] = {
 	/* { offset, cut_msk, interface_msk, base|cmd, msk, value } */
 	{0x0007,
 	 HALMAC_PWR_CUT_ALL_MSK,
@@ -491,7 +501,7 @@ struct halmac_wlan_pwr_cfg TRANS_CARDEMU_TO_PDN_8822B[] = {
 	 HALMAC_PWR_CMD_END, 0, 0},
 };
 
-struct halmac_wlan_pwr_cfg TRANS_PDN_TO_CARDEMU_8822B[] = {
+static struct halmac_wlan_pwr_cfg TRANS_PDN_TO_CARDEMU_8822B[] = {
 	/* { offset, cut_msk, interface_msk, base|cmd, msk, value } */
 	{0x0005,
 	 HALMAC_PWR_CUT_ALL_MSK,
@@ -505,7 +515,7 @@ struct halmac_wlan_pwr_cfg TRANS_PDN_TO_CARDEMU_8822B[] = {
 	 HALMAC_PWR_CMD_END, 0, 0},
 };
 
-struct halmac_wlan_pwr_cfg TRANS_ACT_TO_LPS_8822B[] = {
+static struct halmac_wlan_pwr_cfg TRANS_ACT_TO_LPS_8822B[] = {
 	/* { offset, cut_msk, interface_msk, base|cmd, msk, value } */
 	{0x0101,
 	 HALMAC_PWR_CUT_ALL_MSK,
@@ -534,14 +544,34 @@ struct halmac_wlan_pwr_cfg TRANS_ACT_TO_LPS_8822B[] = {
 	 HALMAC_PWR_CMD_WRITE, BIT(0), BIT(0)},
 	{0x0093,
 	 HALMAC_PWR_CUT_ALL_MSK,
-	 HALMAC_PWR_INTF_ALL_MSK,
+	 HALMAC_PWR_INTF_PCI_MSK,
 	 HALMAC_PWR_ADDR_MAC,
-	 HALMAC_PWR_CMD_WRITE, 0xFF, 0x42},
+	 HALMAC_PWR_CMD_WRITE, 0xFF, 0xDE},
 	{0x0092,
 	 HALMAC_PWR_CUT_ALL_MSK,
-	 HALMAC_PWR_INTF_ALL_MSK,
+	 HALMAC_PWR_INTF_PCI_MSK,
 	 HALMAC_PWR_ADDR_MAC,
-	 HALMAC_PWR_CMD_WRITE, 0xFF, 0x20},
+	 HALMAC_PWR_CMD_WRITE, 0xFF, 0x60},
+	{0x0093,
+	 HALMAC_PWR_CUT_ALL_MSK,
+	 HALMAC_PWR_INTF_USB_MSK,
+	 HALMAC_PWR_ADDR_MAC,
+	 HALMAC_PWR_CMD_WRITE, 0xFF, 0x9B},
+	{0x0092,
+	 HALMAC_PWR_CUT_ALL_MSK,
+	 HALMAC_PWR_INTF_USB_MSK,
+	 HALMAC_PWR_ADDR_MAC,
+	 HALMAC_PWR_CMD_WRITE, 0xFF, 0x60},
+	{0x0093,
+	 HALMAC_PWR_CUT_ALL_MSK,
+	 HALMAC_PWR_INTF_SDIO_MSK,
+	 HALMAC_PWR_ADDR_MAC,
+	 HALMAC_PWR_CMD_WRITE, 0xFF, 0xA},
+	{0x0092,
+	 HALMAC_PWR_CUT_ALL_MSK,
+	 HALMAC_PWR_INTF_SDIO_MSK,
+	 HALMAC_PWR_ADDR_MAC,
+	 HALMAC_PWR_CMD_WRITE, 0xFF, 0x60},
 	{0x0090,
 	 HALMAC_PWR_CUT_ALL_MSK,
 	 HALMAC_PWR_INTF_ALL_MSK,
@@ -629,7 +659,7 @@ struct halmac_wlan_pwr_cfg TRANS_ACT_TO_LPS_8822B[] = {
 	 HALMAC_PWR_CMD_END, 0, 0},
 };
 
-struct halmac_wlan_pwr_cfg TRANS_ACT_TO_DEEP_LPS_8822B[] = {
+static struct halmac_wlan_pwr_cfg TRANS_ACT_TO_DEEP_LPS_8822B[] = {
 	/* { offset, cut_msk, interface_msk, base|cmd, msk, value } */
 	{0x0101,
 	 HALMAC_PWR_CUT_ALL_MSK,
@@ -658,14 +688,34 @@ struct halmac_wlan_pwr_cfg TRANS_ACT_TO_DEEP_LPS_8822B[] = {
 	 HALMAC_PWR_CMD_WRITE, BIT(0), BIT(0)},
 	{0x0093,
 	 HALMAC_PWR_CUT_ALL_MSK,
-	 HALMAC_PWR_INTF_ALL_MSK,
+	 HALMAC_PWR_INTF_PCI_MSK,
 	 HALMAC_PWR_ADDR_MAC,
-	 HALMAC_PWR_CMD_WRITE, 0xFF, 0x40},
+	 HALMAC_PWR_CMD_WRITE, 0xFF, 0xDE},
 	{0x0092,
 	 HALMAC_PWR_CUT_ALL_MSK,
-	 HALMAC_PWR_INTF_ALL_MSK,
+	 HALMAC_PWR_INTF_PCI_MSK,
 	 HALMAC_PWR_ADDR_MAC,
-	 HALMAC_PWR_CMD_WRITE, 0xFF, 0x20},
+	 HALMAC_PWR_CMD_WRITE, 0xFF, 0x60},
+	{0x0093,
+	 HALMAC_PWR_CUT_ALL_MSK,
+	 HALMAC_PWR_INTF_USB_MSK,
+	 HALMAC_PWR_ADDR_MAC,
+	 HALMAC_PWR_CMD_WRITE, 0xFF, 0x9B},
+	{0x0092,
+	 HALMAC_PWR_CUT_ALL_MSK,
+	 HALMAC_PWR_INTF_USB_MSK,
+	 HALMAC_PWR_ADDR_MAC,
+	 HALMAC_PWR_CMD_WRITE, 0xFF, 0x60},
+	{0x0093,
+	 HALMAC_PWR_CUT_ALL_MSK,
+	 HALMAC_PWR_INTF_SDIO_MSK,
+	 HALMAC_PWR_ADDR_MAC,
+	 HALMAC_PWR_CMD_WRITE, 0xFF, 0xA},
+	{0x0092,
+	 HALMAC_PWR_CUT_ALL_MSK,
+	 HALMAC_PWR_INTF_SDIO_MSK,
+	 HALMAC_PWR_ADDR_MAC,
+	 HALMAC_PWR_CMD_WRITE, 0xFF, 0x60},
 	{0x0090,
 	 HALMAC_PWR_CUT_ALL_MSK,
 	 HALMAC_PWR_INTF_ALL_MSK,
@@ -753,7 +803,7 @@ struct halmac_wlan_pwr_cfg TRANS_ACT_TO_DEEP_LPS_8822B[] = {
 	 HALMAC_PWR_CMD_END, 0, 0},
 };
 
-struct halmac_wlan_pwr_cfg TRANS_LPS_TO_ACT_8822B[] = {
+static struct halmac_wlan_pwr_cfg TRANS_LPS_TO_ACT_8822B[] = {
 	/* { offset, cut_msk, interface_msk, base|cmd, msk, value } */
 	{0x0080,
 	 HALMAC_PWR_CUT_ALL_MSK,

@@ -430,40 +430,17 @@ int issue_null_reply(struct rm_obj *prm)
 int ready_for_scan(struct rm_obj *prm)
 {
 	_adapter *padapter = prm->psta->padapter;
-	struct mlme_priv *pmlmepriv = &padapter->mlmepriv;
-
-
-	if (rtw_is_scan_deny(padapter))
-		return _FALSE;
+	u8 ssc_chk;
 
 	if (!rtw_is_adapter_up(padapter))
 		return _FALSE;
 
-	if (rtw_mi_busy_traffic_check(padapter, _FALSE))
-		return _FALSE;
+	ssc_chk = rtw_sitesurvey_condition_check(padapter, _FALSE);
 
-	if (check_fwstate(pmlmepriv, WIFI_AP_STATE)
-		&& check_fwstate(pmlmepriv, WIFI_UNDER_WPS)) {
-		RTW_INFO(FUNC_ADPT_FMT" WIFI_AP_STATE && WIFI_UNDER_WPS\n",
-		FUNC_ADPT_ARG(padapter));
-		return _FALSE;
-	}
-	if (check_fwstate(pmlmepriv,
-		(_FW_UNDER_SURVEY | _FW_UNDER_LINKING)) == _TRUE) {
-		RTW_INFO(FUNC_ADPT_FMT" _FW_UNDER_SURVEY|_FW_UNDER_LINKING\n",
-			FUNC_ADPT_ARG(padapter));
-		return _FALSE;
-	}
+	if (ssc_chk == SS_ALLOW)
+		return _SUCCESS;
 
-#ifdef CONFIG_CONCURRENT_MODE
-	if (rtw_mi_buddy_check_fwstate(padapter,
-		(_FW_UNDER_SURVEY | _FW_UNDER_LINKING | WIFI_UNDER_WPS))) {
-		RTW_INFO(FUNC_ADPT_FMT", but buddy_intf is under scanning or linking or wps_phase\n",
-			FUNC_ADPT_ARG(padapter));
-		return _FALSE;
-	}
-#endif
-	return _SUCCESS;
+	return _FALSE;
 }
 
 int rm_sitesurvey(struct rm_obj *prm)

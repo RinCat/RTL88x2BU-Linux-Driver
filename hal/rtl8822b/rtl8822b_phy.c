@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- * Copyright(c) 2015 - 2017 Realtek Corporation.
+ * Copyright(c) 2015 - 2018 Realtek Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
@@ -510,14 +510,15 @@ static void check_rxfifo_full(PADAPTER adapter)
 	u8 val8 = 0;
 
 	if (regsty->check_hw_status == 1) {
-		/* switch counter to RX fifo */
-		val8 = rtw_read8(adapter, REG_RXERR_RPT_8822B + 3);
-		rtw_write8(adapter, REG_RXERR_RPT_8822B + 3, (val8 | 0xa0));
-
 		pdbgpriv->dbg_rx_fifo_last_overflow = pdbgpriv->dbg_rx_fifo_curr_overflow;
-		pdbgpriv->dbg_rx_fifo_curr_overflow = rtw_read16(adapter, REG_RXERR_RPT_8822B);
-		pdbgpriv->dbg_rx_fifo_diff_overflow =
-			pdbgpriv->dbg_rx_fifo_curr_overflow - pdbgpriv->dbg_rx_fifo_last_overflow;
+		pdbgpriv->dbg_rx_fifo_curr_overflow = rtl8822b_rx_report_get(adapter, RX_FULL_DROP);
+		if (pdbgpriv->dbg_rx_fifo_curr_overflow >= pdbgpriv->dbg_rx_fifo_last_overflow)
+			pdbgpriv->dbg_rx_fifo_diff_overflow =
+				pdbgpriv->dbg_rx_fifo_curr_overflow - pdbgpriv->dbg_rx_fifo_last_overflow;
+		else
+			pdbgpriv->dbg_rx_fifo_diff_overflow =
+				(0xFFFF - pdbgpriv->dbg_rx_fifo_last_overflow)
+				+ pdbgpriv->dbg_rx_fifo_curr_overflow;
 	}
 }
 
@@ -525,6 +526,9 @@ void rtl8822b_phy_haldm_watchdog(PADAPTER adapter)
 {
 	BOOLEAN bFwCurrentInPSMode = _FALSE;
 	u8 bFwPSAwake = _TRUE;
+	struct pwrctrl_priv *pwrpriv = adapter_to_pwrctl(adapter);
+	u8 lps_changed = _FALSE;
+	u8 in_lps = _FALSE;
 
 #ifdef CONFIG_MP_INCLUDED
 	/* for MP power tracking */
@@ -563,7 +567,22 @@ void rtl8822b_phy_haldm_watchdog(PADAPTER adapter)
 #ifdef CONFIG_DISABLE_ODM
 	goto skip_dm;
 #endif
-	rtw_phydm_watchdog(adapter);
+
+#ifdef CONFIG_LPS
+	if (pwrpriv->bLeisurePs && bFwCurrentInPSMode && pwrpriv->pwr_mode != PS_MODE_ACTIVE) {
+		lps_changed = _TRUE;
+		in_lps = _TRUE;
+		LPS_Leave(adapter, "LPS_CTRL_PHYDM");
+	}
+#endif
+
+	rtw_phydm_watchdog(adapter, in_lps);
+
+#ifdef CONFIG_LPS
+	if (lps_changed)
+		LPS_Enter(adapter, "LPS_CTRL_PHYDM");
+#endif
+
 
 #ifdef CONFIG_BEAMFORMING
 #ifdef RTW_BEAMFORMING_VERSION_2
@@ -658,31 +677,46 @@ void rtl8822b_write_rf_reg(PADAPTER adapter, enum rf_path path, u32 addr, u32 ma
 
 static void set_tx_power_level_by_path(PADAPTER adapter, u8 channel, u8 path)
 {
-	phy_set_tx_power_index_by_rate_section(adapter, path, channel, CCK);
+	PHAL_DATA_TYPE hal = GET_HAL_DATA(adapter);
+	u8 under_survey_ch = phy_check_under_survey_ch(adapter);
+	u8 under_24g = (hal->current_band_type == BAND_ON_2_4G);
+
+	if (under_24g)
+		phy_set_tx_power_index_by_rate_section(adapter, path, channel, CCK);
+
 	phy_set_tx_power_index_by_rate_section(adapter, path, channel, OFDM);
-	phy_set_tx_power_index_by_rate_section(adapter, path, channel, HT_MCS0_MCS7);
-	phy_set_tx_power_index_by_rate_section(adapter, path, channel, HT_MCS8_MCS15);
-	phy_set_tx_power_index_by_rate_section(adapter, path, channel, VHT_1SSMCS0_1SSMCS9);
-	phy_set_tx_power_index_by_rate_section(adapter, path, channel, VHT_2SSMCS0_2SSMCS9);
+
+	if (!under_survey_ch) {
+		phy_set_tx_power_index_by_rate_section(adapter, path, channel, HT_MCS0_MCS7);
+		phy_set_tx_power_index_by_rate_section(adapter, path, channel, HT_MCS8_MCS15);
+		phy_set_tx_power_index_by_rate_section(adapter, path, channel, VHT_1SSMCS0_1SSMCS9);
+		phy_set_tx_power_index_by_rate_section(adapter, path, channel, VHT_2SSMCS0_2SSMCS9);
+	}
 }
 
 void rtl8822b_set_tx_power_level(PADAPTER adapter, u8 channel)
 {
 	PHAL_DATA_TYPE hal = GET_HAL_DATA(adapter);
 	struct dm_struct *phydm;
+	#ifdef CONFIG_ANTENNA_DIVERSITY
 	struct phydm_fat_struct *p_dm_fat_table;
+	#endif
 	u8 path = RF_PATH_A;
 
 
 	hal = GET_HAL_DATA(adapter);
 	phydm = &hal->odmpriv;
+
+	#ifdef CONFIG_ANTENNA_DIVERSITY
 	p_dm_fat_table = &phydm->dm_fat_table;
 
 	if (hal->AntDivCfg) {
 		/* antenna diversity Enable */
 		path = (p_dm_fat_table->rx_idle_ant == MAIN_ANT) ? RF_PATH_A : RF_PATH_B;
 		set_tx_power_level_by_path(adapter, channel, path);
-	} else {
+	} else
+	#endif
+	{
 		/* antenna diversity disable */
 		for (path = RF_PATH_A; path < hal->NumTotalRFPath; ++path)
 			set_tx_power_level_by_path(adapter, channel, path);
@@ -729,18 +763,6 @@ void rtl8822b_set_tx_power_index(PADAPTER adapter, u32 powerindex, enum rf_path 
 	}
 }
 
-static u8 rtl8822b_phy_get_current_tx_num(PADAPTER adapter, u8 rate)
-{
-	u8 tx_num = 0;
-
-	if ((rate >= MGN_MCS8 && rate <= MGN_MCS15) ||
-	    (rate >= MGN_VHT2SS_MCS0 && rate <= MGN_VHT2SS_MCS9))
-		tx_num = RF_2TX;
-	else
-		tx_num = RF_1TX;
-
-	return tx_num;
-}
 
 /*
  * Parameters:
@@ -756,10 +778,11 @@ static u8 rtl8822b_phy_get_current_tx_num(PADAPTER adapter, u8 rate)
 u8 rtl8822b_get_tx_power_index(PADAPTER adapter, enum rf_path rfpath, u8 rate, u8 bandwidth, u8 channel, struct txpwr_idx_comp *tic)
 {
 	PHAL_DATA_TYPE hal = GET_HAL_DATA(adapter);
+	struct hal_spec_t *hal_spec = GET_HAL_SPEC(adapter);
 	s16 power_idx;
 	u8 base_idx = 0;
 	s8 by_rate_diff = 0, limit = 0, tpt_offset = 0, extra_bias = 0;
-	u8 ntx_idx = rtl8822b_phy_get_current_tx_num(adapter, rate);
+	u8 ntx_idx = phy_get_current_tx_num(adapter, rate);
 	u8 bIn24G = _FALSE;
 
 	base_idx = PHY_GetTxPowerIndexBase(adapter, rfpath, rate, ntx_idx, bandwidth, channel, &bIn24G);
@@ -790,8 +813,8 @@ u8 rtl8822b_get_tx_power_index(PADAPTER adapter, enum rf_path rfpath, u8 rate, u
 
 	if (power_idx < 0)
 		power_idx = 0;
-	else if (power_idx > MAX_POWER_INDEX)
-		power_idx = MAX_POWER_INDEX;
+	else if (power_idx > hal_spec->txgi_max)
+		power_idx = hal_spec->txgi_max;
 
 	return power_idx;
 }
@@ -979,11 +1002,37 @@ void rtl8822b_switch_chnl_and_set_bw(PADAPTER adapter)
 
 	/* config channel, bw, offset setting */
 #ifdef RTW_CHANNEL_SWITCH_OFFLOAD
-	if (hal->ch_switch_offload)
-		switch_chnl_and_set_bw_by_fw(adapter, switch_band);
+	if (hal->ch_switch_offload) {
 
-	else
+	#ifdef RTW_REDUCE_SCAN_SWITCH_CH_TIME
+		struct dvobj_priv *dvobj = adapter_to_dvobj(adapter);
+		_adapter *iface;
+		struct mlme_ext_priv *mlmeext;
+		u8 drv_switch = _TRUE;
+		int i;
+
+		for (i = 0; i < dvobj->iface_nums; i++) {
+			iface = dvobj->padapters[i];
+			mlmeext = &iface->mlmeextpriv;
+
+			/* check scan state */
+			if (mlmeext_scan_state(mlmeext) != SCAN_DISABLE
+				&& mlmeext_scan_state(mlmeext) != SCAN_COMPLETE
+					&& mlmeext_scan_state(mlmeext) != SCAN_BACKING_OP)
+				drv_switch = _FALSE;
+		}
+	#else
+		u8 drv_switch = _FALSE;
+	#endif
+
+		if (drv_switch == _TRUE)
+			switch_chnl_and_set_bw_by_drv(adapter, switch_band);
+		else
+			switch_chnl_and_set_bw_by_fw(adapter, switch_band);
+
+	} else {
 		switch_chnl_and_set_bw_by_drv(adapter, switch_band);
+	}
 #else
 	switch_chnl_and_set_bw_by_drv(adapter, switch_band);
 #endif /* RTW_CHANNEL_SWITCH_OFFLOAD */
@@ -1553,7 +1602,7 @@ static void _config_beamformer_su(PADAPTER adapter, struct beamformer_entry *bfe
 	rtw_write8(adapter, REG_SND_PTCL_CTRL_8822B, 0xDB);
 
 	/* MAC address/Partial AID of Beamformer */
-	for (i = 0; i < 6; i++)
+	for (i = 0; i < ETH_ALEN; i++)
 		rtw_write8(adapter, addr_bfer_info+i, bfer->mac_addr[i]);
 
 	/* CSI report parameters of Beamformer */
@@ -2316,4 +2365,27 @@ void rtl8822b_phy_bf_sounding_status(PADAPTER adapter, u8 status)
 	RTW_INFO("-%s\n", __FUNCTION__);
 }
 #endif /* CONFIG_BEAMFORMING */
+
+#ifdef CONFIG_LPS_PWR_TRACKING
+void rtw_lps_pwr_tracking(_adapter *adapter, u8 thermal_value)
+{
+	#ifdef CONFIG_LPS
+	u8 lps_changed;
+
+	if (adapter_to_pwrctl(adapter)->bLeisurePs &&
+		adapter_to_pwrctl(adapter)->bFwCurrentInPSMode &&
+		adapter_to_pwrctl(adapter)->pwr_mode != PS_MODE_ACTIVE)
+		lps_changed = _TRUE;
+		LPS_Leave(adapter, "LPS_CTRL_TXSS");
+
+	rtw_phydm_pwr_tracking_directly(adapter);
+
+	if (lps_changed)
+		LPS_Enter(adapter, "LPS_CTRL_TXSS");
+	#endif
+
+	thermal_value += THERMAL_DIFF_TH;
+	rtl8822b_set_fw_thermal_rpt_cmd(adapter, _TRUE, thermal_value);
+}
+#endif
 

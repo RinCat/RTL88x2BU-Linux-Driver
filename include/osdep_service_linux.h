@@ -93,10 +93,6 @@
 	#include <net/cfg80211.h>
 #endif /* CONFIG_IOCTL_CFG80211 */
 
-#ifdef CONFIG_TCP_CSUM_OFFLOAD_TX
-	#include <linux/in.h>
-	#include <linux/udp.h>
-#endif
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 	#include <linux/earlysuspend.h>

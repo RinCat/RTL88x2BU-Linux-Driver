@@ -122,6 +122,22 @@ enum rtw_vendor_subcmd {
 
     APF_SUBCMD_GET_CAPABILITIES = ANDROID_NL80211_SUBCMD_PKT_FILTER_RANGE_START,
     APF_SUBCMD_SET_FILTER,
+    
+    LOGGER_START_LOGGING = ANDROID_NL80211_SUBCMD_DEBUG_RANGE_START,
+    LOGGER_TRIGGER_MEM_DUMP,
+    LOGGER_GET_MEM_DUMP,
+    LOGGER_GET_VER,
+    LOGGER_GET_RING_STATUS,
+    LOGGER_GET_RING_DATA,
+    LOGGER_GET_FEATURE,
+    LOGGER_RESET_LOGGING,
+    LOGGER_TRIGGER_DRIVER_MEM_DUMP,
+    LOGGER_GET_DRIVER_MEM_DUMP,
+    LOGGER_START_PKT_FATE_MONITORING,
+    LOGGER_GET_TX_PKT_FATES,
+    LOGGER_GET_RX_PKT_FATES,
+
+	VENDOR_SUBCMD_MAX
 };
 
 enum gscan_attributes {
@@ -199,6 +215,13 @@ enum gscan_ch_attributes {
 	GSCAN_ATTRIBUTE_CH_ID_7
 };
 
+enum wifi_rssi_monitor_attr {
+        RSSI_MONITOR_ATTRIBUTE_MAX_RSSI,
+        RSSI_MONITOR_ATTRIBUTE_MIN_RSSI,
+        RSSI_MONITOR_ATTRIBUTE_START,
+};
+
+
 enum rtt_attributes {
 	RTT_ATTRIBUTE_TARGET_CNT,
 	RTT_ATTRIBUTE_TARGET_INFO,
@@ -213,6 +236,21 @@ enum rtt_attributes {
 	RTT_ATTRIBUTE_TARGET_NUM_RETRY
 };
 
+enum logger_attributes {
+	LOGGER_ATTRIBUTE_GET_DRIVER,
+	LOGGER_ATTRIBUTE_GET_FW,
+	LOGGER_ATTRIBUTE_RING_ID,
+	LOGGER_ATTRIBUTE_RING_NAME,
+	LOGGER_ATTRIBUTE_RING_FLAGS,
+	LOGGER_ATTRIBUTE_LOG_LEVEL,
+	LOGGER_ATTRIBUTE_LOG_TIME_INTVAL,
+	LOGGER_ATTRIBUTE_LOG_MIN_DATA_SIZE,
+	LOGGER_ATTRIBUTE_FW_DUMP_LEN,
+	LOGGER_ATTRIBUTE_FW_DUMP_DATA,
+	LOGGERG_ATTRIBUTE_RING_DATA,
+	LOGGER_ATTRIBUTE_RING_STATUS,
+	LOGGER_ATTRIBUTE_RING_NUM
+};
 typedef enum rtw_vendor_event {
     RTK_RESERVED1,
     RTK_RESERVED2,
@@ -232,7 +270,12 @@ typedef enum rtw_vendor_event {
 
 enum andr_wifi_feature_set_attr {
 	ANDR_WIFI_ATTRIBUTE_NUM_FEATURE_SET,
-	ANDR_WIFI_ATTRIBUTE_FEATURE_SET
+	ANDR_WIFI_ATTRIBUTE_FEATURE_SET,
+	ANDR_WIFI_ATTRIBUTE_RANDOM_MAC_OUI,
+	ANDR_WIFI_ATTRIBUTE_NODFS_SET,
+	ANDR_WIFI_ATTRIBUTE_COUNTRY,
+	ANDR_WIFI_ATTRIBUTE_ND_OFFLOAD_VALUE
+	// Add more attribute here
 };
 
 typedef enum rtw_vendor_gscan_attribute {
@@ -314,6 +357,29 @@ typedef enum {
     WIFI_ERROR_BUSY = -10,
 } wifi_error;
 
+typedef int wifi_ring_buffer_id;
+/* ring buffer params */
+/**
+ * written_bytes and read_bytes implement a producer consumer API
+ *     hence written_bytes >= read_bytes
+ * a modulo arithmetic of the buffer size has to be applied to those counters:
+ * actual offset into ring buffer = written_bytes % ring_buffer_byte_size
+ *
+ */
+typedef struct {
+    u8 name[32];
+    u32 flags;
+    wifi_ring_buffer_id ring_id; // unique integer representing the ring
+    u32 ring_buffer_byte_size;   // total memory size allocated for the buffer
+    u32 verbose_level;           // verbose level for ring buffer
+    u32 written_bytes;           // number of bytes that was written to the buffer by driver,
+                                 // monotonously increasing integer
+    u32 read_bytes;              // number of bytes that was read from the buffer by user land,
+                                 // monotonously increasing integer
+    u32 written_records;         // number of records that was written to the buffer by driver,
+                                 // monotonously increasing integer
+} wifi_ring_buffer_status;
+
 #ifdef CONFIG_RTW_CFGVEDNOR_LLSTATS
 #define STATS_MAJOR_VERSION      1
 #define STATS_MINOR_VERSION      0
@@ -392,14 +458,11 @@ typedef struct {
 // Max number of tx power levels. The actual number vary per device and is specified by |num_tx_levels|
 #define RADIO_STAT_MAX_TX_LEVELS 256
 
-/* radio statistics */
+/* Internal radio statistics structure in the driver */
 typedef struct {
    wifi_radio radio;                      // wifi radio (if multiple radio supported)
    u32 on_time;                           // msecs the radio is awake (32 bits number accruing over time)
    u32 tx_time;                           // msecs the radio is transmitting (32 bits number accruing over time)
-   u32 num_tx_levels;                     // number of radio transmit power levels
-   u32* tx_time_per_levels;               // pointer to an array of radio transmit per power levels in
-                                          // msecs accured over time
    u32 rx_time;                           // msecs the radio is in active receive (32 bits number accruing over time)
    u32 on_time_scan;                      // msecs the radio is awake due to all scan (32 bits number accruing over time)
    u32 on_time_nbd;                       // msecs the radio is awake due to NAN (32 bits number accruing over time)
@@ -409,7 +472,7 @@ typedef struct {
    u32 on_time_hs20;                      // msecs the radio is awake due to HS2.0 scans and GAS exchange (32 bits number accruing over time)
    u32 num_channels;                      // number of channels
    wifi_channel_stat channels[];          // channel statistics
-} wifi_radio_stat;
+} wifi_radio_stat_internal;
 
 /**
  * Packet statistics reporting by firmware is performed on MPDU basi (i.e. counters increase by 1 for each MPDU)
@@ -525,11 +588,12 @@ typedef struct {
    u32 aggressive_statistics_gathering; // set for field debug mode. Driver should collect all statistics regardless of performance impact.
 } wifi_link_layer_params;
 
-/* callback for reporting link layer stats */
+#define RSSI_MONITOR_EVT_VERSION   1
 typedef struct {
-  void (*on_link_stats_results) (wifi_request_id id, wifi_iface_stat *iface_stat,
-         int num_radios, wifi_radio_stat *radio_stat);
-} wifi_stats_result_handler;
+    u8 version;
+    s8 cur_rssi;
+    mac_addr BSSID;
+} rssi_monitor_evt;
 
 
 /* wifi statistics bitmap  */
@@ -555,5 +619,15 @@ extern int rtw_cfgvendor_send_hotlist_event(struct wiphy *wiphy,
 	struct net_device *dev, void  *data, int len, rtw_vendor_event_t event);
 #endif
 #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)) || defined(RTW_VENDOR_EXT_SUPPORT) */
+
+#ifdef CONFIG_RTW_CFGVEDNOR_RSSIMONITOR
+void rtw_cfgvendor_rssi_monitor_evt(_adapter *padapter);
+#endif
+
+#ifdef CONFIG_RTW_CFGVENDOR_RANDOM_MAC_OUI
+void rtw_hal_pno_random_gen_mac_addr(PADAPTER adapter);
+void rtw_hal_set_hw_mac_addr(PADAPTER adapter, u8 *mac_addr);
+#endif
+
 
 #endif /* _RTW_CFGVENDOR_H_ */

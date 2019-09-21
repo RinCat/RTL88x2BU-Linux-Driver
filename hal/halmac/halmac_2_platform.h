@@ -28,12 +28,18 @@
 #include <osdep_service.h>		/* __BIG_ENDIAN, __LITTLE_ENDIAN, _sema, _mutex */
 #endif
 
-/*[Driver] provide the define of _TRUE, _FALSE, NULL, u8, u16, u32*/
+/*[Driver] provide the define of NULL, u8, u16, u32*/
 #ifndef NULL
 #define NULL		((void *)0)
 #endif
 
 #define HALMAC_INLINE	inline
+
+/*
+ * Ignore following typedef because Linux already have these
+ * u8, u16, u32, s8, s16, s32
+ * __le16, __le32, __be16, __be32
+ */
 
 #define HALMAC_PLATFORM_LITTLE_ENDIAN	1
 #define HALMAC_PLATFORM_BIG_ENDIAN	0

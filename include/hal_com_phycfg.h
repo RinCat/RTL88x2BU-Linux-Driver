@@ -29,8 +29,6 @@ typedef enum _RF_TX_NUM {
 	RF_TX_NUM_NONIMPLEMENT,
 } RF_TX_NUM;
 
-#define MAX_POWER_INDEX		0x3F
-
 /*------------------------------Define structure----------------------------*/
 typedef struct _BB_REGISTER_DEFINITION {
 	u32 rfintfs;			/* set software control: */
@@ -182,9 +180,9 @@ s8 PHY_GetTxPowerLimit(_adapter *adapter
 	, u8 rfpath, u8 rate, u8 ntx_idx, u8 cch
 );
 #else
-#define phy_get_txpwr_lmt_abs(adapter, regd_name, band, bw, tlrs, ntx_idx, cch, lock) MAX_POWER_INDEX
-#define phy_get_txpwr_lmt(adapter, regd_name, band, bw, rfpath, rs, ntx_idx, cch, lock) MAX_POWER_INDEX
-#define PHY_GetTxPowerLimit(adapter, regd_name, band, bw, rfpath, rate, ntx_idx, cch) MAX_POWER_INDEX
+#define phy_get_txpwr_lmt_abs(adapter, regd_name, band, bw, tlrs, ntx_idx, cch, lock) (GET_HAL_SPEC(adapter)->txgi_max)
+#define phy_get_txpwr_lmt(adapter, regd_name, band, bw, rfpath, rs, ntx_idx, cch, lock) (GET_HAL_SPEC(adapter)->txgi_max)
+#define PHY_GetTxPowerLimit(adapter, regd_name, band, bw, rfpath, rate, ntx_idx, cch) (GET_HAL_SPEC(adapter)->txgi_max)
 #endif /* CONFIG_TXPWR_LIMIT */
 
 s8
@@ -297,5 +295,5 @@ int PHY_ConfigRFWithPowerLimitTableParaFile(IN PADAPTER	Adapter, IN const char *
 void phy_free_filebuf_mask(_adapter *padapter, u8 mask);
 void phy_free_filebuf(_adapter *padapter);
 #endif /* CONFIG_LOAD_PHY_PARA_FROM_FILE */
-
+u8 phy_check_under_survey_ch(_adapter *adapter);
 #endif /* __HAL_COMMON_H__ */

@@ -20,7 +20,6 @@ int rtw_os_recvframe_duplicate_skb(_adapter *padapter, union recv_frame *pclonef
 {
 	int res = _SUCCESS;
 	_pkt	*pkt_copy = NULL;
-	struct rx_pkt_attrib *pattrib = &pcloneframe->u.hdr.attrib;
 
 	if (pskb == NULL) {
 		RTW_INFO("%s [WARN] skb == NULL, drop frag frame\n", __func__);
@@ -215,8 +214,10 @@ int rtw_os_recvbuf_resource_alloc(_adapter *padapter, struct recv_buf *precvbuf)
 	int res = _SUCCESS;
 
 #ifdef CONFIG_USB_HCI
+#ifdef CONFIG_USE_USB_BUFFER_ALLOC_RX
 	struct dvobj_priv	*pdvobjpriv = adapter_to_dvobj(padapter);
 	struct usb_device	*pusbd = pdvobjpriv->pusbdev;
+#endif
 
 	precvbuf->irp_pending = _FALSE;
 	precvbuf->purb = usb_alloc_urb(0, GFP_KERNEL);
@@ -384,7 +385,11 @@ int rtw_recv_napi_poll(struct napi_struct *napi, int budget)
 
 	work_done = napi_recv(padapter, budget);
 	if (work_done < budget) {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)) && defined(CONFIG_PCI_HCI)
+		napi_complete_done(napi, work_done);
+#else
 		napi_complete(napi);
+#endif
 		if (!skb_queue_empty(&precvpriv->rx_napi_skb_queue))
 			napi_schedule(napi);
 	}
@@ -506,6 +511,11 @@ void rtw_os_recv_indicate_pkt(_adapter *padapter, _pkt *pkt, union recv_frame *r
 		pkt->protocol = eth_type_trans(pkt, padapter->pnetdev);
 		pkt->dev = padapter->pnetdev;
 		pkt->ip_summed = CHECKSUM_NONE; /* CONFIG_TCP_CSUM_OFFLOAD_RX */
+#ifdef CONFIG_TCP_CSUM_OFFLOAD_RX
+		if ((rframe->u.hdr.attrib.csum_valid == 1)
+		    && (rframe->u.hdr.attrib.csum_err == 0))
+			pkt->ip_summed = CHECKSUM_UNNECESSARY;
+#endif /* CONFIG_TCP_CSUM_OFFLOAD_RX */
 
 #ifdef CONFIG_RTW_NAPI
 #ifdef CONFIG_RTW_NAPI_DYNAMIC
@@ -543,7 +553,6 @@ void rtw_handle_tkip_mic_err(_adapter *padapter, struct sta_info *sta, u8 bgroup
 #endif
 	union iwreq_data wrqu;
 	struct iw_michaelmicfailure    ev;
-	struct mlme_priv              *pmlmepriv  = &padapter->mlmepriv;
 	struct security_priv	*psecuritypriv = &padapter->securitypriv;
 	systime cur_time = 0;
 
@@ -632,7 +641,6 @@ int rtw_recv_monitor(_adapter *padapter, union recv_frame *precv_frame)
 	struct recv_priv *precvpriv;
 	_queue	*pfree_recv_queue;
 	_pkt *skb;
-	struct mlme_priv *pmlmepriv = &padapter->mlmepriv;
 	struct rx_pkt_attrib *pattrib;
 
 	if (NULL == precv_frame)
@@ -685,7 +693,6 @@ int rtw_recv_indicatepkt(_adapter *padapter, union recv_frame *precv_frame)
 {
 	struct recv_priv *precvpriv;
 	_queue	*pfree_recv_queue;
-	struct mlme_priv *pmlmepriv = &padapter->mlmepriv;
 
 	precvpriv = &(padapter->recvpriv);
 	pfree_recv_queue = &(precvpriv->free_recv_queue);

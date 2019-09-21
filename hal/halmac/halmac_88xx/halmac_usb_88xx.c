@@ -15,7 +15,7 @@
 
 #include "halmac_usb_88xx.h"
 
-#if HALMAC_88XX_SUPPORT
+#if (HALMAC_88XX_SUPPORT && HALMAC_USB_SUPPORT)
 
 enum usb_burst_size {
 	USB_BURST_SIZE_3_0 = 0x0,
@@ -53,8 +53,7 @@ init_usb_cfg_88xx(struct halmac_adapter *adapter)
 	}
 
 	HALMAC_REG_W8(REG_RXDMA_MODE, value8);
-	HALMAC_REG_W16(REG_TXDMA_OFFSET_CHK,
-		       HALMAC_REG_R16(REG_TXDMA_OFFSET_CHK) | BIT_DROP_DATA_EN);
+	HALMAC_REG_W16_SET(REG_TXDMA_OFFSET_CHK, BIT_DROP_DATA_EN);
 
 	PLTFM_MSG_TRACE("[TRACE]%s <===\n", __func__);
 
@@ -117,7 +116,7 @@ cfg_usb_rx_agg_88xx(struct halmac_adapter *adapter,
 		break;
 	}
 
-	if (cfg->threshold.drv_define == _FALSE) {
+	if (cfg->threshold.drv_define == 0) {
 		if (HALMAC_REG_R8(REG_SYS_CFG2 + 3) == 0x20) {
 			/* usb3.0 */
 			size = 0x5;
@@ -133,7 +132,7 @@ cfg_usb_rx_agg_88xx(struct halmac_adapter *adapter,
 	}
 
 	value32 = HALMAC_REG_R32(REG_RXDMA_AGG_PG_TH);
-	if (cfg->threshold.size_limit_en == _FALSE)
+	if (cfg->threshold.size_limit_en == 0)
 		HALMAC_REG_W32(REG_RXDMA_AGG_PG_TH, value32 & ~BIT_EN_PRE_CALC);
 	else
 		HALMAC_REG_W32(REG_RXDMA_AGG_PG_TH, value32 | BIT_EN_PRE_CALC);
@@ -159,11 +158,7 @@ cfg_usb_rx_agg_88xx(struct halmac_adapter *adapter,
 u8
 reg_r8_usb_88xx(struct halmac_adapter *adapter, u32 offset)
 {
-	u8 value8;
-
-	value8 = PLTFM_REG_R8(offset);
-
-	return value8;
+	return PLTFM_REG_R8(offset);
 }
 
 /**
@@ -194,11 +189,7 @@ reg_w8_usb_88xx(struct halmac_adapter *adapter, u32 offset, u8 value)
 u16
 reg_r16_usb_88xx(struct halmac_adapter *adapter, u32 offset)
 {
-	u16 value16;
-
-	value16 = PLTFM_REG_R16(offset);
-
-	return value16;
+	return PLTFM_REG_R16(offset);
 }
 
 /**
@@ -229,11 +220,7 @@ reg_w16_usb_88xx(struct halmac_adapter *adapter, u32 offset, u16 value)
 u32
 reg_r32_usb_88xx(struct halmac_adapter *adapter, u32 offset)
 {
-	u32 value32;
-
-	value32 = PLTFM_REG_R32(offset);
-
-	return value32;
+	return PLTFM_REG_R32(offset);
 }
 
 /**
@@ -442,9 +429,9 @@ set_usb_mode_88xx(struct halmac_adapter *adapter, enum halmac_usb_mode mode)
 	cur_mode = (HALMAC_REG_R8(REG_SYS_CFG2 + 3) == 0x20) ?
 					HALMAC_USB_MODE_U3 : HALMAC_USB_MODE_U2;
 
-	/*check if HW supports usb2_usb3 switch*/
+	/* check if HW supports usb2_usb3 switch */
 	usb_tmp = HALMAC_REG_R32(REG_PAD_CTRL2);
-	if (_FALSE == (BIT_GET_USB23_SW_MODE_V1(usb_tmp) |
+	if (0 == (BIT_GET_USB23_SW_MODE_V1(usb_tmp) |
 	    (usb_tmp & BIT_USB3_USB2_TRANSITION))) {
 		PLTFM_MSG_ERR("[ERR]u2/u3 switch\n");
 		return HALMAC_RET_USB2_3_SWITCH_UNSUPPORT;
@@ -512,7 +499,7 @@ usbphy_read_88xx(struct halmac_adapter *adapter, u8 addr, u8 speed)
 		HALMAC_REG_W8(0xff0c, addr | BIT(6));
 		value = (u16)(HALMAC_REG_R32(0xff0c) >> 8);
 	} else if (speed == HAL_INTF_PHY_USB2) {
-		if (addr >= 0xE0 && addr <= 0xFF)
+		if (addr >= 0xE0)
 			addr -= 0x20;
 		if (addr >= 0xC0 && addr <= 0xDF) {
 			HALMAC_REG_W8(0xfe40, addr);

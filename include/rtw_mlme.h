@@ -56,7 +56,7 @@
 #define WIFI_MP_CTX_CCK_CS				0x00200000 /* in continuous tx with carrier suppression */
 #define WIFI_MP_LPBK_STATE				0x00400000
 #define WIFI_OP_CH_SWITCHING			0x00800000
-/*#define WIFI_UNDEFINED_STATE			0x01000000*/
+#define WIFI_UNDER_KEY_HANDSHAKE	0x01000000
 /*#define WIFI_UNDEFINED_STATE			0x02000000*/
 /*#define WIFI_UNDEFINED_STATE			0x04000000*/
 /*#define WIFI_UNDEFINED_STATE			0x08000000*/
@@ -158,6 +158,7 @@ enum {
 	MLME_ADHOC_STOPPED,
 	MLME_MESH_STARTED,
 	MLME_MESH_STOPPED,
+	MLME_OPCH_SWITCH,
 };
 
 #define _FW_UNDER_LINKING	WIFI_UNDER_LINKING
@@ -749,20 +750,22 @@ struct mlme_priv {
 	_lock	lock;
 	sint	fw_state;	/* shall we protect this variable? maybe not necessarily... */
 	u8	to_join; /* flag */
+	u16 join_status;
 #ifdef CONFIG_LAYER2_ROAMING
 	u8 to_roam; /* roaming trying times */
 	struct wlan_network *roam_network; /* the target of active roam */
 	u8 roam_flags;
 	u8 roam_rssi_diff_th; /* rssi difference threshold for active scan candidate selection */
-	u32 roam_scan_int_ms; /* scan interval for active roam */
+	u32 roam_scan_int; 		/* scan interval for active roam (Unit:2 second)*/
 	u32 roam_scanr_exp_ms; /* scan result expire time in ms  for roam */
 	u8 roam_tgt_addr[ETH_ALEN]; /* request to roam to speicific target without other consideration */
 	u8 roam_rssi_threshold;
+	systime last_roaming;
 	bool need_to_roam;
 #endif
 
 	u8	*nic_hdl;
-
+	u32	max_bss_cnt;		/*	The size of scan queue	*/
 	_list		*pscanned;
 	_queue	free_bss_pool;
 	_queue	scanned_queue;
@@ -777,14 +780,16 @@ struct mlme_priv {
 
 	/* bcn check info */
 	struct beacon_keys cur_beacon_keys; /* save current beacon keys */
+#ifdef CONFIG_BCN_CNT_CONFIRM_HDL
 	struct beacon_keys new_beacon_keys; /* save new beacon keys */
 	u8 new_beacon_cnts; /* if new_beacon_cnts >= threshold, ap beacon is changed */
+#endif
 
 #ifdef CONFIG_ARP_KEEP_ALIVE
 	/* for arp offload keep alive */
 	u8 bGetGateway;
 	u8	GetGatewayTryCnt;
-	u8	gw_mac_addr[6];
+	u8	gw_mac_addr[ETH_ALEN];
 	u8	gw_ip[4];
 #endif
 
@@ -804,6 +809,7 @@ struct mlme_priv {
 	_timer set_scan_deny_timer;
 	ATOMIC_T set_scan_deny; /* 0: allowed, 1: deny */
 #endif
+	u8 wpa_phase;/*wpa_phase after wps finished*/
 
 	struct qos_priv qospriv;
 
@@ -824,7 +830,16 @@ struct mlme_priv {
 
 #ifdef CONFIG_80211AC_VHT
 	struct vht_priv	vhtpriv;
+#ifdef ROKU_PRIVATE
+	/*infra mode, used to store AP's info*/
+	struct vht_priv_infra_ap vhtpriv_infra_ap;
+#endif /* ROKU_PRIVATE */
 #endif
+
+#ifdef ROKU_PRIVATE
+	struct ht_priv_infra_ap htpriv_infra_ap;
+#endif /* ROKU_PRIVATE */
+
 #ifdef CONFIG_BEAMFORMING
 #ifndef RTW_BEAMFORMING_VERSION_2
 #if (BEAMFORMING_SUPPORT == 0)/*for driver beamforming*/
@@ -833,13 +848,6 @@ struct mlme_priv {
 #endif /* !RTW_BEAMFORMING_VERSION_2 */
 #endif
 
-#ifdef CONFIG_DFS
-	u8	handle_dfs;
-#endif
-#ifdef CONFIG_DFS_MASTER
-	/* TODO: move to rfctl */
-	_timer dfs_master_timer;
-#endif
 #ifdef CONFIG_RTW_80211R
 	struct ft_roam_info ft_roam;
 #endif
@@ -1002,11 +1010,6 @@ struct mlme_priv {
 	u8	scanning_via_buddy_intf;
 #endif
 
-#if 0
-	u8	NumOfBcnInfoChkFail;
-	u32	timeBcnInfoChkStart;
-#endif
-
 #ifdef CONFIG_APPEND_VENDOR_IE_ENABLE
 	u32 vendor_ie_mask[WLAN_MAX_VENDOR_IE_NUM];
 	u8 vendor_ie[WLAN_MAX_VENDOR_IE_NUM][WLAN_MAX_VENDOR_IE_LEN];
@@ -1050,7 +1053,7 @@ extern void hostapd_mode_unload(_adapter *padapter);
 #endif
 
 
-extern void rtw_joinbss_event_prehandle(_adapter *adapter, u8 *pbuf);
+extern void rtw_joinbss_event_prehandle(_adapter *adapter, u8 *pbuf, u16 status);
 extern void rtw_survey_event_callback(_adapter *adapter, u8 *pbuf);
 extern void rtw_surveydone_event_callback(_adapter *adapter, u8 *pbuf);
 extern void rtw_joinbss_event_callback(_adapter *adapter, u8 *pbuf);
@@ -1188,7 +1191,7 @@ extern struct wlan_network *rtw_get_oldest_wlan_network(_queue *scanned_queue);
 struct wlan_network *_rtw_find_same_network(_queue *scanned_queue, struct wlan_network *network);
 struct wlan_network *rtw_find_same_network(_queue *scanned_queue, struct wlan_network *network);
 
-extern void rtw_free_assoc_resources(_adapter *adapter, int lock_scanned_queue);
+extern void rtw_free_assoc_resources(_adapter *adapter, u8 lock_scanned_queue);
 extern void rtw_indicate_disconnect(_adapter *adapter, u16 reason, u8 locally_generated);
 extern void rtw_indicate_connect(_adapter *adapter);
 void rtw_indicate_scan_done(_adapter *padapter, bool aborted);
@@ -1217,6 +1220,29 @@ extern void rtw_scan_timeout_handler(void *ctx);
 
 extern void rtw_dynamic_check_timer_handlder(void *ctx);
 extern void rtw_iface_dynamic_check_timer_handlder(_adapter *adapter);
+
+enum {
+	SS_DENY_MP_MODE,
+	SS_DENY_RSON_SCANING,
+	SS_DENY_BLOCK_SCAN,
+	SS_DENY_BY_DRV,
+	SS_DENY_SELF_AP_UNDER_WPS,
+	SS_DENY_SELF_AP_UNDER_LINKING,
+	SS_DENY_SELF_AP_UNDER_SURVEY,
+	/*SS_DENY_SELF_STA_UNDER_WPS,*/
+	SS_DENY_SELF_STA_UNDER_LINKING,
+	SS_DENY_SELF_STA_UNDER_SURVEY,
+	SS_DENY_BUDDY_UNDER_LINK_WPS,
+	SS_DENY_BUDDY_UNDER_SURVEY,
+	SS_DENY_BUSY_TRAFFIC,
+	SS_ALLOW,
+#ifdef DBG_LA_MODE
+	SS_DENY_LA_MODE,
+#endif
+};
+
+u8 _rtw_sitesurvey_condition_check(const char *caller, _adapter *adapter, bool check_sc_interval);
+#define rtw_sitesurvey_condition_check(adapter, check_sc_interval) _rtw_sitesurvey_condition_check(__func__, adapter, check_sc_interval)
 
 #ifdef CONFIG_SET_SCAN_DENY_TIMER
 bool rtw_is_scan_deny(_adapter *adapter);
@@ -1331,6 +1357,40 @@ void rtw_proxim_enable(_adapter *padapter);
 void rtw_proxim_disable(_adapter *padapter);
 void rtw_proxim_send_packet(_adapter *padapter, u8 *pbuf, u16 len, u8 m_rate);
 #endif /* CONFIG_INTEL_PROXIM */
+
+#define GET_ARP_HTYPE(_arp)	BE_BITS_TO_2BYTE(((u8 *)(_arp)) + 0, 0, 16)
+#define GET_ARP_PTYPE(_arp)	BE_BITS_TO_2BYTE(((u8 *)(_arp)) + 2, 0, 16)
+#define GET_ARP_HLEN(_arp)	BE_BITS_TO_1BYTE(((u8 *)(_arp)) + 4, 0, 8)
+#define GET_ARP_PLEN(_arp)	BE_BITS_TO_1BYTE(((u8 *)(_arp)) + 5, 0, 8)
+#define GET_ARP_OPER(_arp)	BE_BITS_TO_2BYTE(((u8 *)(_arp)) + 6, 0, 16)
+
+#define SET_ARP_HTYPE(_arp, _val)	SET_BITS_TO_BE_2BYTE(((u8 *)(_arp)) + 0, 0, 16, _val)
+#define SET_ARP_PTYPE(_arp, _val)	SET_BITS_TO_BE_2BYTE(((u8 *)(_arp)) + 2, 0, 16, _val)
+#define SET_ARP_HLEN(_arp, _val)	SET_BITS_TO_BE_1BYTE(((u8 *)(_arp)) + 4, 0, 8, _val)
+#define SET_ARP_PLEN(_arp, _val)	SET_BITS_TO_BE_1BYTE(((u8 *)(_arp)) + 5, 0, 8, _val)
+#define SET_ARP_OPER(_arp, _val)	SET_BITS_TO_BE_2BYTE(((u8 *)(_arp)) + 6, 0, 16, _val)
+
+#define ARP_SHA(_arp, _hlen, _plen)	(((u8 *)(_arp)) + 8)
+#define ARP_SPA(_arp, _hlen, _plen)	(((u8 *)(_arp)) + 8 + (_hlen))
+#define ARP_THA(_arp, _hlen, _plen)	(((u8 *)(_arp)) + 8 + (_hlen) + (_plen))
+#define ARP_TPA(_arp, _hlen, _plen)	(((u8 *)(_arp)) + 8 + 2 * (_hlen) + (_plen))
+
+#define ARP_SENDER_MAC_ADDR(_arp)	ARP_SHA(_arp, ETH_ALEN, RTW_IP_ADDR_LEN)
+#define ARP_SENDER_IP_ADDR(_arp)	ARP_SPA(_arp, ETH_ALEN, RTW_IP_ADDR_LEN)
+#define ARP_TARGET_MAC_ADDR(_arp)	ARP_THA(_arp, ETH_ALEN, RTW_IP_ADDR_LEN)
+#define ARP_TARGET_IP_ADDR(_arp)	ARP_TPA(_arp, ETH_ALEN, RTW_IP_ADDR_LEN)
+
+#define GET_ARP_SENDER_MAC_ADDR(_arp, _val)	_rtw_memcpy(_val, ARP_SENDER_MAC_ADDR(_arp), ETH_ALEN)
+#define GET_ARP_SENDER_IP_ADDR(_arp, _val)	_rtw_memcpy(_val, ARP_SENDER_IP_ADDR(_arp), RTW_IP_ADDR_LEN)
+#define GET_ARP_TARGET_MAC_ADDR(_arp, _val)	_rtw_memcpy(_val, ARP_TARGET_MAC_ADDR(_arp), ETH_ALEN)
+#define GET_ARP_TARGET_IP_ADDR(_arp, _val)	_rtw_memcpy(_val, ARP_TARGET_IP_ADDR(_arp), RTW_IP_ADDR_LEN)
+
+#define SET_ARP_SENDER_MAC_ADDR(_arp, _val)	_rtw_memcpy(ARP_SENDER_MAC_ADDR(_arp), _val, ETH_ALEN)
+#define SET_ARP_SENDER_IP_ADDR(_arp, _val)	_rtw_memcpy(ARP_SENDER_IP_ADDR(_arp), _val, RTW_IP_ADDR_LEN)
+#define SET_ARP_TARGET_MAC_ADDR(_arp, _val)	_rtw_memcpy(ARP_TARGET_MAC_ADDR(_arp), _val, ETH_ALEN)
+#define SET_ARP_TARGET_IP_ADDR(_arp, _val)	_rtw_memcpy(ARP_TARGET_IP_ADDR(_arp), _val, RTW_IP_ADDR_LEN)
+
+void dump_arp_pkt(void *sel, u8 *da, u8 *sa, u8 *arp, bool tx);
 
 #define IPV4_SRC(_iphdr)			(((u8 *)(_iphdr)) + 12)
 #define IPV4_DST(_iphdr)			(((u8 *)(_iphdr)) + 16)

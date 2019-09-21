@@ -177,6 +177,7 @@ u8 rtl8822bu_fw_ips_deinit(_adapter *padapter)
 
 #endif
 
+#ifdef CONFIG_RTW_LED
 static void init_hwled(PADAPTER adapter, u8 enable)
 {
 	u8 mode = 0;
@@ -187,11 +188,18 @@ static void init_hwled(PADAPTER adapter, u8 enable)
 
 	rtw_halmac_led_cfg(adapter_to_dvobj(adapter), enable, mode);
 }
+#endif
 
 static void hal_init_misc(PADAPTER adapter)
 {
 #ifdef CONFIG_RTW_LED
+	struct led_priv *ledpriv = adapter_to_led(adapter);
+
 	init_hwled(adapter, 1);
+#ifdef CONFIG_RTW_SW_LED
+	if (ledpriv->bRegUseLed == _TRUE)
+		rtw_halmac_led_cfg(adapter_to_dvobj(adapter), _TRUE, 3);
+#endif
 #endif /* CONFIG_RTW_LED */
 
 }
@@ -219,7 +227,13 @@ exit:
 static void hal_deinit_misc(PADAPTER adapter)
 {
 #ifdef CONFIG_RTW_LED
+	struct led_priv *ledpriv = adapter_to_led(adapter);
+
 	init_hwled(adapter, 0);
+#ifdef CONFIG_RTW_SW_LED
+	if (ledpriv->bRegUseLed == _TRUE)
+		rtw_halmac_led_cfg(adapter_to_dvobj(adapter), _FALSE, 3);
+#endif
 #endif /* CONFIG_RTW_LED */
 }
 

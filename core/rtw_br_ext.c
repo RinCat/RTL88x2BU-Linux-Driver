@@ -301,7 +301,7 @@ static int update_nd_link_layer_addr(unsigned char *data, int len, unsigned char
 	return 0;
 }
 
-
+#ifdef SUPPORT_RX_UNI2MCAST
 static void convert_ipv6_mac_to_mc(struct sk_buff *skb)
 {
 	struct ipv6hdr *iph = (struct ipv6hdr *)(skb->data + ETH_HLEN);
@@ -319,6 +319,7 @@ static void convert_ipv6_mac_to_mc(struct sk_buff *skb)
 #endif
 }
 #endif /* CL_IPV6_PASS */
+#endif /* SUPPORT_RX_UNI2MCAST */
 
 
 static __inline__ int __nat25_network_hash(unsigned char *networkAddr)

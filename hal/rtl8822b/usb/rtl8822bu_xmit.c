@@ -47,6 +47,7 @@ static s32 update_txdesc(struct xmit_frame *pxmitframe, u8 *pmem, s32 sz, u8 bag
 	sint	bmcst = IS_MCAST(pattrib->ra);
 	u16	SWDefineContent = 0x0;
 	u8	DriverFixedRate = 0x0;
+	u8 hw_port = rtw_hal_get_port(padapter);
 
 #ifndef CONFIG_USE_USB_BUFFER_ALLOC_TX
 	if (padapter->registrypriv.mp_mode == 0) {
@@ -101,16 +102,25 @@ static s32 update_txdesc(struct xmit_frame *pxmitframe, u8 *pmem, s32 sz, u8 bag
 	/*offset 12 */
 	if (!pattrib->qos_en) {
 		/* HW sequence, to fix to use 0 queue. todo: 4AC packets to use auto queue select */
-		SET_TX_DESC_EN_HWSEQ_8822B(ptxdesc, 1); /* Hw set sequence number */
-		SET_TX_DESC_EN_HWEXSEQ_8822B(ptxdesc, 0);
 		SET_TX_DESC_DISQSELSEQ_8822B(ptxdesc, 1);
-		SET_TX_DESC_HW_SSN_SEL_8822B(ptxdesc, 0);
+		SET_TX_DESC_EN_HWSEQ_8822B(ptxdesc, 1);/* Hw set sequence number */
+		SET_TX_DESC_HW_SSN_SEL_8822B(ptxdesc, pattrib->hw_ssn_sel);
+		SET_TX_DESC_EN_HWEXSEQ_8822B(ptxdesc, 0);
 	} else
 		SET_TX_DESC_SW_SEQ_8822B(ptxdesc, pattrib->seqnum);
 
 	if ((pxmitframe->frame_tag & 0x0f) == DATA_FRAMETAG) {
 		/* RTW_INFO("pxmitframe->frame_tag == DATA_FRAMETAG\n");	*/
 		rtl8822b_fill_txdesc_sectype(pattrib, ptxdesc);
+#ifdef CONFIG_TX_CSUM_OFFLOAD
+	if (pattrib->hw_csum == 1) {
+		int offset = 48 + pxmitframe->pkt_offset*8 + 8;
+
+		SET_TX_DESC_OFFSET_8822B(ptxdesc, offset);
+		SET_TX_DESC_CHK_EN_8822B(ptxdesc, 1);
+		SET_TX_DESC_WHEADER_LEN_8822B(ptxdesc, (pattrib->hdrlen + pattrib->iv_len)>>1);
+	}
+#endif
 
 		/* offset 20 */
 #ifdef CONFIG_USB_TX_AGGREGATION
@@ -209,8 +219,17 @@ static s32 update_txdesc(struct xmit_frame *pxmitframe, u8 *pmem, s32 sz, u8 bag
 			/* HW will ignore this setting if the transmission rate is legacy OFDM */
 			if (pmlmeinfo->preamble_mode == PREAMBLE_SHORT)
 				SET_TX_DESC_DATA_SHORT_8822B(ptxdesc, 1);
-
-			SET_TX_DESC_DATARATE_8822B(ptxdesc, MRateToHwRate(pmlmeext->tx_rate));
+#ifdef CONFIG_IP_R_MONITOR
+			if((pattrib->ether_type == ETH_P_ARP) &&
+				(IsSupportedTxOFDM(padapter->registrypriv.wireless_mode))) {
+				SET_TX_DESC_DATARATE_8822B(ptxdesc, MRateToHwRate(IEEE80211_OFDM_RATE_6MB));
+				#ifdef DBG_IP_R_MONITOR
+				RTW_INFO(FUNC_ADPT_FMT ": SP Packet(0x%04X) rate=0x%x SeqNum = %d\n",
+					FUNC_ADPT_ARG(padapter), pattrib->ether_type, MRateToHwRate(pmlmeext->tx_rate), pattrib->seqnum);
+				#endif/*DBG_IP_R_MONITOR*/
+			 } else
+#endif/*CONFIG_IP_R_MONITOR*/
+				SET_TX_DESC_DATARATE_8822B(ptxdesc, MRateToHwRate(pmlmeext->tx_rate));
 		}
 
 #ifdef CONFIG_TDLS
@@ -226,6 +245,7 @@ static s32 update_txdesc(struct xmit_frame *pxmitframe, u8 *pmem, s32 sz, u8 bag
 #endif
 	} else if ((pxmitframe->frame_tag & 0x0f) == MGNT_FRAMETAG) {
 		/* RTW_INFO("pxmitframe->frame_tag == MGNT_FRAMETAG\n");	*/
+		SET_TX_DESC_MBSSID_8822B(ptxdesc, pattrib->mbssid & 0xF);
 
 		SET_TX_DESC_USE_RATE_8822B(ptxdesc, 1);
 		DriverFixedRate = 0x01;
@@ -275,8 +295,8 @@ static s32 update_txdesc(struct xmit_frame *pxmitframe, u8 *pmem, s32 sz, u8 bag
 
 	SET_TX_DESC_SW_DEFINE_8822B(ptxdesc, SWDefineContent);
 
-	SET_TX_DESC_PORT_ID_8822B(ptxdesc, get_hw_port(padapter));
-	SET_TX_DESC_MULTIPLE_PORT_8822B(ptxdesc, get_hw_port(padapter));
+	SET_TX_DESC_PORT_ID_8822B(ptxdesc, hw_port);
+	SET_TX_DESC_MULTIPLE_PORT_8822B(ptxdesc, hw_port);
 
 	rtl8822b_cal_txdesc_chksum(padapter, ptxdesc);
 	rtl8822b_dbg_dump_tx_desc(padapter, pxmitframe->frame_tag, ptxdesc);
@@ -299,6 +319,7 @@ s32 rtl8822bu_xmit_buf_handler(PADAPTER padapter)
 	PHAL_DATA_TYPE phal;
 	struct xmit_priv *pxmitpriv;
 	struct xmit_buf *pxmitbuf;
+	struct xmit_frame *pxmitframe;
 	s32 ret;
 
 
@@ -332,8 +353,10 @@ s32 rtl8822bu_xmit_buf_handler(PADAPTER padapter)
 		if (pxmitbuf == NULL)
 			break;
 
+		pxmitframe = (struct xmit_frame *) pxmitbuf->priv_data;
 		/* only XMITBUF_DATA & XMITBUF_MGNT */
 		rtw_write_port_and_wait(padapter, pxmitbuf->ff_hwaddr, pxmitbuf->len, (unsigned char *)pxmitbuf, 500);
+		rtw_free_xmitframe(pxmitpriv, pxmitframe);
 	} while (1);
 
 #ifdef CONFIG_LPS_LCLK
@@ -427,6 +450,9 @@ static s32 rtw_dump_xframe(PADAPTER padapter, struct xmit_frame *pxmitframe)
 
 	}
 
+#ifdef CONFIG_XMIT_THREAD_MODE
+	if ((pattrib->qsel == QSLT_BEACON) || (pattrib->qsel == QSLT_CMD))
+#endif
 	rtw_free_xmitframe(pxmitpriv, pxmitframe);
 
 	if (ret != _SUCCESS)
@@ -715,7 +741,7 @@ agg_end:
 	pxmitbuf->len = pbuf_tail;
 	pxmitbuf->ff_hwaddr = ff_hwaddr;
 
-	if (pxmitbuf->buf_tag  == XMITBUF_CMD)
+	if (pfirstframe->attrib.qsel == QSLT_BEACON)
 		/* download rsvd page or fw */
 		rtw_write_port(padapter, ff_hwaddr, pbuf_tail, (u8 *)pxmitbuf);
 	else
@@ -732,6 +758,9 @@ agg_end:
 
 	rtw_count_tx_stats(padapter, pfirstframe, pbuf_tail);
 
+#ifdef CONFIG_XMIT_THREAD_MODE
+	if (pfirstframe->attrib.qsel == QSLT_BEACON)
+#endif
 	rtw_free_xmitframe(pxmitpriv, pfirstframe);
 
 	return _TRUE;
@@ -839,7 +868,7 @@ s32	rtl8822bu_init_xmit_priv(PADAPTER padapter)
 #ifdef CONFIG_TX_EARLY_MODE
 	pHalData->bEarlyModeEnable = padapter->registrypriv.early_mode;
 #endif
-
+	rtl8822b_init_xmit_priv(padapter);
 	return _SUCCESS;
 }
 

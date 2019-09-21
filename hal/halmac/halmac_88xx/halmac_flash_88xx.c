@@ -87,7 +87,7 @@ download_flash_88xx(struct halmac_adapter *adapter, u8 *fw_bin, u32 size,
 
 		hdr_info.sub_cmd_id = SUB_CMD_ID_DOWNLOAD_FLASH;
 		hdr_info.content_size = 20;
-		hdr_info.ack = _TRUE;
+		hdr_info.ack = 1;
 		set_h2c_pkt_hdr_88xx(adapter, h2c_buf, &hdr_info, &seq_num);
 
 		rc = send_h2c_pkt_88xx(adapter, h2c_buf);
@@ -131,7 +131,7 @@ download_flash_88xx(struct halmac_adapter *adapter, u8 *fw_bin, u32 size,
  * More details of status code can be found in prototype document
  */
 enum halmac_ret_status
-read_flash_88xx(struct halmac_adapter *adapter, u32 addr)
+read_flash_88xx(struct halmac_adapter *adapter, u32 addr, u32 length)
 {
 	struct halmac_api *api = (struct halmac_api *)adapter->halmac_api;
 	enum halmac_ret_status status;
@@ -168,13 +168,13 @@ read_flash_88xx(struct halmac_adapter *adapter, u32 addr)
 	/* Construct H2C Content */
 	DOWNLOAD_FLASH_SET_SPI_CMD(h2c_buf, 0x03);
 	DOWNLOAD_FLASH_SET_LOCATION(h2c_buf, h2c_info_addr - rsvd_pg_addr);
-	DOWNLOAD_FLASH_SET_SIZE(h2c_buf, 4096);
+	DOWNLOAD_FLASH_SET_SIZE(h2c_buf, length);
 	DOWNLOAD_FLASH_SET_START_ADDR(h2c_buf, addr);
 
 	/* Fill in H2C Header */
 	hdr_info.sub_cmd_id = SUB_CMD_ID_DOWNLOAD_FLASH;
 	hdr_info.content_size = 16;
-	hdr_info.ack = _TRUE;
+	hdr_info.ack = 1;
 	set_h2c_pkt_hdr_88xx(adapter, h2c_buf, &hdr_info, &seq_num);
 
 	/* Send H2C Cmd Packet */
@@ -231,7 +231,7 @@ erase_flash_88xx(struct halmac_adapter *adapter, u8 erase_cmd, u32 addr)
 	/* Fill in H2C Header */
 	hdr_info.sub_cmd_id = SUB_CMD_ID_DOWNLOAD_FLASH;
 	hdr_info.content_size = 16;
-	hdr_info.ack = _TRUE;
+	hdr_info.ack = 1;
 	set_h2c_pkt_hdr_88xx(adapter, h2c_buf, &hdr_info, &seq_num);
 
 	/* Send H2C Cmd Packet */
@@ -286,7 +286,7 @@ check_flash_88xx(struct halmac_adapter *adapter, u8 *fw_bin, u32 size,
 		else
 			pkt_size = size;
 
-		read_flash_88xx(adapter, addr);
+		read_flash_88xx(adapter, addr, 4096);
 
 		cnt = 0;
 		while (cnt < pkt_size) {

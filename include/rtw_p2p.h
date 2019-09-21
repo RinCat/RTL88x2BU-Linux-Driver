@@ -102,11 +102,8 @@ static inline void _rtw_p2p_restore_state(struct wifidirect_info *wdinfo)
 	}
 }
 #endif
-static inline void _rtw_p2p_set_role(struct wifidirect_info *wdinfo, enum P2P_ROLE role)
-{
-	if (wdinfo->role != role)
-		wdinfo->role = role;
-}
+void _rtw_p2p_set_role(struct wifidirect_info *wdinfo, enum P2P_ROLE role);
+
 static inline int _rtw_p2p_state(struct wifidirect_info *wdinfo)
 {
 	return wdinfo->p2p_state;

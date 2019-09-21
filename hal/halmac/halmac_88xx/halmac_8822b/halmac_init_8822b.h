@@ -27,10 +27,22 @@ enum halmac_ret_status
 init_trx_cfg_8822b(struct halmac_adapter *adapter, enum halmac_trx_mode mode);
 
 enum halmac_ret_status
+init_system_cfg_8822b(struct halmac_adapter *adapter);
+
+enum halmac_ret_status
 init_protocol_cfg_8822b(struct halmac_adapter *adapter);
 
 enum halmac_ret_status
 init_h2c_8822b(struct halmac_adapter *adapter);
+
+enum halmac_ret_status
+init_edca_cfg_8822b(struct halmac_adapter *adapter);
+
+enum halmac_ret_status
+init_wmac_cfg_8822b(struct halmac_adapter *adapter);
+
+enum halmac_ret_status
+pre_init_system_cfg_8822b(struct halmac_adapter *adapter);
 
 #endif /* HALMAC_8822B_SUPPORT */
 

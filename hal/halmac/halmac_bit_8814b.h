@@ -16159,8 +16159,6 @@
 	(BIT_CLEAR_MU_SCORETABLE_OFFSET_8814B(x) |                             \
 	 BIT_MU_SCORETABLE_OFFSET_8814B(v))
 
-/* 2 REG_USEREG_SETTING_8814B */
-
 /* 2 REG_BF0_TIME_SETTING_8814B */
 #define BIT_BF0_TIMER_SET_8814B BIT(31)
 #define BIT_BF0_TIMER_CLR_8814B BIT(30)
@@ -19948,7 +19946,43 @@
 
 /* 2 REG_RSVD_8814B */
 
-/* 2 REG_RSVD_8814B */
+/* 2 REG_SCHEDULER_COUNTER_8814B */
+
+#define BIT_SHIFT__SCHEDULER_COUNTER_8814B 16
+#define BIT_MASK__SCHEDULER_COUNTER_8814B 0xffff
+#define BIT__SCHEDULER_COUNTER_8814B(x)                                        \
+	(((x) & BIT_MASK__SCHEDULER_COUNTER_8814B)                             \
+	 << BIT_SHIFT__SCHEDULER_COUNTER_8814B)
+#define BITS__SCHEDULER_COUNTER_8814B                                          \
+	(BIT_MASK__SCHEDULER_COUNTER_8814B                                     \
+	 << BIT_SHIFT__SCHEDULER_COUNTER_8814B)
+#define BIT_CLEAR__SCHEDULER_COUNTER_8814B(x)                                  \
+	((x) & (~BITS__SCHEDULER_COUNTER_8814B))
+#define BIT_GET__SCHEDULER_COUNTER_8814B(x)                                    \
+	(((x) >> BIT_SHIFT__SCHEDULER_COUNTER_8814B) &                         \
+	 BIT_MASK__SCHEDULER_COUNTER_8814B)
+#define BIT_SET__SCHEDULER_COUNTER_8814B(x, v)                                 \
+	(BIT_CLEAR__SCHEDULER_COUNTER_8814B(x) |                               \
+	 BIT__SCHEDULER_COUNTER_8814B(v))
+
+#define BIT__SCHEDULER_COUNTER_RST_8814B BIT(8)
+
+#define BIT_SHIFT_SCHEDULER_COUNTER_SEL_8814B 0
+#define BIT_MASK_SCHEDULER_COUNTER_SEL_8814B 0xff
+#define BIT_SCHEDULER_COUNTER_SEL_8814B(x)                                     \
+	(((x) & BIT_MASK_SCHEDULER_COUNTER_SEL_8814B)                          \
+	 << BIT_SHIFT_SCHEDULER_COUNTER_SEL_8814B)
+#define BITS_SCHEDULER_COUNTER_SEL_8814B                                       \
+	(BIT_MASK_SCHEDULER_COUNTER_SEL_8814B                                  \
+	 << BIT_SHIFT_SCHEDULER_COUNTER_SEL_8814B)
+#define BIT_CLEAR_SCHEDULER_COUNTER_SEL_8814B(x)                               \
+	((x) & (~BITS_SCHEDULER_COUNTER_SEL_8814B))
+#define BIT_GET_SCHEDULER_COUNTER_SEL_8814B(x)                                 \
+	(((x) >> BIT_SHIFT_SCHEDULER_COUNTER_SEL_8814B) &                      \
+	 BIT_MASK_SCHEDULER_COUNTER_SEL_8814B)
+#define BIT_SET_SCHEDULER_COUNTER_SEL_8814B(x, v)                              \
+	(BIT_CLEAR_SCHEDULER_COUNTER_SEL_8814B(x) |                            \
+	 BIT_SCHEDULER_COUNTER_SEL_8814B(v))
 
 /* 2 REG_RSVD_8814B */
 
@@ -23204,6 +23238,11 @@
 #define BIT_CLI0_PWR_ST_V1_8814B BIT(0)
 
 /* 2 REG_GENERAL_OPTION_8814B */
+#define BIT_FIX_MSDU_TAIL_WR_8814B BIT(12)
+#define BIT_FIX_MSDU_SHIFT_8814B BIT(11)
+#define BIT_RXFIFO_GNT_CUT_8814B BIT(8)
+#define BIT_WMAC_FIX_FIRST_MPDU_WITH_PHYSTS_8814B BIT(5)
+#define BIT_DUMMY_RXD_FCS_ERROR_MASK_EN_8814B BIT(4)
 #define BIT_PATTERN_MATCH_FIX_EN_8814B BIT(3)
 #define BIT_TXSERV_FIELD_SEL_8814B BIT(2)
 #define BIT_RXVHT_LEN_SEL_8814B BIT(1)

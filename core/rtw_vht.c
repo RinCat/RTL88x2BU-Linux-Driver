@@ -61,10 +61,6 @@ void dump_vht_cap_ie_content(void *sel, const u8 *buf, u32 buf_len)
 
 void dump_vht_cap_ie(void *sel, const u8 *ie, u32 ie_len)
 {
-	const u8 *pos = ie;
-	u16 id;
-	u16 len;
-
 	const u8 *vht_cap_ie;
 	sint vht_cap_ielen;
 
@@ -99,10 +95,6 @@ void dump_vht_op_ie_content(void *sel, const u8 *buf, u32 buf_len)
 
 void dump_vht_op_ie(void *sel, const u8 *ie, u32 ie_len)
 {
-	const u8 *pos = ie;
-	u16 id;
-	u16 len;
-
 	const u8 *vht_op_ie;
 	sint vht_op_ielen;
 
@@ -490,6 +482,83 @@ void	update_hw_vht_param(_adapter *padapter)
 		rtw_hal_set_hwreg(padapter, HW_VAR_AMPDU_FACTOR, (u8 *)(&pvhtpriv->ampdu_len));
 }
 
+#ifdef ROKU_PRIVATE
+u8 VHT_get_ss_from_map(u8 *vht_mcs_map)
+{
+	u8 i, j;
+	u8 ss = 0;
+
+	for (i = 0; i < 2; i++) {
+		if (vht_mcs_map[i] != 0xff) {
+			for (j = 0; j < 8; j += 2) {
+				if (((vht_mcs_map[i] >> j) & 0x03) == 0x03)
+					break;
+				ss++;
+			}
+		}
+
+	}
+
+return ss;
+}
+
+void VHT_caps_handler_infra_ap(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE)
+{
+	struct mlme_priv		*pmlmepriv = &padapter->mlmepriv;
+	struct vht_priv_infra_ap	*pvhtpriv = &pmlmepriv->vhtpriv_infra_ap;
+	u8      cur_stbc_cap_infra_ap = 0;
+	u16	cur_beamform_cap_infra_ap = 0;
+	u8	*pcap_mcs;
+	u8	*pcap_mcs_tx;
+	u8	Rx_ss = 0, Tx_ss = 0;
+
+	struct mlme_ext_priv		*pmlmeext = &padapter->mlmeextpriv;
+	struct mlme_ext_info		*pmlmeinfo = &(pmlmeext->mlmext_info);
+
+	if (pIE == NULL)
+		return;
+
+	pmlmeinfo->ht_vht_received |= BIT(1);
+
+	pvhtpriv->ldpc_cap_infra_ap = GET_VHT_CAPABILITY_ELE_RX_LDPC(pIE->data);
+
+	if (GET_VHT_CAPABILITY_ELE_RX_STBC(pIE->data))
+		SET_FLAG(cur_stbc_cap_infra_ap, STBC_VHT_ENABLE_RX);
+	if (GET_VHT_CAPABILITY_ELE_TX_STBC(pIE->data))
+		SET_FLAG(cur_stbc_cap_infra_ap, STBC_VHT_ENABLE_TX);
+	pvhtpriv->stbc_cap_infra_ap = cur_stbc_cap_infra_ap;
+
+	/*store ap info for channel bandwidth*/
+	pvhtpriv->channel_width_infra_ap = GET_VHT_CAPABILITY_ELE_CHL_WIDTH(pIE->data);
+
+	/*check B11: SU Beamformer Capable and B12: SU Beamformee B19: MU Beamformer B20:MU Beamformee*/
+	if (GET_VHT_CAPABILITY_ELE_SU_BFER(pIE->data))
+		SET_FLAG(cur_beamform_cap_infra_ap, BEAMFORMING_VHT_BEAMFORMER_ENABLE);
+	if (GET_VHT_CAPABILITY_ELE_SU_BFEE(pIE->data))
+		SET_FLAG(cur_beamform_cap_infra_ap, BEAMFORMING_VHT_BEAMFORMEE_ENABLE);
+	if (GET_VHT_CAPABILITY_ELE_MU_BFER(pIE->data))
+		SET_FLAG(cur_beamform_cap_infra_ap, BEAMFORMING_VHT_MU_MIMO_AP_ENABLE);
+	if (GET_VHT_CAPABILITY_ELE_MU_BFEE(pIE->data))
+		SET_FLAG(cur_beamform_cap_infra_ap, BEAMFORMING_VHT_MU_MIMO_STA_ENABLE);
+	pvhtpriv->beamform_cap_infra_ap = cur_beamform_cap_infra_ap;
+
+	/*store information about vht_mcs_set*/
+	pcap_mcs = GET_VHT_CAPABILITY_ELE_RX_MCS(pIE->data);
+	pcap_mcs_tx = GET_VHT_CAPABILITY_ELE_TX_MCS(pIE->data);
+	_rtw_memcpy(pvhtpriv->vht_mcs_map_infra_ap, pcap_mcs, 2);
+	_rtw_memcpy(pvhtpriv->vht_mcs_map_tx_infra_ap, pcap_mcs_tx, 2);
+
+	Rx_ss = VHT_get_ss_from_map(pvhtpriv->vht_mcs_map_infra_ap);
+	Tx_ss = VHT_get_ss_from_map(pvhtpriv->vht_mcs_map_tx_infra_ap);
+	if (Rx_ss >= Tx_ss) {
+		pvhtpriv->number_of_streams_infra_ap = Rx_ss;
+	} else{
+		pvhtpriv->number_of_streams_infra_ap = Tx_ss;
+	}
+
+}
+#endif /* ROKU_PRIVATE */
+
 void VHT_caps_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE)
 {
 	struct hal_spec_t *hal_spec = GET_HAL_SPEC(padapter);
@@ -621,17 +690,21 @@ void rtw_process_vht_op_mode_notify(_adapter *padapter, u8 *pframe, PVOID sta)
 	struct sta_info		*psta = (struct sta_info *)sta;
 	struct mlme_priv		*pmlmepriv = &padapter->mlmepriv;
 	struct vht_priv		*pvhtpriv = &pmlmepriv->vhtpriv;
-	struct mlme_ext_priv	*pmlmeext = &padapter->mlmeextpriv;
 	struct registry_priv *regsty = adapter_to_regsty(padapter);
 	u8	target_bw;
 	u8	target_rxss, current_rxss;
 	u8	update_ra = _FALSE;
+	u8 tx_nss = 0, rf_type = RF_1T1R;
+	struct hal_spec_t *hal_spec = GET_HAL_SPEC(padapter);
 
 	if (pvhtpriv->vht_option == _FALSE)
 		return;
 
 	target_bw = GET_VHT_OPERATING_MODE_FIELD_CHNL_WIDTH(pframe);
-	target_rxss = (GET_VHT_OPERATING_MODE_FIELD_RX_NSS(pframe) + 1);
+
+	rtw_hal_get_hwreg(padapter, HW_VAR_RF_TYPE, (u8 *)(&rf_type));
+	tx_nss = rtw_min(rf_type_to_rf_tx_cnt(rf_type), hal_spec->tx_nss_num);
+	target_rxss = rtw_min(tx_nss, (GET_VHT_OPERATING_MODE_FIELD_RX_NSS(pframe) + 1));
 
 	if (target_bw != psta->cmn.bw_mode) {
 		if (hal_is_bw_support(padapter, target_bw)
@@ -720,7 +793,7 @@ u32	rtw_build_vht_op_mode_notify_ie(_adapter *padapter, u8 *pbuf, u8 bw)
 
 u32	rtw_build_vht_cap_ie(_adapter *padapter, u8 *pbuf)
 {
-	u8	bw, rf_type, rf_num, rx_stbc_nss = 0;
+	u8	bw, rf_num, rx_stbc_nss = 0;
 	u16	HighestRate;
 	u8	*pcap, *pcap_mcs;
 	u32	len = 0;
@@ -738,19 +811,19 @@ u32	rtw_build_vht_cap_ie(_adapter *padapter, u8 *pbuf)
 	rtw_hal_get_def_var(padapter, HAL_DEF_RX_PACKET_OFFSET, &rx_packet_offset);
 	rtw_hal_get_def_var(padapter, HAL_DEF_MAX_RECVBUF_SZ, &max_recvbuf_sz);
 
-	RTW_DBG("%s, line%d, Available RX buf size = %d bytes\n.", __FUNCTION__, __LINE__, max_recvbuf_sz - rx_packet_offset);
+	RTW_DBG("%s, line%d, Available RX buf size = %d bytes\n", __FUNCTION__, __LINE__, max_recvbuf_sz - rx_packet_offset);
 
 	if ((max_recvbuf_sz - rx_packet_offset) >= 11454) {
 		SET_VHT_CAPABILITY_ELE_MAX_MPDU_LENGTH(pcap, 2);
-		RTW_INFO("%s, line%d, Set MAX MPDU len = 11454 bytes\n.", __FUNCTION__, __LINE__);
+		RTW_INFO("%s, line%d, Set MAX MPDU len = 11454 bytes\n", __FUNCTION__, __LINE__);
 	} else if ((max_recvbuf_sz - rx_packet_offset) >= 7991) {
 		SET_VHT_CAPABILITY_ELE_MAX_MPDU_LENGTH(pcap, 1);
-		RTW_INFO("%s, line%d, Set MAX MPDU len = 7991 bytes\n.", __FUNCTION__, __LINE__);
+		RTW_INFO("%s, line%d, Set MAX MPDU len = 7991 bytes\n", __FUNCTION__, __LINE__);
 	} else if ((max_recvbuf_sz - rx_packet_offset) >= 3895) {
 		SET_VHT_CAPABILITY_ELE_MAX_MPDU_LENGTH(pcap, 0);
-		RTW_INFO("%s, line%d, Set MAX MPDU len = 3895 bytes\n.", __FUNCTION__, __LINE__);
+		RTW_INFO("%s, line%d, Set MAX MPDU len = 3895 bytes\n", __FUNCTION__, __LINE__);
 	} else
-		RTW_ERR("%s, line%d, Error!! Available RX buf size < 3895 bytes\n.", __FUNCTION__, __LINE__);
+		RTW_ERR("%s, line%d, Error!! Available RX buf size < 3895 bytes\n", __FUNCTION__, __LINE__);
 
 	/* B2 B3 Supported Channel Width Set */
 	if (hal_chk_bw_cap(padapter, BW_CAP_160M) && REGSTY_IS_BW_5G_SUPPORT(pregistrypriv, CHANNEL_WIDTH_160)) {
@@ -811,10 +884,11 @@ u32	rtw_build_vht_cap_ie(_adapter *padapter, u8 *pbuf)
 		rtw_hal_get_def_var(padapter, HAL_DEF_BEAMFORMEE_CAP, (u8 *)&rf_num);
 
 		/* IOT action suggested by Yu Chen 2017/3/3 */
+#ifdef CONFIG_80211AC_VHT
 		if ((pmlmeinfo->assoc_AP_vendor == HT_IOT_PEER_BROADCOM) &&
-			!GET_VHT_CAPABILITY_ELE_MU_BFER(&pvhtpriv->beamform_cap))
+			!pvhtpriv->ap_is_mu_bfer)
 			rf_num = (rf_num >= 2 ? 2 : rf_num);
-
+#endif
 		/* B13 14 15 Compressed Steering Number of Beamformer Antennas Supported */
 		SET_VHT_CAPABILITY_ELE_BFER_ANT_SUPP(pcap, rf_num);
 		/* B20 SU Beamformee Capable */
@@ -859,6 +933,8 @@ u32	rtw_build_vht_cap_ie(_adapter *padapter, u8 *pbuf)
 
 u32 rtw_restructure_vht_ie(_adapter *padapter, u8 *in_ie, u8 *out_ie, uint in_len, uint *pout_len)
 {
+	struct rf_ctl_t *rfctl = adapter_to_rfctl(padapter);
+	RT_CHANNEL_INFO *chset = rfctl->channel_set;
 	u32	ielen;
 	u8 max_bw;
 	u8 oper_ch, oper_bw = CHANNEL_WIDTH_20, oper_offset = HAL_PRIME_CHNL_OFFSET_DONT_CARE;
@@ -920,7 +996,11 @@ u32 rtw_restructure_vht_ie(_adapter *padapter, u8 *in_ie, u8 *out_ie, uint in_le
 			oper_bw = rtw_min(oper_bw, max_bw);
 
 			/* try downgrage bw to fit in channel plan setting */
-			while (!rtw_chset_is_chbw_valid(adapter_to_chset(padapter), oper_ch, oper_bw, oper_offset)) {
+			while (!rtw_chset_is_chbw_valid(chset, oper_ch, oper_bw, oper_offset)
+				|| (IS_DFS_SLAVE_WITH_RD(rfctl)
+					&& !rtw_odm_dfs_domain_unknown(rfctl_to_dvobj(rfctl))
+					&& rtw_chset_is_chbw_non_ocp(chset, oper_ch, oper_bw, oper_offset))
+			) {
 				oper_bw--;
 				if (oper_bw == CHANNEL_WIDTH_20) {
 					oper_offset = HAL_PRIME_CHNL_OFFSET_DONT_CARE;
@@ -930,7 +1010,9 @@ u32 rtw_restructure_vht_ie(_adapter *padapter, u8 *in_ie, u8 *out_ie, uint in_le
 		}
 	}
 
-	rtw_warn_on(!rtw_chset_is_chbw_valid(adapter_to_chset(padapter), oper_ch, oper_bw, oper_offset));
+	rtw_warn_on(!rtw_chset_is_chbw_valid(chset, oper_ch, oper_bw, oper_offset));
+	if (IS_DFS_SLAVE_WITH_RD(rfctl) && !rtw_odm_dfs_domain_unknown(rfctl_to_dvobj(rfctl)))
+		rtw_warn_on(rtw_chset_is_chbw_non_ocp(chset, oper_ch, oper_bw, oper_offset));
 
 	/* update VHT_OP_IE */
 	if (oper_bw < CHANNEL_WIDTH_80) {

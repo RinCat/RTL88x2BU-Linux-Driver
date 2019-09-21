@@ -15,16 +15,21 @@
 
 #include "halmac_cfg_wmac_88xx.h"
 #include "halmac_88xx_cfg.h"
+#include "halmac_efuse_88xx.h"
 
 #if HALMAC_88XX_SUPPORT
 
 #define MAC_CLK_SPEED	80 /* 80M */
+#define EFUSE_PCB_INFO_OFFSET	0xCA
 
 enum mac_clock_hw_def {
 	MAC_CLK_HW_DEF_80M = 0,
 	MAC_CLK_HW_DEF_40M = 1,
 	MAC_CLK_HW_DEF_20M = 2,
 };
+
+static enum halmac_ret_status
+board_rf_fine_tune_88xx(struct halmac_adapter *adapter);
 
 /**
  * cfg_mac_addr_88xx() - config mac address
@@ -39,8 +44,7 @@ enum halmac_ret_status
 cfg_mac_addr_88xx(struct halmac_adapter *adapter, u8 port,
 		  union halmac_wlan_addr *addr)
 {
-	u16 mac_addr_h;
-	u32 mac_addr_l;
+	u32 offset;
 	struct halmac_api *api = (struct halmac_api *)adapter->halmac_api;
 
 	PLTFM_MSG_TRACE("[TRACE]%s ===>\n", __func__);
@@ -50,36 +54,28 @@ cfg_mac_addr_88xx(struct halmac_adapter *adapter, u8 port,
 		return HALMAC_RET_PORT_NOT_SUPPORT;
 	}
 
-	mac_addr_l = addr->addr_l_h.low;
-	mac_addr_h = addr->addr_l_h.high;
-
-	mac_addr_l = rtk_le32_to_cpu(mac_addr_l);
-	mac_addr_h = rtk_le16_to_cpu(mac_addr_h);
-
 	switch (port) {
 	case HALMAC_PORTID0:
-		HALMAC_REG_W32(REG_MACID, mac_addr_l);
-		HALMAC_REG_W16(REG_MACID + 4, mac_addr_h);
+		offset = REG_MACID;
 		break;
 	case HALMAC_PORTID1:
-		HALMAC_REG_W32(REG_MACID1, mac_addr_l);
-		HALMAC_REG_W16(REG_MACID1 + 4, mac_addr_h);
+		offset = REG_MACID1;
 		break;
 	case HALMAC_PORTID2:
-		HALMAC_REG_W32(REG_MACID2, mac_addr_l);
-		HALMAC_REG_W16(REG_MACID2 + 4, mac_addr_h);
+		offset = REG_MACID2;
 		break;
 	case HALMAC_PORTID3:
-		HALMAC_REG_W32(REG_MACID3, mac_addr_l);
-		HALMAC_REG_W16(REG_MACID3 + 4, mac_addr_h);
+		offset = REG_MACID3;
 		break;
 	case HALMAC_PORTID4:
-		HALMAC_REG_W32(REG_MACID4, mac_addr_l);
-		HALMAC_REG_W16(REG_MACID4 + 4, mac_addr_h);
+		offset = REG_MACID4;
 		break;
 	default:
-		break;
+		return HALMAC_RET_PORT_NOT_SUPPORT;
 	}
+
+	HALMAC_REG_W32(offset, rtk_le32_to_cpu(addr->addr_l_h.low));
+	HALMAC_REG_W16(offset + 4, rtk_le16_to_cpu(addr->addr_l_h.high));
 
 	PLTFM_MSG_TRACE("[TRACE]%s <===\n", __func__);
 
@@ -99,8 +95,7 @@ enum halmac_ret_status
 cfg_bssid_88xx(struct halmac_adapter *adapter, u8 port,
 	       union halmac_wlan_addr *addr)
 {
-	u16 bssid_addr_h;
-	u32 bssid_addr_l;
+	u32 offset;
 	struct halmac_api *api = (struct halmac_api *)adapter->halmac_api;
 
 	PLTFM_MSG_TRACE("[TRACE]%s ===>\n", __func__);
@@ -110,36 +105,28 @@ cfg_bssid_88xx(struct halmac_adapter *adapter, u8 port,
 		return HALMAC_RET_PORT_NOT_SUPPORT;
 	}
 
-	bssid_addr_l = addr->addr_l_h.low;
-	bssid_addr_h = addr->addr_l_h.high;
-
-	bssid_addr_l = rtk_le32_to_cpu(bssid_addr_l);
-	bssid_addr_h = rtk_le16_to_cpu(bssid_addr_h);
-
 	switch (port) {
 	case HALMAC_PORTID0:
-		HALMAC_REG_W32(REG_BSSID, bssid_addr_l);
-		HALMAC_REG_W16(REG_BSSID + 4, bssid_addr_h);
+		offset = REG_BSSID;
 		break;
 	case HALMAC_PORTID1:
-		HALMAC_REG_W32(REG_BSSID1, bssid_addr_l);
-		HALMAC_REG_W16(REG_BSSID1 + 4, bssid_addr_h);
+		offset = REG_BSSID1;
 		break;
 	case HALMAC_PORTID2:
-		HALMAC_REG_W32(REG_BSSID2, bssid_addr_l);
-		HALMAC_REG_W16(REG_BSSID2 + 4, bssid_addr_h);
+		offset = REG_BSSID2;
 		break;
 	case HALMAC_PORTID3:
-		HALMAC_REG_W32(REG_BSSID3, bssid_addr_l);
-		HALMAC_REG_W16(REG_BSSID3 + 4, bssid_addr_h);
+		offset = REG_BSSID3;
 		break;
 	case HALMAC_PORTID4:
-		HALMAC_REG_W32(REG_BSSID4, bssid_addr_l);
-		HALMAC_REG_W16(REG_BSSID4 + 4, bssid_addr_h);
+		offset = REG_BSSID4;
 		break;
 	default:
-		break;
+		return HALMAC_RET_PORT_NOT_SUPPORT;
 	}
+
+	HALMAC_REG_W32(offset, rtk_le32_to_cpu(addr->addr_l_h.low));
+	HALMAC_REG_W16(offset + 4, rtk_le16_to_cpu(addr->addr_l_h.high));
 
 	PLTFM_MSG_TRACE("[TRACE]%s <===\n", __func__);
 
@@ -158,8 +145,7 @@ enum halmac_ret_status
 cfg_transmitter_addr_88xx(struct halmac_adapter *adapter, u8 port,
 			  union halmac_wlan_addr *addr)
 {
-	u16 mac_addr_h;
-	u32 mac_addr_l;
+	u32 offset;
 	struct halmac_api *api = (struct halmac_api *)adapter->halmac_api;
 
 	PLTFM_MSG_TRACE("[TRACE]%s ===>\n", __func__);
@@ -169,36 +155,28 @@ cfg_transmitter_addr_88xx(struct halmac_adapter *adapter, u8 port,
 		return HALMAC_RET_PORT_NOT_SUPPORT;
 	}
 
-	mac_addr_l = addr->addr_l_h.low;
-	mac_addr_h = addr->addr_l_h.high;
-
-	mac_addr_l = rtk_le32_to_cpu(mac_addr_l);
-	mac_addr_h = rtk_le16_to_cpu(mac_addr_h);
-
 	switch (port) {
 	case HALMAC_PORTID0:
-		HALMAC_REG_W32(REG_TRANSMIT_ADDRSS_0, mac_addr_l);
-		HALMAC_REG_W16(REG_TRANSMIT_ADDRSS_0 + 4, mac_addr_h);
+		offset = REG_TRANSMIT_ADDRSS_0;
 		break;
 	case HALMAC_PORTID1:
-		HALMAC_REG_W32(REG_TRANSMIT_ADDRSS_1, mac_addr_l);
-		HALMAC_REG_W16(REG_TRANSMIT_ADDRSS_1 + 4, mac_addr_h);
+		offset = REG_TRANSMIT_ADDRSS_1;
 		break;
 	case HALMAC_PORTID2:
-		HALMAC_REG_W32(REG_TRANSMIT_ADDRSS_2, mac_addr_l);
-		HALMAC_REG_W16(REG_TRANSMIT_ADDRSS_2 + 4, mac_addr_h);
+		offset = REG_TRANSMIT_ADDRSS_2;
 		break;
 	case HALMAC_PORTID3:
-		HALMAC_REG_W32(REG_TRANSMIT_ADDRSS_3, mac_addr_l);
-		HALMAC_REG_W16(REG_TRANSMIT_ADDRSS_3 + 4, mac_addr_h);
+		offset = REG_TRANSMIT_ADDRSS_3;
 		break;
 	case HALMAC_PORTID4:
-		HALMAC_REG_W32(REG_TRANSMIT_ADDRSS_4, mac_addr_l);
-		HALMAC_REG_W16(REG_TRANSMIT_ADDRSS_4 + 4, mac_addr_h);
+		offset = REG_TRANSMIT_ADDRSS_4;
 		break;
 	default:
-		break;
+		return HALMAC_RET_PORT_NOT_SUPPORT;
 	}
+
+	HALMAC_REG_W32(offset, rtk_le32_to_cpu(addr->addr_l_h.low));
+	HALMAC_REG_W16(offset + 4, rtk_le16_to_cpu(addr->addr_l_h.high));
 
 	PLTFM_MSG_TRACE("[TRACE]%s <===\n", __func__);
 
@@ -380,48 +358,43 @@ rw_bcn_ctrl_88xx(struct halmac_adapter *adapter, u8 port, u8 write_en,
 	PLTFM_MSG_TRACE("[TRACE]%s ===>\n", __func__);
 
 	if (write_en) {
-		if (ctrl->dis_rx_bssid_fit == _TRUE)
+		if (ctrl->dis_rx_bssid_fit == 1)
 			ctrl_value |= BIT_DIS_RX_BSSID_FIT;
 
-		if (ctrl->en_txbcn_rpt == _TRUE)
+		if (ctrl->en_txbcn_rpt == 1)
 			ctrl_value |= BIT_P0_EN_TXBCN_RPT;
 
-		if (ctrl->dis_tsf_udt == _TRUE)
+		if (ctrl->dis_tsf_udt == 1)
 			ctrl_value |= BIT_DIS_TSF_UDT;
 
-		if (ctrl->en_bcn == _TRUE)
+		if (ctrl->en_bcn == 1)
 			ctrl_value |= BIT_EN_BCN_FUNCTION;
 
-		if (ctrl->en_rxbcn_rpt == _TRUE)
+		if (ctrl->en_rxbcn_rpt == 1)
 			ctrl_value |= BIT_P0_EN_RXBCN_RPT;
 
-		if (ctrl->en_p2p_ctwin == _TRUE)
+		if (ctrl->en_p2p_ctwin == 1)
 			ctrl_value |= BIT_EN_P2P_CTWINDOW;
 
-		if (ctrl->en_p2p_bcn_area == _TRUE)
+		if (ctrl->en_p2p_bcn_area == 1)
 			ctrl_value |= BIT_EN_P2P_BCNQ_AREA;
 
 		switch (port) {
 		case HALMAC_PORTID0:
 			HALMAC_REG_W8(REG_BCN_CTRL, ctrl_value);
 			break;
-
 		case HALMAC_PORTID1:
 			HALMAC_REG_W8(REG_BCN_CTRL_CLINT0, ctrl_value);
 			break;
-
 		case HALMAC_PORTID2:
 			HALMAC_REG_W8(REG_BCN_CTRL_CLINT1, ctrl_value);
 			break;
-
 		case HALMAC_PORTID3:
 			HALMAC_REG_W8(REG_BCN_CTRL_CLINT2, ctrl_value);
 			break;
-
 		case HALMAC_PORTID4:
 			HALMAC_REG_W8(REG_BCN_CTRL_CLINT3, ctrl_value);
 			break;
-
 		default:
 			break;
 		}
@@ -431,61 +404,56 @@ rw_bcn_ctrl_88xx(struct halmac_adapter *adapter, u8 port, u8 write_en,
 		case HALMAC_PORTID0:
 			ctrl_value = HALMAC_REG_R8(REG_BCN_CTRL);
 			break;
-
 		case HALMAC_PORTID1:
 			ctrl_value = HALMAC_REG_R8(REG_BCN_CTRL_CLINT0);
 			break;
-
 		case HALMAC_PORTID2:
 			ctrl_value = HALMAC_REG_R8(REG_BCN_CTRL_CLINT1);
 			break;
-
 		case HALMAC_PORTID3:
 			ctrl_value = HALMAC_REG_R8(REG_BCN_CTRL_CLINT2);
 			break;
-
 		case HALMAC_PORTID4:
 			ctrl_value = HALMAC_REG_R8(REG_BCN_CTRL_CLINT3);
 			break;
-
 		default:
 			break;
 		}
 
 		if (ctrl_value & BIT_EN_P2P_BCNQ_AREA)
-			ctrl->en_p2p_bcn_area = _TRUE;
+			ctrl->en_p2p_bcn_area = 1;
 		else
-			ctrl->en_p2p_bcn_area = _FALSE;
+			ctrl->en_p2p_bcn_area = 0;
 
 		if (ctrl_value & BIT_EN_P2P_CTWINDOW)
-			ctrl->en_p2p_ctwin = _TRUE;
+			ctrl->en_p2p_ctwin = 1;
 		else
-			ctrl->en_p2p_ctwin = _FALSE;
+			ctrl->en_p2p_ctwin = 0;
 
 		if (ctrl_value & BIT_P0_EN_RXBCN_RPT)
-			ctrl->en_rxbcn_rpt = _TRUE;
+			ctrl->en_rxbcn_rpt = 1;
 		else
-			ctrl->en_rxbcn_rpt = _FALSE;
+			ctrl->en_rxbcn_rpt = 0;
 
 		if (ctrl_value & BIT_EN_BCN_FUNCTION)
-			ctrl->en_bcn = _TRUE;
+			ctrl->en_bcn = 1;
 		else
-			ctrl->en_bcn = _FALSE;
+			ctrl->en_bcn = 0;
 
 		if (ctrl_value & BIT_DIS_TSF_UDT)
-			ctrl->dis_tsf_udt = _TRUE;
+			ctrl->dis_tsf_udt = 1;
 		else
-			ctrl->dis_tsf_udt = _FALSE;
+			ctrl->dis_tsf_udt = 0;
 
 		if (ctrl_value & BIT_P0_EN_TXBCN_RPT)
-			ctrl->en_txbcn_rpt = _TRUE;
+			ctrl->en_txbcn_rpt = 1;
 		else
-			ctrl->en_txbcn_rpt = _FALSE;
+			ctrl->en_txbcn_rpt = 0;
 
 		if (ctrl_value & BIT_DIS_RX_BSSID_FIT)
-			ctrl->dis_rx_bssid_fit = _TRUE;
+			ctrl->dis_rx_bssid_fit = 1;
 		else
-			ctrl->dis_rx_bssid_fit = _FALSE;
+			ctrl->dis_rx_bssid_fit = 0;
 	}
 
 	PLTFM_MSG_TRACE("[TRACE]%s <===\n", __func__);
@@ -505,20 +473,12 @@ enum halmac_ret_status
 cfg_multicast_addr_88xx(struct halmac_adapter *adapter,
 			union halmac_wlan_addr *addr)
 {
-	u16 addr_h;
-	u32 addr_l;
 	struct halmac_api *api = (struct halmac_api *)adapter->halmac_api;
 
 	PLTFM_MSG_TRACE("[TRACE]%s ===>\n", __func__);
 
-	addr_l = addr->addr_l_h.low;
-	addr_h = addr->addr_l_h.high;
-
-	addr_l = rtk_le32_to_cpu(addr_l);
-	addr_h = rtk_le16_to_cpu(addr_h);
-
-	HALMAC_REG_W32(REG_MAR, addr_l);
-	HALMAC_REG_W16(REG_MAR + 4, addr_h);
+	HALMAC_REG_W32(REG_MAR, rtk_le32_to_cpu(addr->addr_l_h.low));
+	HALMAC_REG_W16(REG_MAR + 4, rtk_le16_to_cpu(addr->addr_l_h.high));
 
 	PLTFM_MSG_TRACE("[TRACE]%s <===\n", __func__);
 
@@ -628,10 +588,10 @@ cfg_bw_88xx(struct halmac_adapter *adapter, enum halmac_bw bw)
 
 	switch (bw) {
 	case HALMAC_BW_80:
-		value32 = value32 | BIT(7);
+		value32 |= BIT(8);
 		break;
 	case HALMAC_BW_40:
-		value32 = value32 | BIT(8);
+		value32 |= BIT(7);
 		break;
 	case HALMAC_BW_20:
 	case HALMAC_BW_10:
@@ -643,13 +603,7 @@ cfg_bw_88xx(struct halmac_adapter *adapter, enum halmac_bw bw)
 
 	HALMAC_REG_W32(REG_WMAC_TRXPTCL_CTL, value32);
 
-	/* TODO:Move to change mac clk api later... */
-	value32 = HALMAC_REG_R32(REG_AFE_CTRL1) & ~(BIT(20) | BIT(21));
-	value32 |= (MAC_CLK_HW_DEF_80M << BIT_SHIFT_MAC_CLK_SEL);
-	HALMAC_REG_W32(REG_AFE_CTRL1, value32);
-
-	HALMAC_REG_W8(REG_USTIME_TSF, MAC_CLK_SPEED);
-	HALMAC_REG_W8(REG_USTIME_EDCA, MAC_CLK_SPEED);
+	cfg_mac_clk_88xx(adapter);
 
 	PLTFM_MSG_TRACE("[TRACE]%s <===\n", __func__);
 
@@ -657,13 +611,38 @@ cfg_bw_88xx(struct halmac_adapter *adapter, enum halmac_bw bw)
 }
 
 void
-enable_bb_rf_88xx(struct halmac_adapter *adapter, u8 enable)
+cfg_txfifo_lt_88xx(struct halmac_adapter *adapter,
+		   struct halmac_txfifo_lifetime_cfg *cfg)
 {
 	u8 value8;
 	u32 value32;
 	struct halmac_api *api = (struct halmac_api *)adapter->halmac_api;
 
+	if (cfg->enable == 1) {
+		value8 = HALMAC_REG_R8(REG_LIFETIME_EN);
+		value8 = value8 | BIT(0) | BIT(1) | BIT(2) | BIT(3);
+		HALMAC_REG_W8(REG_LIFETIME_EN, value8);
+
+		value32 = (cfg->lifetime) >> 8;
+		value32 = value32 + (value32 << 16);
+		HALMAC_REG_W32(REG_PKT_LIFE_TIME, value32);
+	} else {
+		value8 = HALMAC_REG_R8(REG_LIFETIME_EN);
+		value8 = value8 & (~(BIT(0) | BIT(1) | BIT(2) | BIT(3)));
+		HALMAC_REG_W8(REG_LIFETIME_EN, value8);
+	}
+}
+
+enum halmac_ret_status
+enable_bb_rf_88xx(struct halmac_adapter *adapter, u8 enable)
+{
+	u8 value8;
+	u32 value32;
+	struct halmac_api *api = (struct halmac_api *)adapter->halmac_api;
+	enum halmac_ret_status status = HALMAC_RET_SUCCESS;
+
 	if (enable == 1) {
+		status = board_rf_fine_tune_88xx(adapter);
 		value8 = HALMAC_REG_R8(REG_SYS_FUNC_EN);
 		value8 = value8 | BIT(0) | BIT(1);
 		HALMAC_REG_W8(REG_SYS_FUNC_EN, value8);
@@ -688,6 +667,59 @@ enable_bb_rf_88xx(struct halmac_adapter *adapter, u8 enable)
 		value32 = value32 & (~(BIT(24) | BIT(25) | BIT(26)));
 		HALMAC_REG_W32(REG_WLRF1, value32);
 	}
+
+	return status;
+}
+
+static enum halmac_ret_status
+board_rf_fine_tune_88xx(struct halmac_adapter *adapter)
+{
+	u8 *map = NULL;
+	u32 size = adapter->hw_cfg_info.eeprom_size;
+	struct halmac_api *api = (struct halmac_api *)adapter->halmac_api;
+
+	if (adapter->chip_id == HALMAC_CHIP_ID_8822B) {
+		if (!adapter->efuse_map_valid || !adapter->efuse_map) {
+			PLTFM_MSG_ERR("[ERR]efuse map invalid!!\n");
+			return HALMAC_RET_EFUSE_R_FAIL;
+		}
+
+		map = (u8 *)PLTFM_MALLOC(size);
+		if (!map) {
+			PLTFM_MSG_ERR("[ERR]malloc map\n");
+			return HALMAC_RET_MALLOC_FAIL;
+		}
+
+		PLTFM_MEMSET(map, 0xFF, size);
+
+		if (eeprom_parser_88xx(adapter, adapter->efuse_map, map) !=
+		    HALMAC_RET_SUCCESS) {
+			PLTFM_FREE(map, size);
+			return HALMAC_RET_EEPROM_PARSING_FAIL;
+		}
+
+		/* Fine-tune XTAL voltage for 2L PCB board */
+		if (*(map + EFUSE_PCB_INFO_OFFSET) == 0x0C)
+			HALMAC_REG_W8_SET(REG_AFE_CTRL1 + 1, BIT(1));
+
+		PLTFM_FREE(map, size);
+	}
+
+	return HALMAC_RET_SUCCESS;
+}
+
+void
+cfg_mac_clk_88xx(struct halmac_adapter *adapter)
+{
+	u32 value32;
+	struct halmac_api *api = (struct halmac_api *)adapter->halmac_api;
+
+	value32 = HALMAC_REG_R32(REG_AFE_CTRL1) & ~(BIT(20) | BIT(21));
+	value32 |= (MAC_CLK_HW_DEF_80M << BIT_SHIFT_MAC_CLK_SEL);
+	HALMAC_REG_W32(REG_AFE_CTRL1, value32);
+
+	HALMAC_REG_W8(REG_USTIME_TSF, MAC_CLK_SPEED);
+	HALMAC_REG_W8(REG_USTIME_EDCA, MAC_CLK_SPEED);
 }
 
 /**
@@ -753,11 +785,10 @@ config_security_88xx(struct halmac_adapter *adapter,
 
 	PLTFM_MSG_TRACE("[TRACE]%s ===>\n", __func__);
 
-	HALMAC_REG_W16(REG_CR, (u16)(HALMAC_REG_R16(REG_CR) | BIT_MAC_SEC_EN));
+	HALMAC_REG_W16_SET(REG_CR, BIT_MAC_SEC_EN);
 
 	if (setting->compare_keyid == 1) {
-		sec_cfg = HALMAC_REG_R8(REG_SECCFG + 1) | BIT(0);
-		HALMAC_REG_W8(REG_SECCFG + 1, sec_cfg);
+		HALMAC_REG_W8_SET(REG_SECCFG + 1, BIT(0));
 		adapter->hw_cfg_info.chk_security_keyid = 1;
 	} else {
 		adapter->hw_cfg_info.chk_security_keyid = 0;
@@ -784,7 +815,7 @@ config_security_88xx(struct halmac_adapter *adapter,
 	if (setting->bip_enable == 1) {
 		if (adapter->chip_id == HALMAC_CHIP_ID_8822B)
 			return HALMAC_RET_BIP_NO_SUPPORT;
-#if HALMAC_8821C_SUPPORT
+#if (HALMAC_8821C_SUPPORT || HALMAC_8822C_SUPPORT || HALMAC_8812F_SUPPORT)
 		sec_cfg = HALMAC_REG_R8(REG_WSEC_OPTION + 2);
 
 		if (setting->tx_encryption == 1)
@@ -1054,7 +1085,7 @@ rx_clk_gate_88xx(struct halmac_adapter *adapter, u8 enable)
 
 	value8 = HALMAC_REG_R8(REG_RCR + 2);
 
-	if (enable == _TRUE)
+	if (enable == 1)
 		HALMAC_REG_W8(REG_RCR + 2, value8 & ~(BIT(3)));
 	else
 		HALMAC_REG_W8(REG_RCR + 2, value8 | BIT(3));
@@ -1154,15 +1185,26 @@ get_mac_addr_88xx(struct halmac_adapter *adapter, u8 port,
 		return HALMAC_RET_PORT_NOT_SUPPORT;
 	}
 
-	mac_addr_l = rtk_le32_to_cpu(mac_addr_l);
-	mac_addr_h = rtk_le16_to_cpu(mac_addr_h);
-
-	addr->addr_l_h.low = mac_addr_l;
-	addr->addr_l_h.high = mac_addr_h;
+	addr->addr_l_h.low = rtk_cpu_to_le32(mac_addr_l);
+	addr->addr_l_h.high = rtk_cpu_to_le16(mac_addr_h);
 
 	PLTFM_MSG_TRACE("[TRACE]%s <===\n", __func__);
 
 	return HALMAC_RET_SUCCESS;
+}
+
+void
+rts_full_bw_88xx(struct halmac_adapter *adapter, u8 enable)
+{
+	u8 value8;
+	struct halmac_api *api = (struct halmac_api *)adapter->halmac_api;
+
+	value8 = HALMAC_REG_R8(REG_INIRTS_RATE_SEL);
+
+	if (enable == 1)
+		HALMAC_REG_W8(REG_INIRTS_RATE_SEL, value8 | BIT(5));
+	else
+		HALMAC_REG_W8(REG_INIRTS_RATE_SEL, value8 & ~(BIT(5)));
 }
 
 #endif /* HALMAC_88XX_SUPPORT */

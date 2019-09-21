@@ -38,7 +38,11 @@
  *	already queued up, waiting for the discovery process to start.
  * @RTW_MESH_PATH_DELETED: the mesh path has been deleted and should no longer
  *	be used
- *
+ * @RTW_MESH_PATH_ROOT_ADD_CHK: root additional check in root mode.
+ *	With this flag, It will try the last used rann_snd_addr
+ * @RTW_MESH_PATH_PEER_AKA: only used toward a peer, only used in active keep
+ *	alive mechanism. PREQ's da = path dst
+ * 
  * RTW_MESH_PATH_RESOLVED is used by the mesh path timer to
  * decide when to stop or cancel the mesh path discovery.
  */
@@ -50,6 +54,8 @@ enum rtw_mesh_path_flags {
 	RTW_MESH_PATH_RESOLVED =	BIT(4),
 	RTW_MESH_PATH_REQ_QUEUED =	BIT(5),
 	RTW_MESH_PATH_DELETED =	BIT(6),
+	RTW_MESH_PATH_ROOT_ADD_CHK =	BIT(7),
+	RTW_MESH_PATH_PEER_AKA =	BIT(8),
 };
 
 /**
@@ -111,6 +117,9 @@ struct rtw_mesh_path {
 	enum rtw_mesh_path_flags flags;
 	_lock state_lock;
 	u8 rann_snd_addr[ETH_ALEN];
+#ifdef CONFIG_RTW_MESH_ADD_ROOT_CHK
+	u8 add_chk_rann_snd_addr[ETH_ALEN];
+#endif
 	u32 rann_metric;
 	unsigned long last_preq_to_root;
 	bool is_root;
@@ -153,6 +162,8 @@ struct rtw_mesh_path *rtw_mpp_path_lookup(_adapter *adapter,
 				  const u8 *dst);
 int rtw_mpp_path_add(_adapter *adapter,
 		 const u8 *dst, const u8 *mpp);
+void dump_mpp(void *sel, _adapter *adapter);
+
 struct rtw_mesh_path *
 rtw_mesh_path_lookup_by_idx(_adapter *adapter, int idx);
 struct rtw_mesh_path *
@@ -168,6 +179,8 @@ void rtw_mesh_gate_del(struct rtw_mesh_table *tbl, struct rtw_mesh_path *mpath);
 bool rtw_mesh_gate_search(struct rtw_mesh_table *tbl, const u8 *addr);
 int rtw_mesh_path_send_to_gates(struct rtw_mesh_path *mpath);
 int rtw_mesh_gate_num(_adapter *adapter);
+bool rtw_mesh_is_primary_gate(_adapter *adapter);
+void dump_known_gates(void *sel, _adapter *adapter);
 
 void rtw_mesh_plink_broken(struct sta_info *sta);
 

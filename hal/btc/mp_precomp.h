@@ -22,6 +22,7 @@
 
 #ifdef PLATFORM_LINUX
 #define rsprintf snprintf
+#define rstrncat(dst, src, src_size) strncat(dst, src, src_size)
 #elif defined(PLATFORM_WINDOWS)
 #define rsprintf sprintf_s
 #endif
@@ -59,12 +60,14 @@ extern u4Byte GLBtcDbgType[];
 #define HS_SUPPORT		0
 #endif
 
-#include "halbtcoutsrc.h"
-
 /* for wifi only mode */
 #include "hal_btcoex_wifionly.h"
 
 #ifdef CONFIG_BT_COEXIST
+#define BTC_BTINFO_LENGTH_MAX 10
+
+struct wifi_only_cfg;
+struct btc_coexist;
 
 #ifdef CONFIG_RTL8192E
 #include "halbtc8192e1ant.h"
@@ -107,6 +110,8 @@ extern u4Byte GLBtcDbgType[];
 #include "halbtc8821c1ant.h"
 #include "halbtc8821c2ant.h"
 #endif
+
+#include "halbtcoutsrc.h"
 
 #else /* CONFIG_BT_COEXIST */
 

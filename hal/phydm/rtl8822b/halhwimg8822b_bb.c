@@ -23,24 +23,29 @@
  *
  *****************************************************************************/
 
-/*Image2HeaderVersion: R3 1.0*/
+/*Image2HeaderVersion: R3 1.4.5*/
 #include "mp_precomp.h"
 #include "../phydm_precomp.h"
 
+#define D_S_SIZE DELTA_SWINGIDX_SIZE
+
 #if (RTL8822B_SUPPORT == 1)
 static boolean
-check_positive(
-	struct dm_struct *dm,
-	const u32	condition1,
-	const u32	condition2,
-	const u32	condition3,
-	const u32	condition4
+check_positive(struct dm_struct *dm,
+	       const u32	condition1,
+	       const u32	condition2,
+	       const u32	condition3,
+	       const u32	condition4
 )
 {
-	u32	cond1 = condition1, cond2 = condition2, cond3 = condition3, cond4 = condition4;
+	u32	cond1 = condition1, cond2 = condition2,
+		cond3 = condition3, cond4 = condition4;
 
-	u8	cut_version_for_para = (dm->cut_version ==  ODM_CUT_A) ? 15 : dm->cut_version;
-	u8	pkg_type_for_para = (dm->package_type == 0) ? 15 : dm->package_type;
+	u8	cut_version_for_para =
+		(dm->cut_version ==  ODM_CUT_A) ? 15 : dm->cut_version;
+
+	u8	pkg_type_for_para =
+		(dm->package_type == 0) ? 15 : dm->package_type;
 
 	u32	driver1 = cut_version_for_para << 24 |
 			(dm->support_interface & 0xF0) << 16 |
@@ -62,27 +67,32 @@ check_positive(
 			(dm->type_apa & 0xFF00)  << 16;
 
 	PHYDM_DBG(dm, ODM_COMP_INIT,
-	"===> check_positive (cond1, cond2, cond3, cond4) = (0x%X 0x%X 0x%X 0x%X)\n", cond1, cond2, cond3, cond4);
+		  "===> %s (cond1, cond2, cond3, cond4) = (0x%X 0x%X 0x%X 0x%X)\n",
+		  __func__, cond1, cond2, cond3, cond4);
 	PHYDM_DBG(dm, ODM_COMP_INIT,
-	"===> check_positive (driver1, driver2, driver3, driver4) = (0x%X 0x%X 0x%X 0x%X)\n", driver1, driver2, driver3, driver4);
+		  "===> %s (driver1, driver2, driver3, driver4) = (0x%X 0x%X 0x%X 0x%X)\n",
+		  __func__, driver1, driver2, driver3, driver4);
 
 	PHYDM_DBG(dm, ODM_COMP_INIT,
-	"	(Platform, Interface) = (0x%X, 0x%X)\n", dm->support_platform, dm->support_interface);
-	PHYDM_DBG(dm, ODM_COMP_INIT,
-	"	(RFE, Package) = (0x%X, 0x%X)\n", dm->rfe_type, dm->package_type);
-
+		  "	(Platform, Interface) = (0x%X, 0x%X)\n",
+		  dm->support_platform, dm->support_interface);
+	PHYDM_DBG(dm, ODM_COMP_INIT, "	(RFE, Package) = (0x%X, 0x%X)\n",
+		  dm->rfe_type, dm->package_type);
 
 	/*============== value Defined Check ===============*/
 	/*cut version [27:24] need to do value check*/
-	if (((cond1 & 0x0F000000) != 0) && ((cond1 & 0x0F000000) != (driver1 & 0x0F000000)))
+	if (((cond1 & 0x0F000000) != 0) &&
+	    ((cond1 & 0x0F000000) != (driver1 & 0x0F000000)))
 		return false;
 
 	/*pkg type [15:12] need to do value check*/
-	if (((cond1 & 0x0000F000) != 0) && ((cond1 & 0x0000F000) != (driver1 & 0x0000F000)))
+	if (((cond1 & 0x0000F000) != 0) &&
+	    ((cond1 & 0x0000F000) != (driver1 & 0x0000F000)))
 		return false;
 
 	/*interface [11:8] need to do value check*/
-	if (((cond1 & 0x00000F00) != 0) && ((cond1 & 0x00000F00) != (driver1 & 0x00000F00)))
+	if (((cond1 & 0x00000F00) != 0) &&
+	    ((cond1 & 0x00000F00) != (driver1 & 0x00000F00)))
 		return false;
 	/*=============== Bit Defined Check ================*/
 	/* We don't care [31:28] */
@@ -95,21 +105,21 @@ check_positive(
 	else
 		return false;
 }
+
 static boolean
-check_negative(
-	struct dm_struct *dm,
-	const u32	condition1,
-	const u32	condition2
+check_negative(struct dm_struct *dm,
+	       const u32	condition1,
+	       const u32	condition2
 )
 {
 	return true;
 }
 
 /******************************************************************************
-*                           agc_tab.TXT
-******************************************************************************/
+ *                           agc_tab.TXT
+ ******************************************************************************/
 
-u32 array_mp_8822b_agc_tab[] = {
+const u32 array_mp_8822b_agc_tab[] = {
 	0x80000000,	0x00000000,	0x40000000,	0x00000000,
 		0x81C, 0xFF000003,
 		0x81C, 0xFE000003,
@@ -1232,6 +1242,72 @@ u32 array_mp_8822b_agc_tab[] = {
 		0x81C, 0x007A0003,
 		0x81C, 0x007C0003,
 		0x81C, 0x007E0003,
+	0x90000012,	0x00000000,	0x40000000,	0x00000000,
+		0x81C, 0xFF000003,
+		0x81C, 0xDC000003,
+		0x81C, 0xDB020003,
+		0x81C, 0xDA040003,
+		0x81C, 0xD9060003,
+		0x81C, 0xD8080003,
+		0x81C, 0xD70A0003,
+		0x81C, 0xD60C0003,
+		0x81C, 0xD50E0003,
+		0x81C, 0xD4100003,
+		0x81C, 0xD3120003,
+		0x81C, 0xD2140003,
+		0x81C, 0xD1160003,
+		0x81C, 0xD0180003,
+		0x81C, 0xB41A0003,
+		0x81C, 0xB31C0003,
+		0x81C, 0xB21E0003,
+		0x81C, 0xB1200003,
+		0x81C, 0xB0220003,
+		0x81C, 0xAF240003,
+		0x81C, 0xAE260003,
+		0x81C, 0xAD280003,
+		0x81C, 0xAC2A0003,
+		0x81C, 0xAB2C0003,
+		0x81C, 0x8C2E0003,
+		0x81C, 0x8B300003,
+		0x81C, 0x8A320003,
+		0x81C, 0x89340003,
+		0x81C, 0x88360003,
+		0x81C, 0x87380003,
+		0x81C, 0x863A0003,
+		0x81C, 0x853C0003,
+		0x81C, 0x693E0003,
+		0x81C, 0x68400003,
+		0x81C, 0x67420003,
+		0x81C, 0x66440003,
+		0x81C, 0x65460003,
+		0x81C, 0x48480003,
+		0x81C, 0x474A0003,
+		0x81C, 0x464C0003,
+		0x81C, 0x454E0003,
+		0x81C, 0x44500003,
+		0x81C, 0x43520003,
+		0x81C, 0x27540003,
+		0x81C, 0x26560003,
+		0x81C, 0x25580003,
+		0x81C, 0x245A0003,
+		0x81C, 0x235C0003,
+		0x81C, 0x045E0003,
+		0x81C, 0x03600003,
+		0x81C, 0x02620003,
+		0x81C, 0x01640003,
+		0x81C, 0x00660003,
+		0x81C, 0x00680003,
+		0x81C, 0x006A0003,
+		0x81C, 0x006C0003,
+		0x81C, 0x006E0003,
+		0x81C, 0x00700003,
+		0x81C, 0x00720003,
+		0x81C, 0x00740003,
+		0x81C, 0x00760003,
+		0x81C, 0x00780003,
+		0x81C, 0x007A0003,
+		0x81C, 0x007C0003,
+		0x81C, 0x007E0003,
 	0xA0000000,	0x00000000,
 		0x81C, 0xFF000003,
 		0x81C, 0xFE000003,
@@ -2145,33 +2221,33 @@ u32 array_mp_8822b_agc_tab[] = {
 		0x81C, 0x007C0103,
 		0x81C, 0x007E0103,
 	0x9000000d,	0x00000000,	0x40000000,	0x00000000,
-		0x81C, 0xFD000103,
-		0x81C, 0xFC020103,
-		0x81C, 0xFB040103,
-		0x81C, 0xFA060103,
-		0x81C, 0xF9080103,
-		0x81C, 0xF80A0103,
-		0x81C, 0xF70C0103,
-		0x81C, 0xF60E0103,
-		0x81C, 0xF5100103,
-		0x81C, 0xF4120103,
-		0x81C, 0xF3140103,
-		0x81C, 0xF2160103,
-		0x81C, 0xF1180103,
-		0x81C, 0xF01A0103,
-		0x81C, 0xEE1C0103,
-		0x81C, 0xED1E0103,
-		0x81C, 0xEC200103,
-		0x81C, 0xEB220103,
-		0x81C, 0xEA240103,
-		0x81C, 0xE9260103,
-		0x81C, 0xE8280103,
-		0x81C, 0xE72A0103,
-		0x81C, 0xE62C0103,
-		0x81C, 0xE52E0103,
-		0x81C, 0xE4300103,
-		0x81C, 0xE3320103,
-		0x81C, 0xE2340103,
+		0x81C, 0xFC000103,
+		0x81C, 0xFB020103,
+		0x81C, 0xFA040103,
+		0x81C, 0xF9060103,
+		0x81C, 0xF8080103,
+		0x81C, 0xF70A0103,
+		0x81C, 0xF60C0103,
+		0x81C, 0xF50E0103,
+		0x81C, 0xF4100103,
+		0x81C, 0xF3120103,
+		0x81C, 0xF2140103,
+		0x81C, 0xF1160103,
+		0x81C, 0xF0180103,
+		0x81C, 0xEE1A0103,
+		0x81C, 0xED1C0103,
+		0x81C, 0xEC1E0103,
+		0x81C, 0xEB200103,
+		0x81C, 0xEA220103,
+		0x81C, 0xE9240103,
+		0x81C, 0xE8260103,
+		0x81C, 0xE7280103,
+		0x81C, 0xE62A0103,
+		0x81C, 0xE52C0103,
+		0x81C, 0xE42E0103,
+		0x81C, 0xE3300103,
+		0x81C, 0xE2320103,
+		0x81C, 0xE1340103,
 		0x81C, 0xC5360103,
 		0x81C, 0xC4380103,
 		0x81C, 0xC33A0103,
@@ -2393,6 +2469,71 @@ u32 array_mp_8822b_agc_tab[] = {
 		0x81C, 0x03640103,
 		0x81C, 0x02660103,
 		0x81C, 0x01680103,
+		0x81C, 0x006A0103,
+		0x81C, 0x006C0103,
+		0x81C, 0x006E0103,
+		0x81C, 0x00700103,
+		0x81C, 0x00720103,
+		0x81C, 0x00740103,
+		0x81C, 0x00760103,
+		0x81C, 0x00780103,
+		0x81C, 0x007A0103,
+		0x81C, 0x007C0103,
+		0x81C, 0x007E0103,
+	0x90000012,	0x00000000,	0x40000000,	0x00000000,
+		0x81C, 0xF8000103,
+		0x81C, 0xF7020103,
+		0x81C, 0xF6040103,
+		0x81C, 0xF5060103,
+		0x81C, 0xF4080103,
+		0x81C, 0xF30A0103,
+		0x81C, 0xF20C0103,
+		0x81C, 0xF10E0103,
+		0x81C, 0xF0100103,
+		0x81C, 0xEF120103,
+		0x81C, 0xEE140103,
+		0x81C, 0xED160103,
+		0x81C, 0xEC180103,
+		0x81C, 0xEB1A0103,
+		0x81C, 0xEA1C0103,
+		0x81C, 0xE91E0103,
+		0x81C, 0xE8200103,
+		0x81C, 0xE7220103,
+		0x81C, 0xE6240103,
+		0x81C, 0xE5260103,
+		0x81C, 0xE4280103,
+		0x81C, 0xE32A0103,
+		0x81C, 0xC32C0103,
+		0x81C, 0xC22E0103,
+		0x81C, 0xC1300103,
+		0x81C, 0xC0320103,
+		0x81C, 0xA3340103,
+		0x81C, 0xA2360103,
+		0x81C, 0xA1380103,
+		0x81C, 0xA03A0103,
+		0x81C, 0x823C0103,
+		0x81C, 0x813E0103,
+		0x81C, 0x80400103,
+		0x81C, 0x63420103,
+		0x81C, 0x62440103,
+		0x81C, 0x61460103,
+		0x81C, 0x60480103,
+		0x81C, 0x424A0103,
+		0x81C, 0x414C0103,
+		0x81C, 0x404E0103,
+		0x81C, 0x22500103,
+		0x81C, 0x21520103,
+		0x81C, 0x20540103,
+		0x81C, 0x03560103,
+		0x81C, 0x02580103,
+		0x81C, 0x015A0103,
+		0x81C, 0x005C0103,
+		0x81C, 0x005E0103,
+		0x81C, 0x00600103,
+		0x81C, 0x00620103,
+		0x81C, 0x00640103,
+		0x81C, 0x00660103,
+		0x81C, 0x00680103,
 		0x81C, 0x006A0103,
 		0x81C, 0x006C0103,
 		0x81C, 0x006E0103,
@@ -3575,6 +3716,71 @@ u32 array_mp_8822b_agc_tab[] = {
 		0x81C, 0x007A0203,
 		0x81C, 0x007C0203,
 		0x81C, 0x007E0203,
+	0x90000012,	0x00000000,	0x40000000,	0x00000000,
+		0x81C, 0xF7000203,
+		0x81C, 0xF6020203,
+		0x81C, 0xF5040203,
+		0x81C, 0xF4060203,
+		0x81C, 0xF3080203,
+		0x81C, 0xF20A0203,
+		0x81C, 0xF10C0203,
+		0x81C, 0xF00E0203,
+		0x81C, 0xEF100203,
+		0x81C, 0xEE120203,
+		0x81C, 0xED140203,
+		0x81C, 0xEC160203,
+		0x81C, 0xEB180203,
+		0x81C, 0xEA1A0203,
+		0x81C, 0xE91C0203,
+		0x81C, 0xE81E0203,
+		0x81C, 0xE7200203,
+		0x81C, 0xE6220203,
+		0x81C, 0xE5240203,
+		0x81C, 0xE4260203,
+		0x81C, 0xE3280203,
+		0x81C, 0xC42A0203,
+		0x81C, 0xC32C0203,
+		0x81C, 0xC22E0203,
+		0x81C, 0xC1300203,
+		0x81C, 0xC0320203,
+		0x81C, 0xA3340203,
+		0x81C, 0xA2360203,
+		0x81C, 0xA1380203,
+		0x81C, 0xA03A0203,
+		0x81C, 0x823C0203,
+		0x81C, 0x813E0203,
+		0x81C, 0x80400203,
+		0x81C, 0x64420203,
+		0x81C, 0x63440203,
+		0x81C, 0x62460203,
+		0x81C, 0x61480203,
+		0x81C, 0x604A0203,
+		0x81C, 0x414C0203,
+		0x81C, 0x404E0203,
+		0x81C, 0x22500203,
+		0x81C, 0x21520203,
+		0x81C, 0x20540203,
+		0x81C, 0x03560203,
+		0x81C, 0x02580203,
+		0x81C, 0x015A0203,
+		0x81C, 0x005C0203,
+		0x81C, 0x005E0203,
+		0x81C, 0x00600203,
+		0x81C, 0x00620203,
+		0x81C, 0x00640203,
+		0x81C, 0x00660203,
+		0x81C, 0x00680203,
+		0x81C, 0x006A0203,
+		0x81C, 0x006C0203,
+		0x81C, 0x006E0203,
+		0x81C, 0x00700203,
+		0x81C, 0x00720203,
+		0x81C, 0x00740203,
+		0x81C, 0x00760203,
+		0x81C, 0x00780203,
+		0x81C, 0x007A0203,
+		0x81C, 0x007C0203,
+		0x81C, 0x007E0203,
 	0xA0000000,	0x00000000,
 		0x81C, 0xFD000203,
 		0x81C, 0xFC020203,
@@ -4733,6 +4939,71 @@ u32 array_mp_8822b_agc_tab[] = {
 		0x81C, 0x03600303,
 		0x81C, 0x02620303,
 		0x81C, 0x01640303,
+		0x81C, 0x00660303,
+		0x81C, 0x00680303,
+		0x81C, 0x006A0303,
+		0x81C, 0x006C0303,
+		0x81C, 0x006E0303,
+		0x81C, 0x00700303,
+		0x81C, 0x00720303,
+		0x81C, 0x00740303,
+		0x81C, 0x00760303,
+		0x81C, 0x00780303,
+		0x81C, 0x007A0303,
+		0x81C, 0x007C0303,
+		0x81C, 0x007E0303,
+	0x90000012,	0x00000000,	0x40000000,	0x00000000,
+		0x81C, 0xF7000303,
+		0x81C, 0xF6020303,
+		0x81C, 0xF5040303,
+		0x81C, 0xF4060303,
+		0x81C, 0xF3080303,
+		0x81C, 0xF20A0303,
+		0x81C, 0xF10C0303,
+		0x81C, 0xF00E0303,
+		0x81C, 0xEF100303,
+		0x81C, 0xEE120303,
+		0x81C, 0xED140303,
+		0x81C, 0xEC160303,
+		0x81C, 0xEB180303,
+		0x81C, 0xEA1A0303,
+		0x81C, 0xE91C0303,
+		0x81C, 0xCA1E0303,
+		0x81C, 0xC9200303,
+		0x81C, 0xC8220303,
+		0x81C, 0xC7240303,
+		0x81C, 0xC6260303,
+		0x81C, 0xC5280303,
+		0x81C, 0xC42A0303,
+		0x81C, 0xC32C0303,
+		0x81C, 0xC22E0303,
+		0x81C, 0xC1300303,
+		0x81C, 0xA4320303,
+		0x81C, 0xA3340303,
+		0x81C, 0xA2360303,
+		0x81C, 0xA1380303,
+		0x81C, 0xA03A0303,
+		0x81C, 0x823C0303,
+		0x81C, 0x813E0303,
+		0x81C, 0x80400303,
+		0x81C, 0x64420303,
+		0x81C, 0x63440303,
+		0x81C, 0x62460303,
+		0x81C, 0x61480303,
+		0x81C, 0x604A0303,
+		0x81C, 0x414C0303,
+		0x81C, 0x404E0303,
+		0x81C, 0x22500303,
+		0x81C, 0x21520303,
+		0x81C, 0x20540303,
+		0x81C, 0x03560303,
+		0x81C, 0x02580303,
+		0x81C, 0x015A0303,
+		0x81C, 0x005C0303,
+		0x81C, 0x005E0303,
+		0x81C, 0x00600303,
+		0x81C, 0x00620303,
+		0x81C, 0x00640303,
 		0x81C, 0x00660303,
 		0x81C, 0x00680303,
 		0x81C, 0x006A0303,
@@ -5934,6 +6205,72 @@ u32 array_mp_8822b_agc_tab[] = {
 		0x81C, 0x007A0403,
 		0x81C, 0x007C0403,
 		0x81C, 0x007E0403,
+	0x90000012,	0x00000000,	0x40000000,	0x00000000,
+		0x81C, 0xFF000403,
+		0x81C, 0xF6000403,
+		0x81C, 0xF5020403,
+		0x81C, 0xF4040403,
+		0x81C, 0xF3060403,
+		0x81C, 0xF2080403,
+		0x81C, 0xF10A0403,
+		0x81C, 0xF00C0403,
+		0x81C, 0xEF0E0403,
+		0x81C, 0xD6100403,
+		0x81C, 0xD5120403,
+		0x81C, 0xD4140403,
+		0x81C, 0xD3160403,
+		0x81C, 0xD2180403,
+		0x81C, 0xD11A0403,
+		0x81C, 0xD01C0403,
+		0x81C, 0xCF1E0403,
+		0x81C, 0x95200403,
+		0x81C, 0x94220403,
+		0x81C, 0x93240403,
+		0x81C, 0x92260403,
+		0x81C, 0x91280403,
+		0x81C, 0x902A0403,
+		0x81C, 0x8F2C0403,
+		0x81C, 0x8E2E0403,
+		0x81C, 0x8D300403,
+		0x81C, 0x8C320403,
+		0x81C, 0x8B340403,
+		0x81C, 0x8A360403,
+		0x81C, 0x89380403,
+		0x81C, 0x883A0403,
+		0x81C, 0x873C0403,
+		0x81C, 0x863E0403,
+		0x81C, 0x68400403,
+		0x81C, 0x67420403,
+		0x81C, 0x66440403,
+		0x81C, 0x65460403,
+		0x81C, 0x64480403,
+		0x81C, 0x634A0403,
+		0x81C, 0x484C0403,
+		0x81C, 0x474E0403,
+		0x81C, 0x46500403,
+		0x81C, 0x45520403,
+		0x81C, 0x44540403,
+		0x81C, 0x27560403,
+		0x81C, 0x26580403,
+		0x81C, 0x255A0403,
+		0x81C, 0x245C0403,
+		0x81C, 0x235E0403,
+		0x81C, 0x04600403,
+		0x81C, 0x03620403,
+		0x81C, 0x02640403,
+		0x81C, 0x01660403,
+		0x81C, 0x00680403,
+		0x81C, 0x006A0403,
+		0x81C, 0x006C0403,
+		0x81C, 0x006E0403,
+		0x81C, 0x00700403,
+		0x81C, 0x00720403,
+		0x81C, 0x00740403,
+		0x81C, 0x00760403,
+		0x81C, 0x00780403,
+		0x81C, 0x007A0403,
+		0x81C, 0x007C0403,
+		0x81C, 0x007E0403,
 	0xA0000000,	0x00000000,
 		0x81C, 0xFF000403,
 		0x81C, 0xFF000403,
@@ -6479,12 +6816,12 @@ u32 array_mp_8822b_agc_tab[] = {
 		0x81C, 0xB3180503,
 		0x81C, 0xB21A0503,
 		0x81C, 0xB11C0503,
-		0x81C, 0xB01E0503,
-		0x81C, 0xAF200503,
-		0x81C, 0xAE220503,
-		0x81C, 0xAD240503,
-		0x81C, 0xAC260503,
-		0x81C, 0xAB280503,
+		0x81C, 0x931E0503,
+		0x81C, 0x92200503,
+		0x81C, 0x91220503,
+		0x81C, 0x90240503,
+		0x81C, 0x8F260503,
+		0x81C, 0x8E280503,
 		0x81C, 0x8D2A0503,
 		0x81C, 0x8C2C0503,
 		0x81C, 0x8B2E0503,
@@ -7123,6 +7460,72 @@ u32 array_mp_8822b_agc_tab[] = {
 		0x81C, 0x007A0503,
 		0x81C, 0x007C0503,
 		0x81C, 0x007E0503,
+	0x90000012,	0x00000000,	0x40000000,	0x00000000,
+		0x81C, 0xF8000503,
+		0x81C, 0xF7020503,
+		0x81C, 0xF6040503,
+		0x81C, 0xF5060503,
+		0x81C, 0xF4080503,
+		0x81C, 0xF30A0503,
+		0x81C, 0xF20C0503,
+		0x81C, 0xF10E0503,
+		0x81C, 0xF0100503,
+		0x81C, 0xEF120503,
+		0x81C, 0xEE140503,
+		0x81C, 0xED160503,
+		0x81C, 0xEC180503,
+		0x81C, 0xEB1A0503,
+		0x81C, 0xEA1C0503,
+		0x81C, 0xE91E0503,
+		0x81C, 0xE8200503,
+		0x81C, 0xE7220503,
+		0x81C, 0xE6240503,
+		0x81C, 0xE5260503,
+		0x81C, 0xE4280503,
+		0x81C, 0xE32A0503,
+		0x81C, 0xC32C0503,
+		0x81C, 0xC22E0503,
+		0x81C, 0xC1300503,
+		0x81C, 0xC0320503,
+		0x81C, 0xA3340503,
+		0x81C, 0xA2360503,
+		0x81C, 0xA1380503,
+		0x81C, 0xA03A0503,
+		0x81C, 0x823C0503,
+		0x81C, 0x813E0503,
+		0x81C, 0x80400503,
+		0x81C, 0x63420503,
+		0x81C, 0x62440503,
+		0x81C, 0x61460503,
+		0x81C, 0x60480503,
+		0x81C, 0x424A0503,
+		0x81C, 0x414C0503,
+		0x81C, 0x404E0503,
+		0x81C, 0x22500503,
+		0x81C, 0x21520503,
+		0x81C, 0x20540503,
+		0x81C, 0x03560503,
+		0x81C, 0x02580503,
+		0x81C, 0x015A0503,
+		0x81C, 0x005C0503,
+		0x81C, 0x005E0503,
+		0x81C, 0x00600503,
+		0x81C, 0x00620503,
+		0x81C, 0x00640503,
+		0x81C, 0x00660503,
+		0x81C, 0x00680503,
+		0x81C, 0x006A0503,
+		0x81C, 0x006C0503,
+		0x81C, 0x006E0503,
+		0x81C, 0x00700503,
+		0x81C, 0x00720503,
+		0x81C, 0x00740503,
+		0x81C, 0x00760503,
+		0x81C, 0x00780503,
+		0x81C, 0x007A0503,
+		0x81C, 0x007C0503,
+		0x81C, 0x007E0503,
+		0x81C, 0x007E0503,
 	0xA0000000,	0x00000000,
 		0x81C, 0xFE000503,
 		0x81C, 0xFD020503,
@@ -7668,9 +8071,9 @@ u32 array_mp_8822b_agc_tab[] = {
 		0x81C, 0xB2180603,
 		0x81C, 0xB11A0603,
 		0x81C, 0xB01C0603,
-		0x81C, 0xAF1E0603,
-		0x81C, 0xAE200603,
-		0x81C, 0xAD220603,
+		0x81C, 0x921E0603,
+		0x81C, 0x91200603,
+		0x81C, 0x90220603,
 		0x81C, 0x8F240603,
 		0x81C, 0x8E260603,
 		0x81C, 0x8D280603,
@@ -8312,6 +8715,72 @@ u32 array_mp_8822b_agc_tab[] = {
 		0x81C, 0x007A0603,
 		0x81C, 0x007C0603,
 		0x81C, 0x007E0603,
+	0x90000012,	0x00000000,	0x40000000,	0x00000000,
+		0x81C, 0xF7000603,
+		0x81C, 0xF6020603,
+		0x81C, 0xF5040603,
+		0x81C, 0xF4060603,
+		0x81C, 0xF3080603,
+		0x81C, 0xF20A0603,
+		0x81C, 0xF10C0603,
+		0x81C, 0xF00E0603,
+		0x81C, 0xEF100603,
+		0x81C, 0xEE120603,
+		0x81C, 0xED140603,
+		0x81C, 0xEC160603,
+		0x81C, 0xEB180603,
+		0x81C, 0xEA1A0603,
+		0x81C, 0xE91C0603,
+		0x81C, 0xE81E0603,
+		0x81C, 0xE7200603,
+		0x81C, 0xE6220603,
+		0x81C, 0xE5240603,
+		0x81C, 0xE4260603,
+		0x81C, 0xE3280603,
+		0x81C, 0xC42A0603,
+		0x81C, 0xC32C0603,
+		0x81C, 0xC22E0603,
+		0x81C, 0xC1300603,
+		0x81C, 0xC0320603,
+		0x81C, 0xA3340603,
+		0x81C, 0xA2360603,
+		0x81C, 0xA1380603,
+		0x81C, 0xA03A0603,
+		0x81C, 0x823C0603,
+		0x81C, 0x813E0603,
+		0x81C, 0x80400603,
+		0x81C, 0x64420603,
+		0x81C, 0x63440603,
+		0x81C, 0x62460603,
+		0x81C, 0x61480603,
+		0x81C, 0x604A0603,
+		0x81C, 0x414C0603,
+		0x81C, 0x404E0603,
+		0x81C, 0x22500603,
+		0x81C, 0x21520603,
+		0x81C, 0x20540603,
+		0x81C, 0x03560603,
+		0x81C, 0x02580603,
+		0x81C, 0x015A0603,
+		0x81C, 0x005C0603,
+		0x81C, 0x005E0603,
+		0x81C, 0x00600603,
+		0x81C, 0x00620603,
+		0x81C, 0x00640603,
+		0x81C, 0x00660603,
+		0x81C, 0x00680603,
+		0x81C, 0x006A0603,
+		0x81C, 0x006C0603,
+		0x81C, 0x006E0603,
+		0x81C, 0x00700603,
+		0x81C, 0x00720603,
+		0x81C, 0x00740603,
+		0x81C, 0x00760603,
+		0x81C, 0x00780603,
+		0x81C, 0x007A0603,
+		0x81C, 0x007C0603,
+		0x81C, 0x007E0603,
+		0x81C, 0x007E0603,
 	0xA0000000,	0x00000000,
 		0x81C, 0xFD000603,
 		0x81C, 0xFC020603,
@@ -8857,10 +9326,10 @@ u32 array_mp_8822b_agc_tab[] = {
 		0x81C, 0xB2180703,
 		0x81C, 0xB11A0703,
 		0x81C, 0xB01C0703,
-		0x81C, 0xAF1E0703,
-		0x81C, 0xAE200703,
-		0x81C, 0xAD220703,
-		0x81C, 0xAC240703,
+		0x81C, 0x921E0703,
+		0x81C, 0x91200703,
+		0x81C, 0x90220703,
+		0x81C, 0x8F240703,
 		0x81C, 0x8E260703,
 		0x81C, 0x8D280703,
 		0x81C, 0x8C2A0703,
@@ -9501,6 +9970,72 @@ u32 array_mp_8822b_agc_tab[] = {
 		0x81C, 0x007A0703,
 		0x81C, 0x007C0703,
 		0x81C, 0x007E0703,
+	0x90000012,	0x00000000,	0x40000000,	0x00000000,
+		0x81C, 0xF7000703,
+		0x81C, 0xF6020703,
+		0x81C, 0xF5040703,
+		0x81C, 0xF4060703,
+		0x81C, 0xF3080703,
+		0x81C, 0xF20A0703,
+		0x81C, 0xF10C0703,
+		0x81C, 0xF00E0703,
+		0x81C, 0xEF100703,
+		0x81C, 0xEE120703,
+		0x81C, 0xED140703,
+		0x81C, 0xEC160703,
+		0x81C, 0xEB180703,
+		0x81C, 0xEA1A0703,
+		0x81C, 0xE91C0703,
+		0x81C, 0xCA1E0703,
+		0x81C, 0xC9200703,
+		0x81C, 0xC8220703,
+		0x81C, 0xC7240703,
+		0x81C, 0xC6260703,
+		0x81C, 0xC5280703,
+		0x81C, 0xC42A0703,
+		0x81C, 0xC32C0703,
+		0x81C, 0xC22E0703,
+		0x81C, 0xC1300703,
+		0x81C, 0xA4320703,
+		0x81C, 0xA3340703,
+		0x81C, 0xA2360703,
+		0x81C, 0xA1380703,
+		0x81C, 0xA03A0703,
+		0x81C, 0x823C0703,
+		0x81C, 0x813E0703,
+		0x81C, 0x80400703,
+		0x81C, 0x64420703,
+		0x81C, 0x63440703,
+		0x81C, 0x62460703,
+		0x81C, 0x61480703,
+		0x81C, 0x604A0703,
+		0x81C, 0x414C0703,
+		0x81C, 0x404E0703,
+		0x81C, 0x22500703,
+		0x81C, 0x21520703,
+		0x81C, 0x20540703,
+		0x81C, 0x03560703,
+		0x81C, 0x02580703,
+		0x81C, 0x015A0703,
+		0x81C, 0x005C0703,
+		0x81C, 0x005E0703,
+		0x81C, 0x00600703,
+		0x81C, 0x00620703,
+		0x81C, 0x00640703,
+		0x81C, 0x00660703,
+		0x81C, 0x00680703,
+		0x81C, 0x006A0703,
+		0x81C, 0x006C0703,
+		0x81C, 0x006E0703,
+		0x81C, 0x00700703,
+		0x81C, 0x00720703,
+		0x81C, 0x00740703,
+		0x81C, 0x00760703,
+		0x81C, 0x00780703,
+		0x81C, 0x007A0703,
+		0x81C, 0x007C0703,
+		0x81C, 0x007E0703,
+		0x81C, 0x007E0703,
 	0xA0000000,	0x00000000,
 		0x81C, 0xFC000703,
 		0x81C, 0xFB020703,
@@ -9593,19 +10128,19 @@ u32 array_mp_8822b_agc_tab[] = {
 };
 
 void
-odm_read_and_config_mp_8822b_agc_tab(
-	struct	dm_struct *dm
-)
+odm_read_and_config_mp_8822b_agc_tab(struct dm_struct *dm)
 {
 	u32	i = 0;
 	u8	c_cond;
 	boolean	is_matched = true, is_skipped = false;
-	u32	array_len = sizeof(array_mp_8822b_agc_tab)/sizeof(u32);
-	u32	*array = array_mp_8822b_agc_tab;
+	u32	array_len =
+			sizeof(array_mp_8822b_agc_tab) / sizeof(u32);
+	u32	*array = (u32 *)array_mp_8822b_agc_tab;
 
 	u32	v1 = 0, v2 = 0, pre_v1 = 0, pre_v2 = 0;
+	u32	a1 = 0, a2 = 0, a3 = 0, a4 = 0;
 
-	PHYDM_DBG(dm, ODM_COMP_INIT, "===> odm_read_and_config_mp_8822b_agc_tab\n");
+	PHYDM_DBG(dm, ODM_COMP_INIT, "===> %s\n", __func__);
 
 	while ((i + 1) < array_len) {
 		v1 = array[i];
@@ -9613,30 +10148,36 @@ odm_read_and_config_mp_8822b_agc_tab(
 
 		if (v1 & (BIT(31) | BIT(30))) {/*positive & negative condition*/
 			if (v1 & BIT(31)) {/* positive condition*/
-				c_cond  = (u8)((v1 & (BIT(29)|BIT(28))) >> 28);
+				c_cond  =
+					(u8)((v1 & (BIT(29) | BIT(28))) >> 28);
 				if (c_cond == COND_ENDIF) {/*end*/
 					is_matched = true;
 					is_skipped = false;
 					PHYDM_DBG(dm, ODM_COMP_INIT, "ENDIF\n");
 				} else if (c_cond == COND_ELSE) { /*else*/
-					is_matched = is_skipped?false:true;
+					is_matched = is_skipped ? false : true;
 					PHYDM_DBG(dm, ODM_COMP_INIT, "ELSE\n");
 				} else {/*if , else if*/
 					pre_v1 = v1;
 					pre_v2 = v2;
-					PHYDM_DBG(dm, ODM_COMP_INIT, "IF or ELSE IF\n");
+					PHYDM_DBG(dm, ODM_COMP_INIT,
+						  "IF or ELSE IF\n");
 				}
 			} else if (v1 & BIT(30)) { /*negative condition*/
-				if (is_skipped == false) {
-					if (check_positive(dm, pre_v1, pre_v2, v1, v2)) {
+				if (!is_skipped) {
+					a1 = pre_v1; a2 = pre_v2;
+					a3 = v1; a4 = v2;
+					if (check_positive(dm,
+							   a1, a2, a3, a4)) {
 						is_matched = true;
 						is_skipped = true;
 					} else {
 						is_matched = false;
 						is_skipped = false;
 					}
-				} else
+				} else {
 					is_matched = false;
+				}
 			}
 		} else {
 			if (is_matched)
@@ -9649,14 +10190,14 @@ odm_read_and_config_mp_8822b_agc_tab(
 u32
 odm_get_version_mp_8822b_agc_tab(void)
 {
-		return 104;
+		return 112;
 }
 
 /******************************************************************************
-*                           phy_reg.TXT
-******************************************************************************/
+ *                           phy_reg.TXT
+ ******************************************************************************/
 
-u32 array_mp_8822b_phy_reg[] = {
+const u32 array_mp_8822b_phy_reg[] = {
 		0x800, 0x9020D010,
 		0x804, 0x800181A0,
 		0x808, 0x0E028233,
@@ -9682,7 +10223,7 @@ u32 array_mp_8822b_phy_reg[] = {
 		0x858, 0x4060C000,
 		0x85C, 0x74010160,
 		0x860, 0x68A7C321,
-		0x864, 0x79F27432,
+		0x864, 0x79F27032,
 		0x868, 0x8CA7A314,
 		0x86C, 0x778C2878,
 		0x870, 0x77777777,
@@ -9793,12 +10334,12 @@ u32 array_mp_8822b_phy_reg[] = {
 		0xA14, 0x1114D028,
 		0xA18, 0x00881117,
 		0xA1C, 0x89140F00,
-		0xA20, 0x84880000,
+		0xA20, 0x84880010,
 		0xA24, 0x384F6577,
 		0xA28, 0x00001525,
 		0xA2C, 0x00920000,
 		0xA70, 0x101FFF00,
-		0xA74, 0x00000148,
+		0xA74, 0x00000048,
 		0xA78, 0x00000900,
 		0xA7C, 0x225B0606,
 		0xA80, 0x218675B2,
@@ -11153,19 +11694,19 @@ u32 array_mp_8822b_phy_reg[] = {
 };
 
 void
-odm_read_and_config_mp_8822b_phy_reg(
-	struct	dm_struct *dm
-)
+odm_read_and_config_mp_8822b_phy_reg(struct dm_struct *dm)
 {
 	u32	i = 0;
 	u8	c_cond;
 	boolean	is_matched = true, is_skipped = false;
-	u32	array_len = sizeof(array_mp_8822b_phy_reg)/sizeof(u32);
-	u32	*array = array_mp_8822b_phy_reg;
+	u32	array_len =
+			sizeof(array_mp_8822b_phy_reg) / sizeof(u32);
+	u32	*array = (u32 *)array_mp_8822b_phy_reg;
 
 	u32	v1 = 0, v2 = 0, pre_v1 = 0, pre_v2 = 0;
+	u32	a1 = 0, a2 = 0, a3 = 0, a4 = 0;
 
-	PHYDM_DBG(dm, ODM_COMP_INIT, "===> odm_read_and_config_mp_8822b_phy_reg\n");
+	PHYDM_DBG(dm, ODM_COMP_INIT, "===> %s\n", __func__);
 
 	while ((i + 1) < array_len) {
 		v1 = array[i];
@@ -11173,30 +11714,36 @@ odm_read_and_config_mp_8822b_phy_reg(
 
 		if (v1 & (BIT(31) | BIT(30))) {/*positive & negative condition*/
 			if (v1 & BIT(31)) {/* positive condition*/
-				c_cond  = (u8)((v1 & (BIT(29)|BIT(28))) >> 28);
+				c_cond  =
+					(u8)((v1 & (BIT(29) | BIT(28))) >> 28);
 				if (c_cond == COND_ENDIF) {/*end*/
 					is_matched = true;
 					is_skipped = false;
 					PHYDM_DBG(dm, ODM_COMP_INIT, "ENDIF\n");
 				} else if (c_cond == COND_ELSE) { /*else*/
-					is_matched = is_skipped?false:true;
+					is_matched = is_skipped ? false : true;
 					PHYDM_DBG(dm, ODM_COMP_INIT, "ELSE\n");
 				} else {/*if , else if*/
 					pre_v1 = v1;
 					pre_v2 = v2;
-					PHYDM_DBG(dm, ODM_COMP_INIT, "IF or ELSE IF\n");
+					PHYDM_DBG(dm, ODM_COMP_INIT,
+						  "IF or ELSE IF\n");
 				}
 			} else if (v1 & BIT(30)) { /*negative condition*/
-				if (is_skipped == false) {
-					if (check_positive(dm, pre_v1, pre_v2, v1, v2)) {
+				if (!is_skipped) {
+					a1 = pre_v1; a2 = pre_v2;
+					a3 = v1; a4 = v2;
+					if (check_positive(dm,
+							   a1, a2, a3, a4)) {
 						is_matched = true;
 						is_skipped = true;
 					} else {
 						is_matched = false;
 						is_skipped = false;
 					}
-				} else
+				} else {
 					is_matched = false;
+				}
 			}
 		} else {
 			if (is_matched)
@@ -11209,108 +11756,116 @@ odm_read_and_config_mp_8822b_phy_reg(
 u32
 odm_get_version_mp_8822b_phy_reg(void)
 {
-		return 104;
+		return 112;
 }
 
 /******************************************************************************
-*                           phy_reg_pg.TXT
-******************************************************************************/
+ *                           phy_reg_pg.TXT
+ ******************************************************************************/
 
-u32 array_mp_8822b_phy_reg_pg[] = {
-	0, 0, 0, 0x00000c20, 0xffffffff, 0x34363840,
-	0, 0, 0, 0x00000c24, 0xffffffff, 0x38404244,
-	0, 0, 0, 0x00000c28, 0xffffffff, 0x30323436,
-	0, 0, 0, 0x00000c2c, 0xffffffff, 0x38404244,
-	0, 0, 0, 0x00000c30, 0xffffffff, 0x30323436,
-	0, 0, 1, 0x00000c34, 0xffffffff, 0x38404244,
-	0, 0, 1, 0x00000c38, 0xffffffff, 0x30323436,
-	0, 0, 0, 0x00000c3c, 0xffffffff, 0x38404244,
-	0, 0, 0, 0x00000c40, 0xffffffff, 0x30323436,
-	0, 0, 0, 0x00000c44, 0xffffffff, 0x42442628,
-	0, 0, 1, 0x00000c48, 0xffffffff, 0x34363840,
-	0, 0, 1, 0x00000c4c, 0xffffffff, 0x26283032,
-	0, 1, 0, 0x00000e20, 0xffffffff, 0x34363840,
-	0, 1, 0, 0x00000e24, 0xffffffff, 0x38404244,
-	0, 1, 0, 0x00000e28, 0xffffffff, 0x30323436,
-	0, 1, 0, 0x00000e2c, 0xffffffff, 0x38404244,
-	0, 1, 0, 0x00000e30, 0xffffffff, 0x30323436,
-	0, 1, 1, 0x00000e34, 0xffffffff, 0x38404244,
-	0, 1, 1, 0x00000e38, 0xffffffff, 0x30323436,
-	0, 1, 0, 0x00000e3c, 0xffffffff, 0x38404244,
-	0, 1, 0, 0x00000e40, 0xffffffff, 0x30323436,
-	0, 1, 0, 0x00000e44, 0xffffffff, 0x42442628,
-	0, 1, 1, 0x00000e48, 0xffffffff, 0x34363840,
-	0, 1, 1, 0x00000e4c, 0xffffffff, 0x26283032,
+#ifdef CONFIG_8822B
+const u32 array_mp_8822b_phy_reg_pg[] = {
+	0, 0, 0, 0x00000c20, 0xffffffff, 0x32343638,
+	0, 0, 0, 0x00000c24, 0xffffffff, 0x36384042,
+	0, 0, 0, 0x00000c28, 0xffffffff, 0x28303234,
+	0, 0, 0, 0x00000c2c, 0xffffffff, 0x34363840,
+	0, 0, 0, 0x00000c30, 0xffffffff, 0x26283032,
+	0, 0, 1, 0x00000c34, 0xffffffff, 0x34363840,
+	0, 0, 1, 0x00000c38, 0xffffffff, 0x26283032,
+	0, 0, 0, 0x00000c3c, 0xffffffff, 0x34363840,
+	0, 0, 0, 0x00000c40, 0xffffffff, 0x26283032,
+	0, 0, 0, 0x00000c44, 0xffffffff, 0x38402224,
+	0, 0, 1, 0x00000c48, 0xffffffff, 0x30323436,
+	0, 0, 1, 0x00000c4c, 0xffffffff, 0x22242628,
+	0, 1, 0, 0x00000e20, 0xffffffff, 0x32343638,
+	0, 1, 0, 0x00000e24, 0xffffffff, 0x36384042,
+	0, 1, 0, 0x00000e28, 0xffffffff, 0x28303234,
+	0, 1, 0, 0x00000e2c, 0xffffffff, 0x34363840,
+	0, 1, 0, 0x00000e30, 0xffffffff, 0x26283032,
+	0, 1, 1, 0x00000e34, 0xffffffff, 0x34363840,
+	0, 1, 1, 0x00000e38, 0xffffffff, 0x26283032,
+	0, 1, 0, 0x00000e3c, 0xffffffff, 0x34363840,
+	0, 1, 0, 0x00000e40, 0xffffffff, 0x26283032,
+	0, 1, 0, 0x00000e44, 0xffffffff, 0x38402224,
+	0, 1, 1, 0x00000e48, 0xffffffff, 0x30323436,
+	0, 1, 1, 0x00000e4c, 0xffffffff, 0x22242628,
 	1, 0, 0, 0x00000c24, 0xffffffff, 0x34363840,
 	1, 0, 0, 0x00000c28, 0xffffffff, 0x26283032,
-	1, 0, 0, 0x00000c2c, 0xffffffff, 0x34363840,
-	1, 0, 0, 0x00000c30, 0xffffffff, 0x26283032,
-	1, 0, 1, 0x00000c34, 0xffffffff, 0x34363840,
-	1, 0, 1, 0x00000c38, 0xffffffff, 0x26283032,
-	1, 0, 0, 0x00000c3c, 0xffffffff, 0x34363840,
-	1, 0, 0, 0x00000c40, 0xffffffff, 0x26283032,
-	1, 0, 0, 0x00000c44, 0xffffffff, 0x38402224,
-	1, 0, 1, 0x00000c48, 0xffffffff, 0x30323436,
-	1, 0, 1, 0x00000c4c, 0xffffffff, 0x22242628,
+	1, 0, 0, 0x00000c2c, 0xffffffff, 0x32343638,
+	1, 0, 0, 0x00000c30, 0xffffffff, 0x24262830,
+	1, 0, 1, 0x00000c34, 0xffffffff, 0x32343638,
+	1, 0, 1, 0x00000c38, 0xffffffff, 0x24262830,
+	1, 0, 0, 0x00000c3c, 0xffffffff, 0x32343638,
+	1, 0, 0, 0x00000c40, 0xffffffff, 0x24262830,
+	1, 0, 0, 0x00000c44, 0xffffffff, 0x36382022,
+	1, 0, 1, 0x00000c48, 0xffffffff, 0x28303234,
+	1, 0, 1, 0x00000c4c, 0xffffffff, 0x20222426,
 	1, 1, 0, 0x00000e24, 0xffffffff, 0x34363840,
 	1, 1, 0, 0x00000e28, 0xffffffff, 0x26283032,
-	1, 1, 0, 0x00000e2c, 0xffffffff, 0x34363840,
-	1, 1, 0, 0x00000e30, 0xffffffff, 0x26283032,
-	1, 1, 1, 0x00000e34, 0xffffffff, 0x34363840,
-	1, 1, 1, 0x00000e38, 0xffffffff, 0x26283032,
-	1, 1, 0, 0x00000e3c, 0xffffffff, 0x34363840,
-	1, 1, 0, 0x00000e40, 0xffffffff, 0x26283032,
-	1, 1, 0, 0x00000e44, 0xffffffff, 0x38402224,
-	1, 1, 1, 0x00000e48, 0xffffffff, 0x30323436,
-	1, 1, 1, 0x00000e4c, 0xffffffff, 0x22242628
+	1, 1, 0, 0x00000e2c, 0xffffffff, 0x32343638,
+	1, 1, 0, 0x00000e30, 0xffffffff, 0x24262830,
+	1, 1, 1, 0x00000e34, 0xffffffff, 0x32343638,
+	1, 1, 1, 0x00000e38, 0xffffffff, 0x24262830,
+	1, 1, 0, 0x00000e3c, 0xffffffff, 0x32343638,
+	1, 1, 0, 0x00000e40, 0xffffffff, 0x24262830,
+	1, 1, 0, 0x00000e44, 0xffffffff, 0x36382022,
+	1, 1, 1, 0x00000e48, 0xffffffff, 0x28303234,
+	1, 1, 1, 0x00000e4c, 0xffffffff, 0x20222426
 };
 
+#endif
+
 void
-odm_read_and_config_mp_8822b_phy_reg_pg(
-	struct dm_struct	*dm
-)
+odm_read_and_config_mp_8822b_phy_reg_pg(struct dm_struct *dm)
 {
-	u32	i = 0;
-	u32	array_len = sizeof(array_mp_8822b_phy_reg_pg)/sizeof(u32);
-	u32	*array = array_mp_8822b_phy_reg_pg;
+#ifdef CONFIG_8822B
+
+	u32 i = 0;
+	u32 array_len =
+		 sizeof(array_mp_8822b_phy_reg_pg) / sizeof(u32);
+	u32 *array = (u32 *)array_mp_8822b_phy_reg_pg;
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
 	void	*adapter = dm->adapter;
 	HAL_DATA_TYPE	*hal_data = GET_HAL_DATA(((PADAPTER)adapter));
 
-	PlatformZeroMemory(hal_data->BufOfLinesPwrByRate, MAX_LINES_HWCONFIG_TXT*MAX_BYTES_LINE_HWCONFIG_TXT);
-	hal_data->nLinesReadPwrByRate = array_len/6;
+	odm_memory_set(dm, hal_data->BufOfLinesPwrByRate, 0,
+		       MAX_LINES_HWCONFIG_TXT *
+		       MAX_BYTES_LINE_HWCONFIG_TXT);
+	hal_data->nLinesReadPwrByRate = array_len / 6;
 #endif
 
-	PHYDM_DBG(dm, ODM_COMP_INIT, "===> odm_read_and_config_mp_8822b_phy_reg_pg\n");
+	PHYDM_DBG(dm, ODM_COMP_INIT, "===> %s\n", __func__);
 
 	dm->phy_reg_pg_version = 1;
 	dm->phy_reg_pg_value_type = PHY_REG_PG_EXACT_VALUE;
 
 	for (i = 0; i < array_len; i += 6) {
 		u32	v1 = array[i];
-		u32	v2 = array[i+1];
-		u32	v3 = array[i+2];
-		u32	v4 = array[i+3];
-		u32	v5 = array[i+4];
-		u32	v6 = array[i+5];
+		u32	v2 = array[i + 1];
+		u32	v3 = array[i + 2];
+		u32	v4 = array[i + 3];
+		u32	v5 = array[i + 4];
+		u32	v6 = array[i + 5];
 
 		odm_config_bb_phy_reg_pg_8822b(dm, v1, v2, v3, v4, v5, v6);
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
-	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i/6], 100, "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
-		(v1 == 0?"2.4G":"  5G"), (v2 == 0?"A":"B"), (v3 == 0?"1Tx":"2Tx"), v4, v5, v6);
+	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i / 6], 100,
+		 "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
+		 (v1 == 0 ? "2.4G" : "  5G"), (v2 == 0 ? "A" : "B"),
+		 (v3 == 0 ? "1Tx" : "2Tx"), v4, v5, v6);
 #endif
 	}
+#endif
 }
 
-
-
 /******************************************************************************
-*                           phy_reg_pg_type12.TXT
-******************************************************************************/
+ *                           phy_reg_pg_type12.TXT
+ ******************************************************************************/
 
-u32 array_mp_8822b_phy_reg_pg_type12[] = {
+#ifdef CONFIG_8822B_TYPE12
+const u32 array_mp_8822b_phy_reg_pg_type12[] = {
 	0, 0, 0, 0x00000c20, 0xffffffff, 0x32343638,
 	0, 0, 0, 0x00000c24, 0xffffffff, 0x36384042,
 	0, 0, 0, 0x00000c28, 0xffffffff, 0x28303234,
@@ -11359,52 +11914,59 @@ u32 array_mp_8822b_phy_reg_pg_type12[] = {
 	1, 1, 1, 0x00000e4c, 0xffffffff, 0x18202224
 };
 
+#endif
+
 void
-odm_read_and_config_mp_8822b_phy_reg_pg_type12(
-	struct dm_struct	*dm
-)
+odm_read_and_config_mp_8822b_phy_reg_pg_type12(struct dm_struct *dm)
 {
-	u32	i = 0;
-	u32	array_len = sizeof(array_mp_8822b_phy_reg_pg_type12)/sizeof(u32);
-	u32	*array = array_mp_8822b_phy_reg_pg_type12;
+#ifdef CONFIG_8822B_TYPE12
+
+	u32 i = 0;
+	u32 array_len =
+		 sizeof(array_mp_8822b_phy_reg_pg_type12) / sizeof(u32);
+	u32 *array = (u32 *)array_mp_8822b_phy_reg_pg_type12;
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
 	void	*adapter = dm->adapter;
 	HAL_DATA_TYPE	*hal_data = GET_HAL_DATA(((PADAPTER)adapter));
 
-	PlatformZeroMemory(hal_data->BufOfLinesPwrByRate, MAX_LINES_HWCONFIG_TXT*MAX_BYTES_LINE_HWCONFIG_TXT);
-	hal_data->nLinesReadPwrByRate = array_len/6;
+	odm_memory_set(dm, hal_data->BufOfLinesPwrByRate, 0,
+		       MAX_LINES_HWCONFIG_TXT *
+		       MAX_BYTES_LINE_HWCONFIG_TXT);
+	hal_data->nLinesReadPwrByRate = array_len / 6;
 #endif
 
-	PHYDM_DBG(dm, ODM_COMP_INIT, "===> odm_read_and_config_mp_8822b_phy_reg_pg_type12\n");
+	PHYDM_DBG(dm, ODM_COMP_INIT, "===> %s\n", __func__);
 
 	dm->phy_reg_pg_version = 1;
 	dm->phy_reg_pg_value_type = PHY_REG_PG_EXACT_VALUE;
 
 	for (i = 0; i < array_len; i += 6) {
 		u32	v1 = array[i];
-		u32	v2 = array[i+1];
-		u32	v3 = array[i+2];
-		u32	v4 = array[i+3];
-		u32	v5 = array[i+4];
-		u32	v6 = array[i+5];
+		u32	v2 = array[i + 1];
+		u32	v3 = array[i + 2];
+		u32	v4 = array[i + 3];
+		u32	v5 = array[i + 4];
+		u32	v6 = array[i + 5];
 
 		odm_config_bb_phy_reg_pg_8822b(dm, v1, v2, v3, v4, v5, v6);
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
-	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i/6], 100, "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
-		(v1 == 0?"2.4G":"  5G"), (v2 == 0?"A":"B"), (v3 == 0?"1Tx":"2Tx"), v4, v5, v6);
+	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i / 6], 100,
+		 "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
+		 (v1 == 0 ? "2.4G" : "  5G"), (v2 == 0 ? "A" : "B"),
+		 (v3 == 0 ? "1Tx" : "2Tx"), v4, v5, v6);
 #endif
 	}
+#endif
 }
 
-
-
 /******************************************************************************
-*                           phy_reg_pg_type15.TXT
-******************************************************************************/
+ *                           phy_reg_pg_type15.TXT
+ ******************************************************************************/
 
-u32 array_mp_8822b_phy_reg_pg_type15[] = {
+#ifdef CONFIG_8822B_TYPE15
+const u32 array_mp_8822b_phy_reg_pg_type15[] = {
 	0, 0, 0, 0x00000c20, 0xffffffff, 0x32343638,
 	0, 0, 0, 0x00000c24, 0xffffffff, 0x36384042,
 	0, 0, 0, 0x00000c28, 0xffffffff, 0x28303234,
@@ -11453,52 +12015,59 @@ u32 array_mp_8822b_phy_reg_pg_type15[] = {
 	1, 1, 1, 0x00000e4c, 0xffffffff, 0x20222426
 };
 
+#endif
+
 void
-odm_read_and_config_mp_8822b_phy_reg_pg_type15(
-	struct dm_struct	*dm
-)
+odm_read_and_config_mp_8822b_phy_reg_pg_type15(struct dm_struct *dm)
 {
-	u32	i = 0;
-	u32	array_len = sizeof(array_mp_8822b_phy_reg_pg_type15)/sizeof(u32);
-	u32	*array = array_mp_8822b_phy_reg_pg_type15;
+#ifdef CONFIG_8822B_TYPE15
+
+	u32 i = 0;
+	u32 array_len =
+		 sizeof(array_mp_8822b_phy_reg_pg_type15) / sizeof(u32);
+	u32 *array = (u32 *)array_mp_8822b_phy_reg_pg_type15;
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
 	void	*adapter = dm->adapter;
 	HAL_DATA_TYPE	*hal_data = GET_HAL_DATA(((PADAPTER)adapter));
 
-	PlatformZeroMemory(hal_data->BufOfLinesPwrByRate, MAX_LINES_HWCONFIG_TXT*MAX_BYTES_LINE_HWCONFIG_TXT);
-	hal_data->nLinesReadPwrByRate = array_len/6;
+	odm_memory_set(dm, hal_data->BufOfLinesPwrByRate, 0,
+		       MAX_LINES_HWCONFIG_TXT *
+		       MAX_BYTES_LINE_HWCONFIG_TXT);
+	hal_data->nLinesReadPwrByRate = array_len / 6;
 #endif
 
-	PHYDM_DBG(dm, ODM_COMP_INIT, "===> odm_read_and_config_mp_8822b_phy_reg_pg_type15\n");
+	PHYDM_DBG(dm, ODM_COMP_INIT, "===> %s\n", __func__);
 
 	dm->phy_reg_pg_version = 1;
 	dm->phy_reg_pg_value_type = PHY_REG_PG_EXACT_VALUE;
 
 	for (i = 0; i < array_len; i += 6) {
 		u32	v1 = array[i];
-		u32	v2 = array[i+1];
-		u32	v3 = array[i+2];
-		u32	v4 = array[i+3];
-		u32	v5 = array[i+4];
-		u32	v6 = array[i+5];
+		u32	v2 = array[i + 1];
+		u32	v3 = array[i + 2];
+		u32	v4 = array[i + 3];
+		u32	v5 = array[i + 4];
+		u32	v6 = array[i + 5];
 
 		odm_config_bb_phy_reg_pg_8822b(dm, v1, v2, v3, v4, v5, v6);
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
-	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i/6], 100, "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
-		(v1 == 0?"2.4G":"  5G"), (v2 == 0?"A":"B"), (v3 == 0?"1Tx":"2Tx"), v4, v5, v6);
+	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i / 6], 100,
+		 "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
+		 (v1 == 0 ? "2.4G" : "  5G"), (v2 == 0 ? "A" : "B"),
+		 (v3 == 0 ? "1Tx" : "2Tx"), v4, v5, v6);
 #endif
 	}
+#endif
 }
 
-
-
 /******************************************************************************
-*                           phy_reg_pg_type16.TXT
-******************************************************************************/
+ *                           phy_reg_pg_type16.TXT
+ ******************************************************************************/
 
-u32 array_mp_8822b_phy_reg_pg_type16[] = {
+#ifdef CONFIG_8822B_TYPE16
+const u32 array_mp_8822b_phy_reg_pg_type16[] = {
 	0, 0, 0, 0x00000c20, 0xffffffff, 0x32343638,
 	0, 0, 0, 0x00000c24, 0xffffffff, 0x36384042,
 	0, 0, 0, 0x00000c28, 0xffffffff, 0x28303234,
@@ -11547,52 +12116,59 @@ u32 array_mp_8822b_phy_reg_pg_type16[] = {
 	1, 1, 1, 0x00000e4c, 0xffffffff, 0x20222426
 };
 
+#endif
+
 void
-odm_read_and_config_mp_8822b_phy_reg_pg_type16(
-	struct dm_struct	*dm
-)
+odm_read_and_config_mp_8822b_phy_reg_pg_type16(struct dm_struct *dm)
 {
-	u32	i = 0;
-	u32	array_len = sizeof(array_mp_8822b_phy_reg_pg_type16)/sizeof(u32);
-	u32	*array = array_mp_8822b_phy_reg_pg_type16;
+#ifdef CONFIG_8822B_TYPE16
+
+	u32 i = 0;
+	u32 array_len =
+		 sizeof(array_mp_8822b_phy_reg_pg_type16) / sizeof(u32);
+	u32 *array = (u32 *)array_mp_8822b_phy_reg_pg_type16;
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
 	void	*adapter = dm->adapter;
 	HAL_DATA_TYPE	*hal_data = GET_HAL_DATA(((PADAPTER)adapter));
 
-	PlatformZeroMemory(hal_data->BufOfLinesPwrByRate, MAX_LINES_HWCONFIG_TXT*MAX_BYTES_LINE_HWCONFIG_TXT);
-	hal_data->nLinesReadPwrByRate = array_len/6;
+	odm_memory_set(dm, hal_data->BufOfLinesPwrByRate, 0,
+		       MAX_LINES_HWCONFIG_TXT *
+		       MAX_BYTES_LINE_HWCONFIG_TXT);
+	hal_data->nLinesReadPwrByRate = array_len / 6;
 #endif
 
-	PHYDM_DBG(dm, ODM_COMP_INIT, "===> odm_read_and_config_mp_8822b_phy_reg_pg_type16\n");
+	PHYDM_DBG(dm, ODM_COMP_INIT, "===> %s\n", __func__);
 
 	dm->phy_reg_pg_version = 1;
 	dm->phy_reg_pg_value_type = PHY_REG_PG_EXACT_VALUE;
 
 	for (i = 0; i < array_len; i += 6) {
 		u32	v1 = array[i];
-		u32	v2 = array[i+1];
-		u32	v3 = array[i+2];
-		u32	v4 = array[i+3];
-		u32	v5 = array[i+4];
-		u32	v6 = array[i+5];
+		u32	v2 = array[i + 1];
+		u32	v3 = array[i + 2];
+		u32	v4 = array[i + 3];
+		u32	v5 = array[i + 4];
+		u32	v6 = array[i + 5];
 
 		odm_config_bb_phy_reg_pg_8822b(dm, v1, v2, v3, v4, v5, v6);
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
-	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i/6], 100, "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
-		(v1 == 0?"2.4G":"  5G"), (v2 == 0?"A":"B"), (v3 == 0?"1Tx":"2Tx"), v4, v5, v6);
+	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i / 6], 100,
+		 "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
+		 (v1 == 0 ? "2.4G" : "  5G"), (v2 == 0 ? "A" : "B"),
+		 (v3 == 0 ? "1Tx" : "2Tx"), v4, v5, v6);
 #endif
 	}
+#endif
 }
 
-
-
 /******************************************************************************
-*                           phy_reg_pg_type17.TXT
-******************************************************************************/
+ *                           phy_reg_pg_type17.TXT
+ ******************************************************************************/
 
-u32 array_mp_8822b_phy_reg_pg_type17[] = {
+#ifdef CONFIG_8822B_TYPE17
+const u32 array_mp_8822b_phy_reg_pg_type17[] = {
 	0, 0, 0, 0x00000c20, 0xffffffff, 0x32343638,
 	0, 0, 0, 0x00000c24, 0xffffffff, 0x36384042,
 	0, 0, 0, 0x00000c28, 0xffffffff, 0x28303234,
@@ -11641,52 +12217,160 @@ u32 array_mp_8822b_phy_reg_pg_type17[] = {
 	1, 1, 1, 0x00000e4c, 0xffffffff, 0x20222426
 };
 
+#endif
+
 void
-odm_read_and_config_mp_8822b_phy_reg_pg_type17(
-	struct dm_struct	*dm
-)
+odm_read_and_config_mp_8822b_phy_reg_pg_type17(struct dm_struct *dm)
 {
-	u32	i = 0;
-	u32	array_len = sizeof(array_mp_8822b_phy_reg_pg_type17)/sizeof(u32);
-	u32	*array = array_mp_8822b_phy_reg_pg_type17;
+#ifdef CONFIG_8822B_TYPE17
+
+	u32 i = 0;
+	u32 array_len =
+		 sizeof(array_mp_8822b_phy_reg_pg_type17) / sizeof(u32);
+	u32 *array = (u32 *)array_mp_8822b_phy_reg_pg_type17;
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
 	void	*adapter = dm->adapter;
 	HAL_DATA_TYPE	*hal_data = GET_HAL_DATA(((PADAPTER)adapter));
 
-	PlatformZeroMemory(hal_data->BufOfLinesPwrByRate, MAX_LINES_HWCONFIG_TXT*MAX_BYTES_LINE_HWCONFIG_TXT);
-	hal_data->nLinesReadPwrByRate = array_len/6;
+	odm_memory_set(dm, hal_data->BufOfLinesPwrByRate, 0,
+		       MAX_LINES_HWCONFIG_TXT *
+		       MAX_BYTES_LINE_HWCONFIG_TXT);
+	hal_data->nLinesReadPwrByRate = array_len / 6;
 #endif
 
-	PHYDM_DBG(dm, ODM_COMP_INIT, "===> odm_read_and_config_mp_8822b_phy_reg_pg_type17\n");
+	PHYDM_DBG(dm, ODM_COMP_INIT, "===> %s\n", __func__);
 
 	dm->phy_reg_pg_version = 1;
 	dm->phy_reg_pg_value_type = PHY_REG_PG_EXACT_VALUE;
 
 	for (i = 0; i < array_len; i += 6) {
 		u32	v1 = array[i];
-		u32	v2 = array[i+1];
-		u32	v3 = array[i+2];
-		u32	v4 = array[i+3];
-		u32	v5 = array[i+4];
-		u32	v6 = array[i+5];
+		u32	v2 = array[i + 1];
+		u32	v3 = array[i + 2];
+		u32	v4 = array[i + 3];
+		u32	v5 = array[i + 4];
+		u32	v6 = array[i + 5];
 
 		odm_config_bb_phy_reg_pg_8822b(dm, v1, v2, v3, v4, v5, v6);
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
-	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i/6], 100, "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
-		(v1 == 0?"2.4G":"  5G"), (v2 == 0?"A":"B"), (v3 == 0?"1Tx":"2Tx"), v4, v5, v6);
+	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i / 6], 100,
+		 "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
+		 (v1 == 0 ? "2.4G" : "  5G"), (v2 == 0 ? "A" : "B"),
+		 (v3 == 0 ? "1Tx" : "2Tx"), v4, v5, v6);
 #endif
 	}
+#endif
 }
 
+/******************************************************************************
+ *                           phy_reg_pg_type18.TXT
+ ******************************************************************************/
 
+#ifdef CONFIG_8822B_TYPE18
+const u32 array_mp_8822b_phy_reg_pg_type18[] = {
+	0, 0, 0, 0x00000c20, 0xffffffff, 0x32343638,
+	0, 0, 0, 0x00000c24, 0xffffffff, 0x36384042,
+	0, 0, 0, 0x00000c28, 0xffffffff, 0x28303234,
+	0, 0, 0, 0x00000c2c, 0xffffffff, 0x34363840,
+	0, 0, 0, 0x00000c30, 0xffffffff, 0x26283032,
+	0, 0, 1, 0x00000c34, 0xffffffff, 0x34363840,
+	0, 0, 1, 0x00000c38, 0xffffffff, 0x26283032,
+	0, 0, 0, 0x00000c3c, 0xffffffff, 0x34363840,
+	0, 0, 0, 0x00000c40, 0xffffffff, 0x26283032,
+	0, 0, 0, 0x00000c44, 0xffffffff, 0x38402224,
+	0, 0, 1, 0x00000c48, 0xffffffff, 0x30323436,
+	0, 0, 1, 0x00000c4c, 0xffffffff, 0x22242628,
+	0, 1, 0, 0x00000e20, 0xffffffff, 0x32343638,
+	0, 1, 0, 0x00000e24, 0xffffffff, 0x36384042,
+	0, 1, 0, 0x00000e28, 0xffffffff, 0x28303234,
+	0, 1, 0, 0x00000e2c, 0xffffffff, 0x34363840,
+	0, 1, 0, 0x00000e30, 0xffffffff, 0x26283032,
+	0, 1, 1, 0x00000e34, 0xffffffff, 0x34363840,
+	0, 1, 1, 0x00000e38, 0xffffffff, 0x26283032,
+	0, 1, 0, 0x00000e3c, 0xffffffff, 0x34363840,
+	0, 1, 0, 0x00000e40, 0xffffffff, 0x26283032,
+	0, 1, 0, 0x00000e44, 0xffffffff, 0x38402224,
+	0, 1, 1, 0x00000e48, 0xffffffff, 0x30323436,
+	0, 1, 1, 0x00000e4c, 0xffffffff, 0x22242628,
+	1, 0, 0, 0x00000c24, 0xffffffff, 0x34363840,
+	1, 0, 0, 0x00000c28, 0xffffffff, 0x26283032,
+	1, 0, 0, 0x00000c2c, 0xffffffff, 0x32343638,
+	1, 0, 0, 0x00000c30, 0xffffffff, 0x24262830,
+	1, 0, 1, 0x00000c34, 0xffffffff, 0x32343638,
+	1, 0, 1, 0x00000c38, 0xffffffff, 0x24262830,
+	1, 0, 0, 0x00000c3c, 0xffffffff, 0x32343638,
+	1, 0, 0, 0x00000c40, 0xffffffff, 0x24262830,
+	1, 0, 0, 0x00000c44, 0xffffffff, 0x36382022,
+	1, 0, 1, 0x00000c48, 0xffffffff, 0x28303234,
+	1, 0, 1, 0x00000c4c, 0xffffffff, 0x20222426,
+	1, 1, 0, 0x00000e24, 0xffffffff, 0x34363840,
+	1, 1, 0, 0x00000e28, 0xffffffff, 0x26283032,
+	1, 1, 0, 0x00000e2c, 0xffffffff, 0x32343638,
+	1, 1, 0, 0x00000e30, 0xffffffff, 0x24262830,
+	1, 1, 1, 0x00000e34, 0xffffffff, 0x32343638,
+	1, 1, 1, 0x00000e38, 0xffffffff, 0x24262830,
+	1, 1, 0, 0x00000e3c, 0xffffffff, 0x32343638,
+	1, 1, 0, 0x00000e40, 0xffffffff, 0x24262830,
+	1, 1, 0, 0x00000e44, 0xffffffff, 0x36382022,
+	1, 1, 1, 0x00000e48, 0xffffffff, 0x28303234,
+	1, 1, 1, 0x00000e4c, 0xffffffff, 0x20222426
+};
+
+#endif
+
+void
+odm_read_and_config_mp_8822b_phy_reg_pg_type18(struct dm_struct *dm)
+{
+#ifdef CONFIG_8822B_TYPE18
+
+	u32 i = 0;
+	u32 array_len =
+		 sizeof(array_mp_8822b_phy_reg_pg_type18) / sizeof(u32);
+	u32 *array = (u32 *)array_mp_8822b_phy_reg_pg_type18;
+
+#if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
+	void	*adapter = dm->adapter;
+	HAL_DATA_TYPE	*hal_data = GET_HAL_DATA(((PADAPTER)adapter));
+
+	odm_memory_set(dm, hal_data->BufOfLinesPwrByRate, 0,
+		       MAX_LINES_HWCONFIG_TXT *
+		       MAX_BYTES_LINE_HWCONFIG_TXT);
+	hal_data->nLinesReadPwrByRate = array_len / 6;
+#endif
+
+	PHYDM_DBG(dm, ODM_COMP_INIT, "===> %s\n", __func__);
+
+	dm->phy_reg_pg_version = 1;
+	dm->phy_reg_pg_value_type = PHY_REG_PG_EXACT_VALUE;
+
+	for (i = 0; i < array_len; i += 6) {
+		u32	v1 = array[i];
+		u32	v2 = array[i + 1];
+		u32	v3 = array[i + 2];
+		u32	v4 = array[i + 3];
+		u32	v5 = array[i + 4];
+		u32	v6 = array[i + 5];
+
+		odm_config_bb_phy_reg_pg_8822b(dm, v1, v2, v3, v4, v5, v6);
+
+#if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
+	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i / 6], 100,
+		 "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
+		 (v1 == 0 ? "2.4G" : "  5G"), (v2 == 0 ? "A" : "B"),
+		 (v3 == 0 ? "1Tx" : "2Tx"), v4, v5, v6);
+#endif
+	}
+#endif
+}
 
 /******************************************************************************
-*                           phy_reg_pg_type2.TXT
-******************************************************************************/
+ *                           phy_reg_pg_type2.TXT
+ ******************************************************************************/
 
-u32 array_mp_8822b_phy_reg_pg_type2[] = {
+#ifdef CONFIG_8822B_TYPE2
+const u32 array_mp_8822b_phy_reg_pg_type2[] = {
 	0, 0, 0, 0x00000c20, 0xffffffff, 0x32343638,
 	0, 0, 0, 0x00000c24, 0xffffffff, 0x36384042,
 	0, 0, 0, 0x00000c28, 0xffffffff, 0x28303234,
@@ -11735,52 +12419,59 @@ u32 array_mp_8822b_phy_reg_pg_type2[] = {
 	1, 1, 1, 0x00000e4c, 0xffffffff, 0x26283032
 };
 
+#endif
+
 void
-odm_read_and_config_mp_8822b_phy_reg_pg_type2(
-	struct dm_struct	*dm
-)
+odm_read_and_config_mp_8822b_phy_reg_pg_type2(struct dm_struct *dm)
 {
-	u32	i = 0;
-	u32	array_len = sizeof(array_mp_8822b_phy_reg_pg_type2)/sizeof(u32);
-	u32	*array = array_mp_8822b_phy_reg_pg_type2;
+#ifdef CONFIG_8822B_TYPE2
+
+	u32 i = 0;
+	u32 array_len =
+		 sizeof(array_mp_8822b_phy_reg_pg_type2) / sizeof(u32);
+	u32 *array = (u32 *)array_mp_8822b_phy_reg_pg_type2;
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
 	void	*adapter = dm->adapter;
 	HAL_DATA_TYPE	*hal_data = GET_HAL_DATA(((PADAPTER)adapter));
 
-	PlatformZeroMemory(hal_data->BufOfLinesPwrByRate, MAX_LINES_HWCONFIG_TXT*MAX_BYTES_LINE_HWCONFIG_TXT);
-	hal_data->nLinesReadPwrByRate = array_len/6;
+	odm_memory_set(dm, hal_data->BufOfLinesPwrByRate, 0,
+		       MAX_LINES_HWCONFIG_TXT *
+		       MAX_BYTES_LINE_HWCONFIG_TXT);
+	hal_data->nLinesReadPwrByRate = array_len / 6;
 #endif
 
-	PHYDM_DBG(dm, ODM_COMP_INIT, "===> odm_read_and_config_mp_8822b_phy_reg_pg_type2\n");
+	PHYDM_DBG(dm, ODM_COMP_INIT, "===> %s\n", __func__);
 
 	dm->phy_reg_pg_version = 1;
 	dm->phy_reg_pg_value_type = PHY_REG_PG_EXACT_VALUE;
 
 	for (i = 0; i < array_len; i += 6) {
 		u32	v1 = array[i];
-		u32	v2 = array[i+1];
-		u32	v3 = array[i+2];
-		u32	v4 = array[i+3];
-		u32	v5 = array[i+4];
-		u32	v6 = array[i+5];
+		u32	v2 = array[i + 1];
+		u32	v3 = array[i + 2];
+		u32	v4 = array[i + 3];
+		u32	v5 = array[i + 4];
+		u32	v6 = array[i + 5];
 
 		odm_config_bb_phy_reg_pg_8822b(dm, v1, v2, v3, v4, v5, v6);
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
-	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i/6], 100, "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
-		(v1 == 0?"2.4G":"  5G"), (v2 == 0?"A":"B"), (v3 == 0?"1Tx":"2Tx"), v4, v5, v6);
+	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i / 6], 100,
+		 "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
+		 (v1 == 0 ? "2.4G" : "  5G"), (v2 == 0 ? "A" : "B"),
+		 (v3 == 0 ? "1Tx" : "2Tx"), v4, v5, v6);
 #endif
 	}
+#endif
 }
 
-
-
 /******************************************************************************
-*                           phy_reg_pg_type3.TXT
-******************************************************************************/
+ *                           phy_reg_pg_type3.TXT
+ ******************************************************************************/
 
-u32 array_mp_8822b_phy_reg_pg_type3[] = {
+#ifdef CONFIG_8822B_TYPE3
+const u32 array_mp_8822b_phy_reg_pg_type3[] = {
 	0, 0, 0, 0x00000c20, 0xffffffff, 0x32343638,
 	0, 0, 0, 0x00000c24, 0xffffffff, 0x36384042,
 	0, 0, 0, 0x00000c28, 0xffffffff, 0x28303234,
@@ -11829,52 +12520,59 @@ u32 array_mp_8822b_phy_reg_pg_type3[] = {
 	1, 1, 1, 0x00000e4c, 0xffffffff, 0x20222426
 };
 
+#endif
+
 void
-odm_read_and_config_mp_8822b_phy_reg_pg_type3(
-	struct dm_struct	*dm
-)
+odm_read_and_config_mp_8822b_phy_reg_pg_type3(struct dm_struct *dm)
 {
-	u32	i = 0;
-	u32	array_len = sizeof(array_mp_8822b_phy_reg_pg_type3)/sizeof(u32);
-	u32	*array = array_mp_8822b_phy_reg_pg_type3;
+#ifdef CONFIG_8822B_TYPE3
+
+	u32 i = 0;
+	u32 array_len =
+		 sizeof(array_mp_8822b_phy_reg_pg_type3) / sizeof(u32);
+	u32 *array = (u32 *)array_mp_8822b_phy_reg_pg_type3;
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
 	void	*adapter = dm->adapter;
 	HAL_DATA_TYPE	*hal_data = GET_HAL_DATA(((PADAPTER)adapter));
 
-	PlatformZeroMemory(hal_data->BufOfLinesPwrByRate, MAX_LINES_HWCONFIG_TXT*MAX_BYTES_LINE_HWCONFIG_TXT);
-	hal_data->nLinesReadPwrByRate = array_len/6;
+	odm_memory_set(dm, hal_data->BufOfLinesPwrByRate, 0,
+		       MAX_LINES_HWCONFIG_TXT *
+		       MAX_BYTES_LINE_HWCONFIG_TXT);
+	hal_data->nLinesReadPwrByRate = array_len / 6;
 #endif
 
-	PHYDM_DBG(dm, ODM_COMP_INIT, "===> odm_read_and_config_mp_8822b_phy_reg_pg_type3\n");
+	PHYDM_DBG(dm, ODM_COMP_INIT, "===> %s\n", __func__);
 
 	dm->phy_reg_pg_version = 1;
 	dm->phy_reg_pg_value_type = PHY_REG_PG_EXACT_VALUE;
 
 	for (i = 0; i < array_len; i += 6) {
 		u32	v1 = array[i];
-		u32	v2 = array[i+1];
-		u32	v3 = array[i+2];
-		u32	v4 = array[i+3];
-		u32	v5 = array[i+4];
-		u32	v6 = array[i+5];
+		u32	v2 = array[i + 1];
+		u32	v3 = array[i + 2];
+		u32	v4 = array[i + 3];
+		u32	v5 = array[i + 4];
+		u32	v6 = array[i + 5];
 
 		odm_config_bb_phy_reg_pg_8822b(dm, v1, v2, v3, v4, v5, v6);
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
-	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i/6], 100, "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
-		(v1 == 0?"2.4G":"  5G"), (v2 == 0?"A":"B"), (v3 == 0?"1Tx":"2Tx"), v4, v5, v6);
+	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i / 6], 100,
+		 "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
+		 (v1 == 0 ? "2.4G" : "  5G"), (v2 == 0 ? "A" : "B"),
+		 (v3 == 0 ? "1Tx" : "2Tx"), v4, v5, v6);
 #endif
 	}
+#endif
 }
 
-
-
 /******************************************************************************
-*                           phy_reg_pg_type4.TXT
-******************************************************************************/
+ *                           phy_reg_pg_type4.TXT
+ ******************************************************************************/
 
-u32 array_mp_8822b_phy_reg_pg_type4[] = {
+#ifdef CONFIG_8822B_TYPE4
+const u32 array_mp_8822b_phy_reg_pg_type4[] = {
 	0, 0, 0, 0x00000c20, 0xffffffff, 0x38404244,
 	0, 0, 0, 0x00000c24, 0xffffffff, 0x42444648,
 	0, 0, 0, 0x00000c28, 0xffffffff, 0x34363840,
@@ -11923,52 +12621,59 @@ u32 array_mp_8822b_phy_reg_pg_type4[] = {
 	1, 1, 1, 0x00000e4c, 0xffffffff, 0x26283032
 };
 
+#endif
+
 void
-odm_read_and_config_mp_8822b_phy_reg_pg_type4(
-	struct dm_struct	*dm
-)
+odm_read_and_config_mp_8822b_phy_reg_pg_type4(struct dm_struct *dm)
 {
-	u32	i = 0;
-	u32	array_len = sizeof(array_mp_8822b_phy_reg_pg_type4)/sizeof(u32);
-	u32	*array = array_mp_8822b_phy_reg_pg_type4;
+#ifdef CONFIG_8822B_TYPE4
+
+	u32 i = 0;
+	u32 array_len =
+		 sizeof(array_mp_8822b_phy_reg_pg_type4) / sizeof(u32);
+	u32 *array = (u32 *)array_mp_8822b_phy_reg_pg_type4;
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
 	void	*adapter = dm->adapter;
 	HAL_DATA_TYPE	*hal_data = GET_HAL_DATA(((PADAPTER)adapter));
 
-	PlatformZeroMemory(hal_data->BufOfLinesPwrByRate, MAX_LINES_HWCONFIG_TXT*MAX_BYTES_LINE_HWCONFIG_TXT);
-	hal_data->nLinesReadPwrByRate = array_len/6;
+	odm_memory_set(dm, hal_data->BufOfLinesPwrByRate, 0,
+		       MAX_LINES_HWCONFIG_TXT *
+		       MAX_BYTES_LINE_HWCONFIG_TXT);
+	hal_data->nLinesReadPwrByRate = array_len / 6;
 #endif
 
-	PHYDM_DBG(dm, ODM_COMP_INIT, "===> odm_read_and_config_mp_8822b_phy_reg_pg_type4\n");
+	PHYDM_DBG(dm, ODM_COMP_INIT, "===> %s\n", __func__);
 
 	dm->phy_reg_pg_version = 1;
 	dm->phy_reg_pg_value_type = PHY_REG_PG_EXACT_VALUE;
 
 	for (i = 0; i < array_len; i += 6) {
 		u32	v1 = array[i];
-		u32	v2 = array[i+1];
-		u32	v3 = array[i+2];
-		u32	v4 = array[i+3];
-		u32	v5 = array[i+4];
-		u32	v6 = array[i+5];
+		u32	v2 = array[i + 1];
+		u32	v3 = array[i + 2];
+		u32	v4 = array[i + 3];
+		u32	v5 = array[i + 4];
+		u32	v6 = array[i + 5];
 
 		odm_config_bb_phy_reg_pg_8822b(dm, v1, v2, v3, v4, v5, v6);
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
-	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i/6], 100, "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
-		(v1 == 0?"2.4G":"  5G"), (v2 == 0?"A":"B"), (v3 == 0?"1Tx":"2Tx"), v4, v5, v6);
+	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i / 6], 100,
+		 "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
+		 (v1 == 0 ? "2.4G" : "  5G"), (v2 == 0 ? "A" : "B"),
+		 (v3 == 0 ? "1Tx" : "2Tx"), v4, v5, v6);
 #endif
 	}
+#endif
 }
 
-
-
 /******************************************************************************
-*                           phy_reg_pg_type5.TXT
-******************************************************************************/
+ *                           phy_reg_pg_type5.TXT
+ ******************************************************************************/
 
-u32 array_mp_8822b_phy_reg_pg_type5[] = {
+#ifdef CONFIG_8822B_TYPE5
+const u32 array_mp_8822b_phy_reg_pg_type5[] = {
 	0, 0, 0, 0x00000c20, 0xffffffff, 0x32343638,
 	0, 0, 0, 0x00000c24, 0xffffffff, 0x36384042,
 	0, 0, 0, 0x00000c28, 0xffffffff, 0x28303234,
@@ -12017,46 +12722,52 @@ u32 array_mp_8822b_phy_reg_pg_type5[] = {
 	1, 1, 1, 0x00000e4c, 0xffffffff, 0x20222426
 };
 
+#endif
+
 void
-odm_read_and_config_mp_8822b_phy_reg_pg_type5(
-	struct dm_struct	*dm
-)
+odm_read_and_config_mp_8822b_phy_reg_pg_type5(struct dm_struct *dm)
 {
-	u32	i = 0;
-	u32	array_len = sizeof(array_mp_8822b_phy_reg_pg_type5)/sizeof(u32);
-	u32	*array = array_mp_8822b_phy_reg_pg_type5;
+#ifdef CONFIG_8822B_TYPE5
+
+	u32 i = 0;
+	u32 array_len =
+		 sizeof(array_mp_8822b_phy_reg_pg_type5) / sizeof(u32);
+	u32 *array = (u32 *)array_mp_8822b_phy_reg_pg_type5;
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
 	void	*adapter = dm->adapter;
 	HAL_DATA_TYPE	*hal_data = GET_HAL_DATA(((PADAPTER)adapter));
 
-	PlatformZeroMemory(hal_data->BufOfLinesPwrByRate, MAX_LINES_HWCONFIG_TXT*MAX_BYTES_LINE_HWCONFIG_TXT);
-	hal_data->nLinesReadPwrByRate = array_len/6;
+	odm_memory_set(dm, hal_data->BufOfLinesPwrByRate, 0,
+		       MAX_LINES_HWCONFIG_TXT *
+		       MAX_BYTES_LINE_HWCONFIG_TXT);
+	hal_data->nLinesReadPwrByRate = array_len / 6;
 #endif
 
-	PHYDM_DBG(dm, ODM_COMP_INIT, "===> odm_read_and_config_mp_8822b_phy_reg_pg_type5\n");
+	PHYDM_DBG(dm, ODM_COMP_INIT, "===> %s\n", __func__);
 
 	dm->phy_reg_pg_version = 1;
 	dm->phy_reg_pg_value_type = PHY_REG_PG_EXACT_VALUE;
 
 	for (i = 0; i < array_len; i += 6) {
 		u32	v1 = array[i];
-		u32	v2 = array[i+1];
-		u32	v3 = array[i+2];
-		u32	v4 = array[i+3];
-		u32	v5 = array[i+4];
-		u32	v6 = array[i+5];
+		u32	v2 = array[i + 1];
+		u32	v3 = array[i + 2];
+		u32	v4 = array[i + 3];
+		u32	v5 = array[i + 4];
+		u32	v6 = array[i + 5];
 
 		odm_config_bb_phy_reg_pg_8822b(dm, v1, v2, v3, v4, v5, v6);
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
-	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i/6], 100, "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
-		(v1 == 0?"2.4G":"  5G"), (v2 == 0?"A":"B"), (v3 == 0?"1Tx":"2Tx"), v4, v5, v6);
+	rsprintf((char *)hal_data->BufOfLinesPwrByRate[i / 6], 100,
+		 "%s, %s, %s, 0x%X, 0x%08X, 0x%08X,",
+		 (v1 == 0 ? "2.4G" : "  5G"), (v2 == 0 ? "A" : "B"),
+		 (v3 == 0 ? "1Tx" : "2Tx"), v4, v5, v6);
 #endif
 	}
+#endif
 }
-
-
 
 #endif /* end of HWIMG_SUPPORT*/
 

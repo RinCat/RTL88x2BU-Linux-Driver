@@ -96,7 +96,6 @@ void rtw_reset_securitypriv(_adapter *adapter)
 	u32	backupTKIPcountermeasure_time = 0;
 	/* add for CONFIG_IEEE80211W, none 11w also can use */
 	_irqL irqL;
-	struct mlme_ext_priv	*pmlmeext = &adapter->mlmeextpriv;
 
 	_enter_critical_bh(&adapter->security_key_mutex, &irqL);
 
@@ -378,9 +377,6 @@ int hostapd_mode_init(_adapter *padapter)
 
 	/* pnetdev->wireless_handlers = NULL; */
 
-#ifdef CONFIG_TCP_CSUM_OFFLOAD_TX
-	pnetdev->features |= NETIF_F_IP_CSUM;
-#endif
 
 
 

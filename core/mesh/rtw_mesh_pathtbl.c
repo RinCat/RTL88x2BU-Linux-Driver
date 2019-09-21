@@ -374,6 +374,15 @@ int rtw_mesh_path_add_gate(struct rtw_mesh_path *mpath)
 	ori_num_gates = minfo->num_gates;
 	minfo->num_gates++;
 	rtw_hlist_add_head_rcu(&mpath->gate_list, &tbl->known_gates);
+
+	if (ori_num_gates == 0
+		|| rtw_macaddr_is_larger(mpath->dst, minfo->max_addr_gate->dst)
+	) {
+		minfo->max_addr_gate = mpath;
+		minfo->max_addr_gate_is_larger_than_self =
+			rtw_macaddr_is_larger(mpath->dst, adapter_mac_addr(mpath->adapter));
+	}
+
 	_rtw_spinunlock(&tbl->gates_lock);
 
 	exit_critical_bh(&mpath->state_lock);
@@ -414,6 +423,23 @@ void rtw_mesh_gate_del(struct rtw_mesh_table *tbl, struct rtw_mesh_path *mpath)
 	rtw_hlist_del_rcu(&mpath->gate_list);
 	ori_num_gates = minfo->num_gates;
 	minfo->num_gates--;
+
+	if (ori_num_gates == 1) {
+		minfo->max_addr_gate = NULL;
+		minfo->max_addr_gate_is_larger_than_self = 0;
+	} else if (minfo->max_addr_gate == mpath) {
+		struct rtw_mesh_path *gate, *max_addr_gate = NULL;
+		rtw_hlist_node *node;
+
+		rtw_hlist_for_each_entry_rcu(gate, node, &tbl->known_gates, gate_list) {
+			if (!max_addr_gate || rtw_macaddr_is_larger(gate->dst, max_addr_gate->dst))
+				max_addr_gate = gate;
+		}
+		minfo->max_addr_gate = max_addr_gate;
+		minfo->max_addr_gate_is_larger_than_self =
+			rtw_macaddr_is_larger(max_addr_gate->dst, adapter_mac_addr(mpath->adapter));
+	}
+
 	exit_critical_bh(&tbl->gates_lock);
 
 	if (ori_num_gates == 1)
@@ -456,6 +482,45 @@ bool rtw_mesh_gate_search(struct rtw_mesh_table *tbl, const u8 *addr)
 int rtw_mesh_gate_num(_adapter *adapter)
 {
 	return adapter->mesh_info.num_gates;
+}
+
+bool rtw_mesh_is_primary_gate(_adapter *adapter)
+{
+	struct rtw_mesh_cfg *mcfg = &adapter->mesh_cfg;
+	struct rtw_mesh_info *minfo = &adapter->mesh_info;
+
+	return mcfg->dot11MeshGateAnnouncementProtocol
+		&& !minfo->max_addr_gate_is_larger_than_self;
+}
+
+void dump_known_gates(void *sel, _adapter *adapter)
+{
+	struct rtw_mesh_info *minfo = &adapter->mesh_info;
+	struct rtw_mesh_table *tbl;
+	struct rtw_mesh_path *gate;
+	rtw_hlist_node *node;
+
+	if (!rtw_mesh_gate_num(adapter))
+		goto exit;
+
+	rtw_rcu_read_lock();
+
+	tbl = minfo->mesh_paths;
+	if (!tbl)
+		goto unlock;
+
+	RTW_PRINT_SEL(sel, "num:%d\n", rtw_mesh_gate_num(adapter));
+
+	rtw_hlist_for_each_entry_rcu(gate, node, &tbl->known_gates, gate_list) {
+		RTW_PRINT_SEL(sel, "%c"MAC_FMT"\n"
+			, gate == minfo->max_addr_gate ? '*' : ' '
+			, MAC_ARG(gate->dst));
+	}
+
+unlock:
+	rtw_rcu_read_unlock();
+exit:
+	return;
 }
 
 static
@@ -574,6 +639,34 @@ int rtw_mpp_path_add(_adapter *adapter,
 	return ret;
 }
 
+void dump_mpp(void *sel, _adapter *adapter)
+{
+	struct rtw_mesh_path *mpath;
+	int idx = 0;
+	char dst[ETH_ALEN];
+	char mpp[ETH_ALEN];
+
+	RTW_PRINT_SEL(sel, "%-17s %-17s\n", "dst", "mpp");
+
+	do {
+		rtw_rcu_read_lock();
+
+		mpath = rtw_mpp_path_lookup_by_idx(adapter, idx);
+		if (mpath) {
+			_rtw_memcpy(dst, mpath->dst, ETH_ALEN);
+			_rtw_memcpy(mpp, mpath->mpp, ETH_ALEN);
+		}
+
+		rtw_rcu_read_unlock();
+
+		if (mpath) {
+			RTW_PRINT_SEL(sel, MAC_FMT" "MAC_FMT"\n"
+				, MAC_ARG(dst), MAC_ARG(mpp));
+		}
+
+		idx++;
+	} while (mpath);
+}
 
 /**
  * rtw_mesh_plink_broken - deactivates paths and sends perr when a link breaks

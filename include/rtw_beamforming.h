@@ -327,7 +327,7 @@ struct beamforming_entry {
 	u16	mac_id;		/* Used to Set Reg42C in IBSS mode. */
 	u16	p_aid;		/* Used to fill Reg42C & Reg714 to compare with P_AID of Tx DESC. */
 	u16 g_id;
-	u8	mac_addr[6];/* Used to fill Reg6E4 to fill Mac address of CSI report frame. */
+	u8	mac_addr[ETH_ALEN];/* Used to fill Reg6E4 to fill Mac address of CSI report frame. */
 	enum channel_width	sound_bw;	/* Sounding BandWidth */
 	u16	sound_period;
 	BEAMFORMING_CAP	beamforming_entry_cap;

@@ -21,6 +21,7 @@
 #ifdef CONFIG_BT_COEXIST
 	#include <hal_btcoex.h>
 #endif
+	#include <hal_btcoex_wifionly.h>
 
 #ifdef CONFIG_SDIO_HCI
 	#include <hal_sdio.h>
@@ -133,10 +134,19 @@ typedef enum _RX_AGG_MODE {
 #ifdef CONFIG_RTL8188F
 	#define EFUSE_MAP_SIZE	512
 #endif
+#ifdef CONFIG_RTL8188GTV
+	#define EFUSE_MAP_SIZE	512
+#endif
+#ifdef CONFIG_RTL8710B
+	#define EFUSE_MAP_SIZE	512
+#endif
+#ifdef CONFIG_RTL8192F
+	#define EFUSE_MAP_SIZE	512
+#endif
 
 #if defined(CONFIG_RTL8814A) || defined(CONFIG_RTL8822B) || defined(CONFIG_RTL8821C)
 	#define EFUSE_MAX_SIZE	1024
-#elif defined(CONFIG_RTL8188E) || defined(CONFIG_RTL8188F) || defined(CONFIG_RTL8703B)
+#elif defined(CONFIG_RTL8188E) || defined(CONFIG_RTL8188F) || defined(CONFIG_RTL8188GTV) || defined(CONFIG_RTL8703B) || defined(CONFIG_RTL8710B)
 	#define EFUSE_MAX_SIZE	256
 #else
 	#define EFUSE_MAX_SIZE	512
@@ -217,6 +227,8 @@ struct hal_spec_t {
 
 	u8 rfpath_num_2g:4;	/* used for tx power index path */
 	u8 rfpath_num_5g:4;	/* used for tx power index path */
+	u8 txgi_max; /* maximum tx power gain index */
+	u8 txgi_pdbm; /* tx power gain index per dBm */
 
 	u8 max_tx_cnt;
 	u8 tx_nss_num:4;
@@ -227,7 +239,10 @@ struct hal_spec_t {
 	u8 proto_cap;	/* value of PROTO_CAP_XXX */
 	u8 wl_func;		/* value of WL_FUNC_XXX */
 
+	u8 rx_tsf_filter:1;
+
 	u8 pg_txpwr_saddr; /* starting address of PG tx power info */
+	u8 pg_txgi_diff_factor; /* PG tx power gain index diff to tx power gain index */
 
 	u8 hci_type;	/* value of HCI Type */
 };
@@ -265,7 +280,7 @@ typedef struct hal_p2p_ps_para {
 	u8  noa_sel:1;
 	u8  all_sta_sleep:1;
 	u8  discovery:1;
-	u8  rsvd2:1;
+	u8  disable_close_rf:1;
 	u8  p2p_port_id;
 	u8  p2p_group;
 	u8  p2p_macid;
@@ -382,8 +397,9 @@ typedef struct hal_com_data {
 	u16	ForcedDataRate;	/* Force Data Rate. 0: Auto, 0x02: 1M ~ 0x6C: 54M. */
 	u8	bDumpRxPkt;
 	u8	bDumpTxPkt;
-	u8	dis_turboedca;
-
+	u8	dis_turboedca; /* 1: disable turboedca, 
+						  2: disable turboedca and setting EDCA parameter based on the input parameter*/
+	u32 edca_param_mode;
 
 	/****** EEPROM setting.******/
 	u8	bautoload_fail_flag;
@@ -429,7 +445,9 @@ typedef struct hal_com_data {
 #endif /*CONFIG_RF_POWER_TRIM*/
 
 #if defined(CONFIG_RTL8723B) || defined(CONFIG_RTL8703B) || \
-	defined(CONFIG_RTL8723D)
+	defined(CONFIG_RTL8723D) || \
+	defined(CONFIG_RTL8192F)
+
 	u8	adjuseVoltageVal;
 	u8	need_restore;
 #endif
@@ -524,6 +542,7 @@ typedef struct hal_com_data {
 	u64			bk_rf_ability;
 	u8			bIQKInitialized;
 	u8			bNeedIQK;
+	u8			neediqk_24g;
 	u8			IQK_MP_Switch;
 	u8			bScanInProcess;
 	/******** PHY DM & DM Section **********/
@@ -537,7 +556,11 @@ typedef struct hal_com_data {
 	u32	interfaceIndex;
 
 #ifdef CONFIG_P2P
+#ifdef CONFIG_P2P_PS_NOA_USE_MACID_SLEEP
+	u16 p2p_ps_offload;
+#else
 	u8	p2p_ps_offload;
+#endif
 #endif
 	/* Auto FSM to Turn On, include clock, isolation, power control for MAC only */
 	u8	bMacPwrCtrlOn;
@@ -579,7 +602,11 @@ typedef struct hal_com_data {
 	/* SDIO Tx FIFO related. */
 	/*  */
 	/* HIQ, MID, LOW, PUB free pages; padapter->xmitpriv.free_txpg */
+#ifdef CONFIG_RTL8192F
+	u16			SdioTxFIFOFreePage[SDIO_TX_FREE_PG_QUEUE];
+#else
 	u8			SdioTxFIFOFreePage[SDIO_TX_FREE_PG_QUEUE];
+#endif/*CONFIG_RTL8192F*/
 	_lock		SdioTxFIFOFreePageLock;
 	u8			SdioTxOQTMaxFreeSpace;
 	u8			SdioTxOQTFreeSpace;
@@ -683,7 +710,7 @@ typedef struct hal_com_data {
 #endif /* CONFIG_BT_COEXIST */
 
 #if defined(CONFIG_RTL8723B) || defined(CONFIG_RTL8703B) \
-	|| defined(CONFIG_RTL8188F) || defined(CONFIG_RTL8723D)
+	|| defined(CONFIG_RTL8188F) || defined(CONFIG_RTL8188GTV) || defined(CONFIG_RTL8723D)|| defined(CONFIG_RTL8192F)
 #ifndef CONFIG_PCI_HCI	/* mutual exclusive with PCI -- so they're SDIO and GSPI */
 	/* Interrupt relatd register information. */
 	u32			SysIntrStatus;
@@ -735,7 +762,7 @@ typedef struct hal_com_data {
 	struct hal_iqk_reg_backup iqk_reg_backup[MAX_IQK_INFO_BACKUP_CHNL_NUM];
 
 #ifdef RTW_HALMAC
-	u8 drv_rsvd_page_number;
+	u16 drv_rsvd_page_number;
 #endif
 
 #ifdef CONFIG_BEAMFORMING

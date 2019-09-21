@@ -18,6 +18,8 @@
 void rtw_mi_update_union_chan_inf(_adapter *adapter, u8 ch, u8 offset , u8 bw);
 u8 rtw_mi_stayin_union_ch_chk(_adapter *adapter);
 u8 rtw_mi_stayin_union_band_chk(_adapter *adapter);
+
+int rtw_mi_get_ch_setting_union_by_ifbmp(struct dvobj_priv *dvobj, u8 ifbmp, u8 *ch, u8 *bw, u8 *offset);
 int rtw_mi_get_ch_setting_union(_adapter *adapter, u8 *ch, u8 *bw, u8 *offset);
 int rtw_mi_get_ch_setting_union_no_self(_adapter *adapter, u8 *ch, u8 *bw, u8 *offset);
 
@@ -48,7 +50,11 @@ struct mi_state {
 	#endif
 	u8 mgmt_tx_num;
 #endif
-
+#ifdef CONFIG_P2P
+	u8 p2p_device_num;
+	u8 p2p_gc;
+	u8 p2p_go;
+#endif
 	u8 union_ch;
 	u8 union_bw;
 	u8 union_offset;
@@ -95,6 +101,16 @@ struct mi_state {
 #define MSTATE_ROCH_NUM(_mstate)		0
 #endif
 
+#ifdef CONFIG_P2P
+#define MSTATE_P2P_DV_NUM(_mstate)		((_mstate)->p2p_device_num)
+#define MSTATE_P2P_GC_NUM(_mstate)		((_mstate)->p2p_gc)
+#define MSTATE_P2P_GO_NUM(_mstate)		((_mstate)->p2p_go)
+#else
+#define MSTATE_P2P_DV_NUM(_mstate)		0
+#define MSTATE_P2P_GC_NUM(_mstate)		0
+#define MSTATE_P2P_GO_NUM(_mstate)		0
+#endif
+
 #if defined(CONFIG_IOCTL_CFG80211)
 #define MSTATE_MGMT_TX_NUM(_mstate)		((_mstate)->mgmt_tx_num)
 #else
@@ -112,8 +128,10 @@ struct mi_state {
 #define rtw_mi_get_assoced_sta_num(adapter)	DEV_STA_LD_NUM(adapter_to_dvobj(adapter))
 #define rtw_mi_get_ap_num(adapter)			DEV_AP_NUM(adapter_to_dvobj(adapter))
 #define rtw_mi_get_mesh_num(adapter)		DEV_MESH_NUM(adapter_to_dvobj(adapter))
+u8 rtw_mi_get_assoc_if_num(_adapter *adapter);
 
 /* For now, not return union_ch/bw/offset */
+void rtw_mi_status_by_ifbmp(struct dvobj_priv *dvobj, u8 ifbmp, struct mi_state *mstate);
 void rtw_mi_status(_adapter *adapter, struct mi_state *mstate);
 void rtw_mi_status_no_self(_adapter *adapter, struct mi_state *mstate);
 void rtw_mi_status_no_others(_adapter *adapter, struct mi_state *mstate);
@@ -157,6 +175,9 @@ void rtw_mi_buddy_intf_start(_adapter *adapter);
 void rtw_mi_intf_stop(_adapter *adapter);
 void rtw_mi_buddy_intf_stop(_adapter *adapter);
 
+#ifdef CONFIG_NEW_NETDEV_HDL
+u8 rtw_mi_hal_iface_init(_adapter *padapter);
+#endif
 void rtw_mi_suspend_free_assoc_resource(_adapter *adapter);
 void rtw_mi_buddy_suspend_free_assoc_resource(_adapter *adapter);
 
@@ -236,9 +257,6 @@ void rtw_mi_buddy_adapter_reset(_adapter *padapter);
 u8 rtw_mi_dynamic_check_timer_handlder(_adapter *padapter);
 u8 rtw_mi_buddy_dynamic_check_timer_handlder(_adapter *padapter);
 
-u8 rtw_mi_dev_unload(_adapter *padapter);
-u8 rtw_mi_buddy_dev_unload(_adapter *padapter);
-
 extern void rtw_iface_dynamic_chk_wk_hdl(_adapter *padapter);
 u8 rtw_mi_dynamic_chk_wk_hdl(_adapter *padapter);
 u8 rtw_mi_buddy_dynamic_chk_wk_hdl(_adapter *padapter);
@@ -268,7 +286,7 @@ u8 rtw_mi_buddy_stay_in_p2p_mode(_adapter *padapter);
 #endif
 
 _adapter *rtw_get_iface_by_id(_adapter *padapter, u8 iface_id);
-_adapter *rtw_get_iface_by_macddr(_adapter *padapter, u8 *mac_addr);
+_adapter *rtw_get_iface_by_macddr(_adapter *padapter, const u8 *mac_addr);
 _adapter *rtw_get_iface_by_hwport(_adapter *padapter, u8 hw_port);
 
 void rtw_mi_buddy_clone_bcmc_packet(_adapter *padapter, union recv_frame *precvframe, u8 *pphy_status);
@@ -278,6 +296,8 @@ void rtw_mi_buddy_clone_bcmc_packet(_adapter *padapter, union recv_frame *precvf
 _adapter *rtw_mi_get_ap_adapter(_adapter *padapter);
 #endif
 
+u8 rtw_mi_get_ld_sta_ifbmp(_adapter *adapter);
+u8 rtw_mi_get_ap_mesh_ifbmp(_adapter *adapter);
 void rtw_mi_update_ap_bmc_camid(_adapter *padapter, u8 camid_a, u8 camid_b);
 
 #endif /*__RTW_MI_H_*/

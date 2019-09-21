@@ -30,6 +30,11 @@ ex_hal8822b_wifi_only_switchbandnotify(
 	IN u1Byte  is_5g
 	);
 VOID
+ex_hal8822b_wifi_only_connectnotify(
+	IN struct wifi_only_cfg *pwifionlycfg,
+	IN u1Byte  is_5g
+	);
+VOID
 hal8822b_wifi_only_switch_antenna(IN struct wifi_only_cfg *pwifionlycfg,
 	IN u1Byte  is_5g
 	);

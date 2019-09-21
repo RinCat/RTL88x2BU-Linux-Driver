@@ -71,13 +71,14 @@ const char *const GLBtcWifiBwString[] = {
 	"11bg",
 	"HT20",
 	"HT40",
-	"HT80",
-	"HT160"
+	"VHT80",
+	"VHT160"
 };
 
 const char *const GLBtcWifiFreqString[] = {
 	"2.4G",
-	"5G"
+	"5G",
+	"2.4G+5G"
 };
 
 const char *const GLBtcIotPeerString[] = {
@@ -615,6 +616,112 @@ u32 halbtcoutsrc_GetWifiLinkStatus(PBTC_COEXIST pBtCoexist)
 	return retVal;
 }
 
+struct btc_wifi_link_info halbtcoutsrc_getwifilinkinfo(PBTC_COEXIST pBtCoexist)
+{
+	u8 n_assoc_iface = 0, i =0, mcc_en = _FALSE;
+	PADAPTER adapter = NULL;
+	PADAPTER iface = NULL;
+	PADAPTER sta_iface = NULL, p2p_iface = NULL, ap_iface = NULL;
+	BTC_LINK_MODE btc_link_moe = BTC_LINK_MAX;
+	struct dvobj_priv *dvobj = NULL;
+	struct mlme_ext_priv *mlmeext = NULL;
+	struct btc_wifi_link_info wifi_link_info;
+
+	adapter = (PADAPTER)pBtCoexist->Adapter;
+	dvobj = adapter_to_dvobj(adapter);
+	n_assoc_iface = rtw_mi_get_assoc_if_num(adapter);
+
+	/* init value */
+	wifi_link_info.link_mode = BTC_LINK_NONE;
+	wifi_link_info.sta_center_channel = 0;
+	wifi_link_info.p2p_center_channel = 0;
+	wifi_link_info.bany_client_join_go = _FALSE;
+	wifi_link_info.benable_noa = _FALSE;
+	wifi_link_info.bhotspot = _FALSE;
+
+	for (i = 0; i < dvobj->iface_nums; i++) {
+		iface = dvobj->padapters[i];
+		if (!iface)
+			continue;
+		
+		mlmeext = &iface->mlmeextpriv;
+		if (MLME_IS_GO(iface)) {
+			wifi_link_info.link_mode = BTC_LINK_ONLY_GO;
+			wifi_link_info.p2p_center_channel =
+				rtw_get_center_ch(mlmeext->cur_channel, mlmeext->cur_bwmode, mlmeext->cur_ch_offset);
+			p2p_iface	 = iface;
+			if (rtw_linked_check(iface))
+				wifi_link_info.bany_client_join_go = _TRUE;
+		} else if (MLME_IS_GC(iface)) {
+			wifi_link_info.link_mode = BTC_LINK_ONLY_GC;
+			wifi_link_info.p2p_center_channel =
+				rtw_get_center_ch(mlmeext->cur_channel, mlmeext->cur_bwmode, mlmeext->cur_ch_offset);
+			p2p_iface = iface;
+		} else if (MLME_IS_AP(iface)) {
+			wifi_link_info.link_mode = BTC_LINK_ONLY_AP;
+			ap_iface = iface;
+			wifi_link_info.p2p_center_channel =
+				rtw_get_center_ch(mlmeext->cur_channel, mlmeext->cur_bwmode, mlmeext->cur_ch_offset);
+		} else if (MLME_IS_STA(iface) && rtw_linked_check(iface)) {
+			wifi_link_info.link_mode = BTC_LINK_ONLY_STA;
+			wifi_link_info.sta_center_channel =
+				rtw_get_center_ch(mlmeext->cur_channel, mlmeext->cur_bwmode, mlmeext->cur_ch_offset);
+			sta_iface = iface;
+		}
+	}
+
+#ifdef CONFIG_MCC_MODE
+	if (MCC_EN(adapter)) {
+		if (rtw_hal_check_mcc_status(adapter, MCC_STATUS_DOING_MCC))
+			mcc_en = _TRUE;
+	}
+#endif/* CONFIG_MCC_MODE */
+
+	if (n_assoc_iface == 0) {
+		wifi_link_info.link_mode = BTC_LINK_NONE;
+	} else if (n_assoc_iface == 1) {
+		/* by pass */
+	} else if (n_assoc_iface == 2) {	
+		if (sta_iface && p2p_iface) {
+			u8 band_sta = sta_iface->mlmeextpriv.cur_channel > 14 ? BAND_ON_5G : BAND_ON_2_4G;
+			u8 band_p2p = p2p_iface->mlmeextpriv.cur_channel > 14 ? BAND_ON_5G : BAND_ON_2_4G;
+			if (band_sta == band_p2p) {
+				switch (band_sta) {
+				case BAND_ON_2_4G:
+					if (MLME_IS_GO(p2p_iface))
+						wifi_link_info.link_mode =
+							mcc_en == _TRUE ?  BTC_LINK_2G_MCC_GO_STA : BTC_LINK_2G_SCC_GO_STA;
+					else if (MLME_IS_GC(p2p_iface))
+						wifi_link_info.link_mode =
+							mcc_en == _TRUE ?  BTC_LINK_2G_MCC_GC_STA : BTC_LINK_2G_SCC_GC_STA;
+					break;
+				case BAND_ON_5G:
+					if (MLME_IS_GO(p2p_iface))
+						wifi_link_info.link_mode =
+							mcc_en == _TRUE ?  BTC_LINK_5G_MCC_GO_STA : BTC_LINK_5G_SCC_GO_STA;
+					else if (MLME_IS_GC(p2p_iface))
+						wifi_link_info.link_mode =
+							mcc_en == _TRUE ?  BTC_LINK_5G_MCC_GC_STA : BTC_LINK_5G_SCC_GC_STA;
+					break;
+				default:
+					break;
+				}
+			} else {
+				if (MLME_IS_GO(p2p_iface))
+					wifi_link_info.link_mode = BTC_LINK_25G_MCC_GO_STA;
+				else if (MLME_IS_GC(p2p_iface))
+					wifi_link_info.link_mode = BTC_LINK_25G_MCC_GC_STA;
+			}
+		}
+	} else {
+		if (pBtCoexist->board_info.btdm_ant_num == 1)
+			RTW_ERR("%s do not support n_assoc_iface > 2 (ant_num == 1)", __func__);
+	}
+
+	return wifi_link_info;
+}
+
+
 static void _btmpoper_timer_hdl(void *p)
 {
 	if (GLBtcBtMpRptWait == _TRUE) {
@@ -900,6 +1007,7 @@ u8 halbtcoutsrc_Get(void *pBtcContext, u8 getType, void *pOutBuf)
 	PADAPTER padapter;
 	PHAL_DATA_TYPE pHalData;
 	struct mlme_ext_priv *mlmeext;
+	struct btc_wifi_link_info *wifi_link_info;
 	u8 bSoftApExist, bVwifiExist;
 	u8 *pu8;
 	s32 *pS4Tmp;
@@ -923,6 +1031,7 @@ u8 halbtcoutsrc_Get(void *pBtcContext, u8 getType, void *pOutBuf)
 	pU4Tmp = (u32 *)pOutBuf;
 	pU1Tmp = (u8 *)pOutBuf;
 	pU2Tmp = (u16*)pOutBuf;
+	wifi_link_info = (struct btc_wifi_link_info *)pOutBuf;
 	ret = _TRUE;
 
 	switch (getType) {
@@ -1019,6 +1128,11 @@ u8 halbtcoutsrc_Get(void *pBtcContext, u8 getType, void *pOutBuf)
 #endif
 		break;
 
+	case BTC_GET_BL_WIFI_LW_PWR_STATE:
+		/* return false due to coex do not run during 32K */
+		*pu8 = FALSE;
+		break;
+
 	case BTC_GET_S4_WIFI_RSSI:
 		*pS4Tmp = halbtcoutsrc_GetWifiRssi(padapter);
 		break;
@@ -1073,7 +1187,9 @@ u8 halbtcoutsrc_Get(void *pBtcContext, u8 getType, void *pOutBuf)
 	case BTC_GET_U4_WIFI_LINK_STATUS:
 		*pU4Tmp = halbtcoutsrc_GetWifiLinkStatus(pBtCoexist);
 		break;
-
+	case BTC_GET_BL_WIFI_LINK_INFO:
+		*wifi_link_info = halbtcoutsrc_getwifilinkinfo(pBtCoexist);
+		break;
 	case BTC_GET_U4_BT_PATCH_VER:
 		*pU4Tmp = halbtcoutsrc_GetBtPatchVer(pBtCoexist);
 		break;
@@ -1668,13 +1784,101 @@ void halbtcoutsrc_DisplayWifiStatus(PBTC_COEXIST pBtCoexist)
 	u8			wifiChnl = 0, wifiP2PChnl = 0, nScanAPNum = 0, FwPSState;
 	u32			iqk_cnt_total = 0, iqk_cnt_ok = 0, iqk_cnt_fail = 0;
 	u16			wifiBcnInterval = 0;
+	PHAL_DATA_TYPE hal = GET_HAL_DATA(padapter);
+	struct btc_wifi_link_info wifi_link_info;
+
+	wifi_link_info = halbtcoutsrc_getwifilinkinfo(pBtCoexist);
+
+	switch (wifi_link_info.link_mode) {
+		case BTC_LINK_NONE:
+			CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %s/ %d/ %d/ %d", "WifiLinkMode/HotSpa/Noa/ClientJoin",
+					"None", wifi_link_info.bhotspot, wifi_link_info.benable_noa, wifi_link_info.bany_client_join_go);
+			wifiFreq = hal->current_channel > 14 ?  BTC_FREQ_5G : BTC_FREQ_2_4G;
+			break;
+		case BTC_LINK_ONLY_GO:
+			CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %s/ %d/ %d/ %d", "WifiLinkMode/HotSpa/Noa/ClientJoin",
+					"ONLY_GO", wifi_link_info.bhotspot, wifi_link_info.benable_noa, wifi_link_info.bany_client_join_go);
+			wifiFreq = hal->current_channel > 14 ?  BTC_FREQ_5G : BTC_FREQ_2_4G;
+			break;
+		case BTC_LINK_ONLY_GC:
+			CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %s/ %d/ %d/ %d", "WifiLinkMode/HotSpa/Noa/ClientJoin",
+					"ONLY_GC", wifi_link_info.bhotspot, wifi_link_info.benable_noa, wifi_link_info.bany_client_join_go);
+			wifiFreq = hal->current_channel > 14 ?  BTC_FREQ_5G : BTC_FREQ_2_4G;
+			break;
+		case BTC_LINK_ONLY_STA:
+			CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %s/ %d/ %d/ %d", "WifiLinkMode/HotSpa/Noa/ClientJoin",
+					"ONLY_STA", wifi_link_info.bhotspot, wifi_link_info.benable_noa, wifi_link_info.bany_client_join_go);
+			wifiFreq = hal->current_channel > 14 ?  BTC_FREQ_5G : BTC_FREQ_2_4G;
+			break;
+		case BTC_LINK_ONLY_AP:
+			CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %s/ %d/ %d/ %d", "WifiLinkMode/HotSpa/Noa/ClientJoin",
+					"ONLY_AP", wifi_link_info.bhotspot, wifi_link_info.benable_noa, wifi_link_info.bany_client_join_go);
+			wifiFreq = hal->current_channel > 14 ?  BTC_FREQ_5G : BTC_FREQ_2_4G;
+			break;
+		case BTC_LINK_2G_MCC_GO_STA:
+			CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %s/ %d/ %d/ %d", "WifiLinkMode/HotSpa/Noa/ClientJoin",
+					"24G_MCC_GO_STA", wifi_link_info.bhotspot, wifi_link_info.benable_noa, wifi_link_info.bany_client_join_go);
+			wifiFreq = BTC_FREQ_2_4G;
+			break;
+		case BTC_LINK_5G_MCC_GO_STA:
+			CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %s/ %d/ %d/ %d", "WifiLinkMode/HotSpa/Noa/ClientJoin",
+					"5G_MCC_GO_STA", wifi_link_info.bhotspot, wifi_link_info.benable_noa, wifi_link_info.bany_client_join_go);
+			wifiFreq = BTC_FREQ_5G;
+			break;
+		case BTC_LINK_25G_MCC_GO_STA:
+			CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %s/ %d/ %d/ %d", "WifiLinkMode/HotSpa/Noa/ClientJoin",
+					"2BANDS_MCC_GO_STA", wifi_link_info.bhotspot, wifi_link_info.benable_noa, wifi_link_info.bany_client_join_go);
+			wifiFreq = BTC_FREQ_25G;
+			break;
+		case BTC_LINK_2G_MCC_GC_STA:
+			CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %s/ %d/ %d/ %d", "WifiLinkMode/HotSpa/Noa/ClientJoin",
+					"24G_MCC_GC_STA", wifi_link_info.bhotspot, wifi_link_info.benable_noa, wifi_link_info.bany_client_join_go);
+			wifiFreq = BTC_FREQ_2_4G;
+			break;
+		case BTC_LINK_5G_MCC_GC_STA:
+			CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %s/ %d/ %d/ %d", "WifiLinkMode/HotSpa/Noa/ClientJoin",
+					"5G_MCC_GC_STA", wifi_link_info.bhotspot, wifi_link_info.benable_noa, wifi_link_info.bany_client_join_go);
+			wifiFreq = BTC_FREQ_5G;
+			break;
+		case BTC_LINK_25G_MCC_GC_STA:
+			CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %s/ %d/ %d/ %d", "WifiLinkMode/HotSpa/Noa/ClientJoin",
+					"2BANDS_MCC_GC_STA", wifi_link_info.bhotspot, wifi_link_info.benable_noa, wifi_link_info.bany_client_join_go);
+			wifiFreq = BTC_FREQ_25G;
+			break;
+		case BTC_LINK_2G_SCC_GO_STA:
+			CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %s/ %d/ %d/ %d", "WifiLinkMode/HotSpa/Noa/ClientJoin",
+					"24G_SCC_GO_STA", wifi_link_info.bhotspot, wifi_link_info.benable_noa, wifi_link_info.bany_client_join_go);
+			wifiFreq = BTC_FREQ_2_4G;
+			break;
+		case BTC_LINK_5G_SCC_GO_STA:
+			CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %s/ %d/ %d/ %d", "WifiLinkMode/HotSpa/Noa/ClientJoin",
+					"5G_SCC_GO_STA", wifi_link_info.bhotspot, wifi_link_info.benable_noa, wifi_link_info.bany_client_join_go);
+			wifiFreq = BTC_FREQ_5G;
+			break;
+		case BTC_LINK_2G_SCC_GC_STA:
+			CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %s/ %d/ %d/ %d", "WifiLinkMode/HotSpa/Noa/ClientJoin",
+					"24G_SCC_GC_STA", wifi_link_info.bhotspot, wifi_link_info.benable_noa, wifi_link_info.bany_client_join_go);
+			wifiFreq = BTC_FREQ_2_4G;
+			break;
+		case BTC_LINK_5G_SCC_GC_STA:
+			CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %s/ %d/ %d/ %d", "WifiLinkMode/HotSpa/Noa/ClientJoin",
+					"5G_SCC_GC_STA", wifi_link_info.bhotspot, wifi_link_info.benable_noa, wifi_link_info.bany_client_join_go);
+			wifiFreq = BTC_FREQ_5G;
+			break;
+		default:
+			CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %s/ %d/ %d/ %d", "WifiLinkMode/HotSpa/Noa/ClientJoin",
+					"UNKNOWN", wifi_link_info.bhotspot, wifi_link_info.benable_noa, wifi_link_info.bany_client_join_go);
+			wifiFreq = hal->current_channel > 14 ?  BTC_FREQ_5G : BTC_FREQ_2_4G;
+			break;
+	}
+
+	CL_PRINTF(cliBuf);
 
 	wifiLinkStatus = halbtcoutsrc_GetWifiLinkStatus(pBtCoexist);
-	CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %d/ %d/ %d/ %d/ %d (mcc+2band = %d)", "STA/vWifi/HS/p2pGo/p2pGc",
+	CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %d/ %d/ %d/ %d/ %d", "STA/vWifi/HS/p2pGo/p2pGc",
 		((wifiLinkStatus & WIFI_STA_CONNECTED) ? 1 : 0), ((wifiLinkStatus & WIFI_AP_CONNECTED) ? 1 : 0),
 		((wifiLinkStatus & WIFI_HS_CONNECTED) ? 1 : 0), ((wifiLinkStatus & WIFI_P2P_GO_CONNECTED) ? 1 : 0),
-		((wifiLinkStatus & WIFI_P2P_GC_CONNECTED) ? 1 : 0),
-		halbtcoutsrc_IsDualBandConnected(padapter) ? 1 : 0);
+		((wifiLinkStatus & WIFI_P2P_GC_CONNECTED) ? 1 : 0));
 	CL_PRINTF(cliBuf);
 
 	pBtCoexist->btc_get(pBtCoexist, BTC_GET_BL_WIFI_SCAN, &bScan);
@@ -1698,15 +1902,14 @@ void halbtcoutsrc_DisplayWifiStatus(PBTC_COEXIST pBtCoexist)
 	}
 
 	pBtCoexist->btc_get(pBtCoexist, BTC_GET_S4_WIFI_RSSI, &wifiRssi);
-	pBtCoexist->btc_get(pBtCoexist, BTC_GET_U1_WIFI_DOT11_CHNL, &wifiChnl);
 	pBtCoexist->btc_get(pBtCoexist, BTC_GET_U2_BEACON_PERIOD, &wifiBcnInterval);
-	if ((wifiLinkStatus & WIFI_P2P_GO_CONNECTED) || (wifiLinkStatus & WIFI_P2P_GC_CONNECTED)) 
-		pBtCoexist->btc_get(pBtCoexist, BTC_GET_U1_WIFI_P2P_CHNL, &wifiP2PChnl);	
+	wifiChnl = wifi_link_info.sta_center_channel;
+	wifiP2PChnl = wifi_link_info.p2p_center_channel;
+
 	CL_SPRINTF(cliBuf, BT_TMP_BUF_SIZE, "\r\n %-35s = %d dBm/ %d/ %d/ %d", "RSSI/ STA_Chnl/ P2P_Chnl/ BI",
 		wifiRssi-100, wifiChnl, wifiP2PChnl, wifiBcnInterval);
 	CL_PRINTF(cliBuf);
 
-	pBtCoexist->btc_get(pBtCoexist, BTC_GET_BL_WIFI_UNDER_5G, &wifiFreq);
 	pBtCoexist->btc_get(pBtCoexist, BTC_GET_U4_WIFI_BW, &wifiBw);
 	pBtCoexist->btc_get(pBtCoexist, BTC_GET_BL_WIFI_BUSY, &bWifiBusy);
 	pBtCoexist->btc_get(pBtCoexist, BTC_GET_U4_WIFI_TRAFFIC_DIRECTION, &wifiTrafficDir);
@@ -2348,6 +2551,16 @@ u32 halbtcoutsrc_GetPhydmVersion(void *pBtcContext)
 #ifdef CONFIG_RTL8821C
 	return RELEASE_VERSION_8821C;
 #endif
+
+#ifdef CONFIG_RTL8192F
+	return RELEASE_VERSION_8192F;
+#endif
+}
+
+u32 halbtcoutsrc_SetAtomic (void *btc_ctx, u32 *target, u32 val)
+{
+	*target = val;
+	return _SUCCESS;
 }
 
 void halbtcoutsrc_phydm_modify_AntDiv_HwSw(void *pBtcContext, u8 is_hw)
@@ -2535,6 +2748,7 @@ void EXhalbtcoutsrc_AntInfoSetting(void *padapter)
 	}
 
 	pBtCoexist->board_info.customerID = RT_CID_DEFAULT;
+	pBtCoexist->board_info.customer_id = RT_CID_DEFAULT;
 
 	/* set default antenna position to main  port */
 	pBtCoexist->board_info.btdm_ant_pos = BTC_ANTENNA_AT_MAIN_PORT;
@@ -2604,9 +2818,10 @@ u8 EXhalbtcoutsrc_InitlizeVariables(void *padapter)
 	pBtCoexist->btc_get_ble_scan_para_from_bt = halbtcoutsrc_GetBleScanParaFromBt;
 	pBtCoexist->btc_get_bt_afh_map_from_bt = halbtcoutsrc_GetBtAFHMapFromBt;
 	pBtCoexist->btc_get_bt_phydm_version = halbtcoutsrc_GetPhydmVersion;
+	pBtCoexist->btc_set_atomic= halbtcoutsrc_SetAtomic;
 	pBtCoexist->btc_phydm_modify_RA_PCR_threshold = halbtcoutsrc_phydm_modify_RA_PCR_threshold;
 	pBtCoexist->btc_phydm_query_PHY_counter = halbtcoutsrc_phydm_query_PHY_counter;
-	pBtCoexist->btc_phydm_modify_ANTDIV_HwSw = halbtcoutsrc_phydm_modify_AntDiv_HwSw;
+	pBtCoexist->btc_phydm_modify_antdiv_hwsw = halbtcoutsrc_phydm_modify_AntDiv_HwSw;
 
 	pBtCoexist->cli_buf = &GLBtcDbgBuf[0];
 
@@ -2798,10 +3013,6 @@ void EXhalbtcoutsrc_init_hw_config(PBTC_COEXIST pBtCoexist, u8 bWifiOnly)
 			ex_halbtc8822b1ant_init_hw_config(pBtCoexist, bWifiOnly);
 		else if (pBtCoexist->board_info.btdm_ant_num == 2)
 			ex_halbtc8822b2ant_init_hw_config(pBtCoexist, bWifiOnly);
-		#ifdef CONFIG_FW_MULTI_PORT_SUPPORT
-		rtw_hal_set_default_port_id_cmd(pBtCoexist->Adapter, 0);
-		rtw_hal_set_wifi_port_id_cmd(pBtCoexist->Adapter);
-		#endif
 	}
 #endif
 
@@ -2811,10 +3022,6 @@ void EXhalbtcoutsrc_init_hw_config(PBTC_COEXIST pBtCoexist, u8 bWifiOnly)
 			ex_halbtc8821c2ant_init_hw_config(pBtCoexist, bWifiOnly);
 		else if (pBtCoexist->board_info.btdm_ant_num == 1)
 			ex_halbtc8821c1ant_init_hw_config(pBtCoexist, bWifiOnly);
-		#ifdef CONFIG_FW_MULTI_PORT_SUPPORT
-		rtw_hal_set_default_port_id_cmd(pBtCoexist->Adapter, 0);
-		rtw_hal_set_wifi_port_id_cmd(pBtCoexist->Adapter);
-		#endif
 	}
 #endif
 }
@@ -3293,7 +3500,9 @@ void EXhalbtcoutsrc_connect_notify(PBTC_COEXIST pBtCoexist, u8 assoType)
 
 void EXhalbtcoutsrc_media_status_notify(PBTC_COEXIST pBtCoexist, RT_MEDIA_STATUS mediaStatus)
 {
-	u8 mStatus;
+	u8 mStatus = BTC_MEDIA_MAX;
+	PADAPTER adapter = (PADAPTER)pBtCoexist->Adapter;
+	HAL_DATA_TYPE *hal = GET_HAL_DATA(adapter);
 
 	if (!halbtcoutsrc_IsBtCoexistAvailable(pBtCoexist))
 		return;
@@ -3302,15 +3511,25 @@ void EXhalbtcoutsrc_media_status_notify(PBTC_COEXIST pBtCoexist, RT_MEDIA_STATUS
 	if (pBtCoexist->manual_control)
 		return;
 
-	if (RT_MEDIA_CONNECT == mediaStatus)
-		mStatus = BTC_MEDIA_CONNECT;
-	else
+	if (RT_MEDIA_CONNECT == mediaStatus) {
+		if (hal->current_band_type == BAND_ON_2_4G)
+			mStatus = BTC_MEDIA_CONNECT;
+		else if (hal->current_band_type == BAND_ON_5G)
+			mStatus = BTC_MEDIA_CONNECT_5G;
+		else {
+			mStatus = BTC_MEDIA_CONNECT;
+			RTW_ERR("%s unknow band type\n", __func__);
+		}
+	} else
 		mStatus = BTC_MEDIA_DISCONNECT;
 
 	/* All notify is called in cmd thread, don't need to leave low power again
 	*	halbtcoutsrc_LeaveLowPower(pBtCoexist); */
 	if (IS_HARDWARE_TYPE_8821(pBtCoexist->Adapter)) {
 #ifdef CONFIG_RTL8821A
+		/* compatible for 8821A */
+		if (mStatus == BTC_MEDIA_CONNECT_5G)
+			mStatus = BTC_MEDIA_CONNECT;
 		if (pBtCoexist->board_info.btdm_ant_num == 2)
 			ex_halbtc8821a2ant_media_status_notify(pBtCoexist, mStatus);
 		else if (pBtCoexist->board_info.btdm_ant_num == 1)
@@ -3354,6 +3573,9 @@ void EXhalbtcoutsrc_media_status_notify(PBTC_COEXIST pBtCoexist, RT_MEDIA_STATUS
 
 #ifdef CONFIG_RTL8812A
 	else if (IS_HARDWARE_TYPE_8812(pBtCoexist->Adapter)) {
+		/* compatible for 8812A */
+		if (mStatus == BTC_MEDIA_CONNECT_5G)
+			mStatus = BTC_MEDIA_CONNECT;
 		if (pBtCoexist->board_info.btdm_ant_num == 2)
 			ex_halbtc8812a2ant_media_status_notify(pBtCoexist, mStatus);
 		else if (pBtCoexist->board_info.btdm_ant_num == 1)
@@ -3384,7 +3606,9 @@ void EXhalbtcoutsrc_media_status_notify(PBTC_COEXIST pBtCoexist, RT_MEDIA_STATUS
 
 void EXhalbtcoutsrc_specific_packet_notify(PBTC_COEXIST pBtCoexist, u8 pktType)
 {
-	u8	packetType;
+	u8 packetType;
+	PADAPTER adapter = (PADAPTER)pBtCoexist->Adapter;
+	HAL_DATA_TYPE *hal = GET_HAL_DATA(adapter);
 
 	if (!halbtcoutsrc_IsBtCoexistAvailable(pBtCoexist))
 		return;
@@ -3403,10 +3627,17 @@ void EXhalbtcoutsrc_specific_packet_notify(PBTC_COEXIST pBtCoexist, u8 pktType)
 		return;
 	}
 
+	if (hal->current_band_type == BAND_ON_5G)
+		packetType |=  BTC_5G_BAND;
+
 	/* All notify is called in cmd thread, don't need to leave low power again
 	*	halbtcoutsrc_LeaveLowPower(pBtCoexist); */
 	if (IS_HARDWARE_TYPE_8821(pBtCoexist->Adapter)) {
 #ifdef CONFIG_RTL8821A
+		/* compatible for 8821A */
+		if (hal->current_band_type == BAND_ON_5G)
+			packetType &= ~BTC_5G_BAND;
+
 		if (pBtCoexist->board_info.btdm_ant_num == 2)
 			ex_halbtc8821a2ant_specific_packet_notify(pBtCoexist, packetType);
 		else if (pBtCoexist->board_info.btdm_ant_num == 1)
@@ -3450,6 +3681,10 @@ void EXhalbtcoutsrc_specific_packet_notify(PBTC_COEXIST pBtCoexist, u8 pktType)
 
 #ifdef CONFIG_RTL8812A
 	else if (IS_HARDWARE_TYPE_8812(pBtCoexist->Adapter)) {
+		/* compatible for 8812A */
+		if (hal->current_band_type == BAND_ON_5G)
+			packetType &= ~BTC_5G_BAND;
+		
 		if (pBtCoexist->board_info.btdm_ant_num == 2)
 			ex_halbtc8812a2ant_specific_packet_notify(pBtCoexist, packetType);
 		else if (pBtCoexist->board_info.btdm_ant_num == 1)
@@ -3705,6 +3940,8 @@ void EXhalbtcoutsrc_halt_notify(PBTC_COEXIST pBtCoexist)
 	if (!halbtcoutsrc_IsBtCoexistAvailable(pBtCoexist))
 		return;
 
+	pBtCoexist->statistics.cnt_halt_notify++;
+
 	if (IS_HARDWARE_TYPE_8821(pBtCoexist->Adapter)) {
 #ifdef CONFIG_RTL8821A
 		if (pBtCoexist->board_info.btdm_ant_num == 2)
@@ -3791,6 +4028,8 @@ void EXhalbtcoutsrc_pnp_notify(PBTC_COEXIST pBtCoexist, u8 pnpState)
 {
 	if (!halbtcoutsrc_IsBtCoexistAvailable(pBtCoexist))
 		return;
+
+	pBtCoexist->statistics.cnt_pnp_notify++;
 
 	/*  */
 	/* currently only 1ant we have to do the notification, */
@@ -4291,15 +4530,6 @@ void EXhalbtcoutsrc_DisplayAntDetection(PBTC_COEXIST pBtCoexist)
 			ex_halbtc8723b1ant_display_ant_detection(pBtCoexist);
 #endif
 	}
-
-#ifdef CONFIG_RTL8821C
-	else if (IS_HARDWARE_TYPE_8821C(pBtCoexist->Adapter)) {
-		if (pBtCoexist->board_info.btdm_ant_num == 2)
-			ex_halbtc8821c2ant_display_ant_detection(pBtCoexist);
-		else if (pBtCoexist->board_info.btdm_ant_num == 1)
-			ex_halbtc8821c1ant_display_ant_detection(pBtCoexist);
-	}
-#endif
 
 	halbtcoutsrc_NormalLowPower(pBtCoexist);
 }
@@ -4910,7 +5140,7 @@ void hal_btcoex_SuspendNotify(PADAPTER padapter, u8 state)
 	case BTCOEX_SUSPEND_STATE_RESUME:
 #ifdef CONFIG_FW_MULTI_PORT_SUPPORT
 		/* re-download FW after resume, inform WL FW port number */
-		rtw_hal_set_wifi_port_id_cmd(GLBtCoexist.Adapter);
+		rtw_hal_set_wifi_btc_port_id_cmd(GLBtCoexist.Adapter);
 #endif
 		EXhalbtcoutsrc_pnp_notify(&GLBtCoexist, BTC_WIFI_PNP_WAKE_UP);
 		break;

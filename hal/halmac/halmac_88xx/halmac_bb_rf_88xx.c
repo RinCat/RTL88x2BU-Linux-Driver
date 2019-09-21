@@ -56,7 +56,7 @@ start_iqk_88xx(struct halmac_adapter *adapter, struct halmac_iqk_para *param)
 
 	hdr_info.sub_cmd_id = SUB_CMD_ID_IQK;
 	hdr_info.content_size = 1;
-	hdr_info.ack = _TRUE;
+	hdr_info.ack = 1;
 	set_h2c_pkt_hdr_88xx(adapter, h2c_buf, &hdr_info, &seq_num);
 
 	adapter->halmac_state.iqk_state.seq_num = seq_num;
@@ -116,16 +116,19 @@ ctrl_pwr_tracking_88xx(struct halmac_adapter *adapter,
 	PWR_TRK_SET_TSSI_VALUE_A(h2c_buf, param->tssi_value);
 	PWR_TRK_SET_OFFSET_VALUE_A(h2c_buf, param->pwr_tracking_offset_value);
 
+	param = &opt->pwr_tracking_para[HALMAC_RF_PATH_B];
 	PWR_TRK_SET_ENABLE_B(h2c_buf, param->enable);
 	PWR_TRK_SET_TX_PWR_INDEX_B(h2c_buf, param->tx_pwr_index);
 	PWR_TRK_SET_TSSI_VALUE_B(h2c_buf, param->tssi_value);
 	PWR_TRK_SET_OFFSET_VALUE_B(h2c_buf, param->pwr_tracking_offset_value);
 
+	param = &opt->pwr_tracking_para[HALMAC_RF_PATH_C];
 	PWR_TRK_SET_ENABLE_C(h2c_buf, param->enable);
 	PWR_TRK_SET_TX_PWR_INDEX_C(h2c_buf, param->tx_pwr_index);
 	PWR_TRK_SET_TSSI_VALUE_C(h2c_buf, param->tssi_value);
 	PWR_TRK_SET_OFFSET_VALUE_C(h2c_buf, param->pwr_tracking_offset_value);
 
+	param = &opt->pwr_tracking_para[HALMAC_RF_PATH_D];
 	PWR_TRK_SET_ENABLE_D(h2c_buf, param->enable);
 	PWR_TRK_SET_TX_PWR_INDEX_D(h2c_buf, param->tx_pwr_index);
 	PWR_TRK_SET_TSSI_VALUE_D(h2c_buf, param->tssi_value);
@@ -133,7 +136,7 @@ ctrl_pwr_tracking_88xx(struct halmac_adapter *adapter,
 
 	hdr_info.sub_cmd_id = SUB_CMD_ID_PWR_TRK;
 	hdr_info.content_size = 20;
-	hdr_info.ack = _TRUE;
+	hdr_info.ack = 1;
 	set_h2c_pkt_hdr_88xx(adapter, h2c_buf, &hdr_info, &seq_num);
 
 	adapter->halmac_state.pwr_trk_state.seq_num = seq_num;
@@ -243,7 +246,7 @@ psd_88xx(struct halmac_adapter *adapter, u16 start_psd, u16 end_psd)
 
 	hdr_info.sub_cmd_id = SUB_CMD_ID_PSD;
 	hdr_info.content_size = 4;
-	hdr_info.ack = _TRUE;
+	hdr_info.ack = 1;
 	set_h2c_pkt_hdr_88xx(adapter, h2c_buf, &hdr_info, &seq_num);
 
 	status = send_h2c_pkt_88xx(adapter, h2c_buf);
@@ -377,7 +380,7 @@ get_psd_data_88xx(struct halmac_adapter *adapter, u8 *buf, u32 size)
 	PLTFM_MEMCPY(state->data + seg_id * state->seg_size,
 		     buf + C2H_DATA_OFFSET_88XX, seg_size);
 
-	if (PSD_DATA_GET_END_SEGMENT(buf) == _FALSE)
+	if (PSD_DATA_GET_END_SEGMENT(buf) == 0)
 		return HALMAC_RET_SUCCESS;
 
 	proc_status = HALMAC_CMD_PROCESS_DONE;

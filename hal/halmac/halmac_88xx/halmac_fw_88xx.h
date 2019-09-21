@@ -22,14 +22,15 @@
 
 #define HALMC_DDMA_POLLING_COUNT		1000
 
-#endif /* HALMAC_88XX_SUPPORT */
-
 enum halmac_ret_status
 download_firmware_88xx(struct halmac_adapter *adapter, u8 *fw_bin, u32 size);
 
 enum halmac_ret_status
 free_download_firmware_88xx(struct halmac_adapter *adapter,
 			    enum halmac_dlfw_mem mem_sel, u8 *fw_bin, u32 size);
+
+enum halmac_ret_status
+reset_wifi_fw_88xx(struct halmac_adapter *adapter);
 
 enum halmac_ret_status
 get_fw_version_88xx(struct halmac_adapter *adapter,
@@ -57,5 +58,7 @@ send_general_info_88xx(struct halmac_adapter *adapter,
 
 enum halmac_ret_status
 drv_fwctrl_88xx(struct halmac_adapter *adapter, u8 *payload, u32 size, u8 ack);
+
+#endif /* HALMAC_88XX_SUPPORT */
 
 #endif/* _HALMAC_FW_88XX_H_ */

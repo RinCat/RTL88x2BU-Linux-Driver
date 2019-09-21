@@ -22,6 +22,7 @@
 
 #define TXBF_CTRL_CFG	(BIT_R_ENABLE_NDPA | BIT_USE_NDPA_PARAMETER | \
 			 BIT_R_EN_NDPA_INT | BIT_DIS_NDP_BFEN)
+#define CSI_RATE_MAP	0x292911
 
 static void
 cfg_mu_bfee_88xx(struct halmac_adapter *adapter,
@@ -153,7 +154,7 @@ cfg_mu_bfer_88xx(struct halmac_adapter *adapter,
 	u32 gid_valid[6] = {0};
 	struct halmac_api *api = (struct halmac_api *)adapter->halmac_api;
 
-	if (param->mu_tx_en == _FALSE) {
+	if (param->mu_tx_en == 0) {
 		HALMAC_REG_W8(REG_MU_TX_CTL,
 			      HALMAC_REG_R8(REG_MU_TX_CTL) & ~(BIT(7)));
 		return;
@@ -211,7 +212,7 @@ cfg_mu_bfer_88xx(struct halmac_adapter *adapter,
 
 	/*To validate the sounding successful MU STA and enable MU TX*/
 	for (i = 0; i < 6; i++) {
-		if (param->sounding_sts[i] == _TRUE)
+		if (param->sounding_sts[i] == 1)
 			mu_tbl_valid |= BIT(i);
 	}
 	HALMAC_REG_W8(REG_MU_TX_CTL, mu_tbl_valid | BIT(7));
@@ -252,6 +253,16 @@ cfg_sounding_88xx(struct halmac_adapter *adapter, enum halmac_snd_role role,
 		HALMAC_REG_W8(REG_SND_PTCL_CTRL + 3, 0x26);
 		HALMAC_REG_W8_CLR(REG_RXFLTMAP1, BIT(4));
 		HALMAC_REG_W8_CLR(REG_RXFLTMAP4, BIT(4));
+		#if (HALMAC_8822C_SUPPORT || HALMAC_8812F_SUPPORT)
+		if (adapter->chip_id == HALMAC_CHIP_ID_8822C)
+			HALMAC_REG_W32(REG_CSI_RRSR,
+				       BIT_CSI_RRSC_BITMAP(CSI_RATE_MAP) |
+				       BIT_OFDM_LEN_TH(0));
+		else if (adapter->chip_id == HALMAC_CHIP_ID_8812F)
+			HALMAC_REG_W32(REG_CSI_RRSR,
+				       BIT_CSI_RRSC_BITMAP(CSI_RATE_MAP) |
+				       BIT_OFDM_LEN_TH(3));
+		#endif
 		break;
 	default:
 		return HALMAC_RET_INVALID_SOUNDING_SETTING;
@@ -740,7 +751,7 @@ fw_snding_88xx(struct halmac_adapter *adapter,
 
 	hdr_info.sub_cmd_id = SUB_CMD_ID_FW_SNDING;
 	hdr_info.content_size = 8;
-	hdr_info.ack = _TRUE;
+	hdr_info.ack = 1;
 	set_h2c_pkt_hdr_88xx(adapter, h2c_buf, &hdr_info, &seq_num);
 	adapter->halmac_state.fw_snding_state.seq_num = seq_num;
 
@@ -767,7 +778,7 @@ snding_pkt_chk_88xx(struct halmac_adapter *adapter, u8 *pkt)
 
 	if (GET_TX_DESC_NDPA(pkt) == 0) {
 		PLTFM_MSG_ERR("[ERR]txdesc ndpa = 0\n");
-		return _FALSE;
+		return 0;
 	}
 
 	data_rate = (u8)GET_TX_DESC_DATARATE(pkt);
@@ -775,21 +786,21 @@ snding_pkt_chk_88xx(struct halmac_adapter *adapter, u8 *pkt)
 	      data_rate <= HALMAC_VHT_NSS2_MCS9)) {
 		if (!(data_rate >= HALMAC_MCS8 && data_rate <= HALMAC_MCS15)) {
 			PLTFM_MSG_ERR("[ERR]txdesc rate\n");
-			return _FALSE;
+			return 0;
 		}
 	}
 
 	if (GET_TX_DESC_NAVUSEHDR(pkt) == 0) {
 		PLTFM_MSG_ERR("[ERR]txdesc navusehdr = 0\n");
-		return _FALSE;
+		return 0;
 	}
 
 	if (GET_TX_DESC_USE_RATE(pkt) == 0) {
 		PLTFM_MSG_ERR("[ERR]txdesc userate = 0\n");
-		return _FALSE;
+		return 0;
 	}
 
-	return _TRUE;
+	return 1;
 }
 
 static enum halmac_cmd_construct_state

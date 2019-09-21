@@ -243,14 +243,13 @@ start_dlfw_88xx(struct halmac_adapter *adapter, u8 *fw_bin, u32 size,
 	struct halmac_api *api = (struct halmac_api *)adapter->halmac_api;
 	enum halmac_ret_status status;
 
-	dmem_size = *((u32 *)(fw_bin + WLAN_FW_HDR_DMEM_SIZE));
-	imem_size = *((u32 *)(fw_bin + WLAN_FW_HDR_IMEM_SIZE));
+	dmem_size =
+		rtk_le32_to_cpu(*((__le32 *)(fw_bin + WLAN_FW_HDR_DMEM_SIZE)));
+	imem_size =
+		rtk_le32_to_cpu(*((__le32 *)(fw_bin + WLAN_FW_HDR_IMEM_SIZE)));
 	if (0 != ((*(fw_bin + WLAN_FW_HDR_MEM_USAGE)) & BIT(4)))
-		emem_size = *((u32 *)(fw_bin + WLAN_FW_HDR_EMEM_SIZE));
-
-	dmem_size = rtk_le32_to_cpu(dmem_size);
-	imem_size = rtk_le32_to_cpu(imem_size);
-	emem_size = rtk_le32_to_cpu(emem_size);
+		emem_size =
+		rtk_le32_to_cpu(*((__le32 *)(fw_bin + WLAN_FW_HDR_EMEM_SIZE)));
 
 	dmem_size += WLAN_FW_HDR_CHKSUM_SIZE;
 	imem_size += WLAN_FW_HDR_CHKSUM_SIZE;
@@ -268,15 +267,15 @@ start_dlfw_88xx(struct halmac_adapter *adapter, u8 *fw_bin, u32 size,
 	HALMAC_REG_W16(REG_MCUFW_CTRL, value16);
 
 	cur_fw = fw_bin + WLAN_FW_HDR_SIZE;
-	addr = *((u32 *)(fw_bin + WLAN_FW_HDR_DMEM_ADDR));
-	addr = rtk_le32_to_cpu(addr) & ~BIT(31);
+	addr = rtk_le32_to_cpu(*((__le32 *)(fw_bin + WLAN_FW_HDR_DMEM_ADDR)));
+	addr &= ~BIT(31);
 	status = dlfw_to_mem_88xx(adapter, cur_fw, 0, addr, dmem_size);
 	if (status != HALMAC_RET_SUCCESS)
 		return status;
 
 	cur_fw = fw_bin + WLAN_FW_HDR_SIZE + dmem_size;
-	addr = *((u32 *)(fw_bin + WLAN_FW_HDR_IMEM_ADDR));
-	addr = rtk_le32_to_cpu(addr) & ~BIT(31);
+	addr = rtk_le32_to_cpu(*((__le32 *)(fw_bin + WLAN_FW_HDR_IMEM_ADDR)));
+	addr &= ~BIT(31);
 	status = dlfw_to_mem_88xx(adapter, cur_fw, 0, addr, imem_size);
 	if (status != HALMAC_RET_SUCCESS)
 		return status;
@@ -285,8 +284,9 @@ DLFW_EMEM:
 	if (emem_size) {
 		cur_fw = fw_bin + WLAN_FW_HDR_SIZE +
 				dmem_size + imem_size;
-		addr = *((u32 *)(fw_bin + WLAN_FW_HDR_EMEM_ADDR));
-		addr = rtk_le32_to_cpu(addr) & ~BIT(31);
+		addr = rtk_le32_to_cpu(*((__le32 *)(fw_bin +
+				       WLAN_FW_HDR_EMEM_ADDR)));
+		addr &= ~BIT(31);
 		status = dlfw_to_mem_88xx(adapter, cur_fw, dl_addr << 7, addr,
 					  emem_size);
 		if (status != HALMAC_RET_SUCCESS)
@@ -308,15 +308,12 @@ chk_h2c_ver_88xx(struct halmac_adapter *adapter, u8 *fw_bin)
 	u16 halmac_h2c_ver;
 	u16 fw_h2c_ver;
 
-	fw_h2c_ver = *((u16 *)(fw_bin + WLAN_FW_HDR_H2C_FMT_VER));
-	fw_h2c_ver = rtk_le16_to_cpu(fw_h2c_ver);
+	fw_h2c_ver = rtk_le16_to_cpu(*((__le16 *)(fw_bin +
+						  WLAN_FW_HDR_H2C_FMT_VER)));
 	halmac_h2c_ver = H2C_FORMAT_VERSION;
 
 	PLTFM_MSG_TRACE("[TRACE]halmac h2c ver = %x, fw h2c ver = %x!!\n",
 			halmac_h2c_ver, fw_h2c_ver);
-
-	if (fw_h2c_ver != halmac_h2c_ver)
-		PLTFM_MSG_WARN("[WARN]H2C/C2H ver is compatible!!\n");
 }
 
 static enum halmac_ret_status
@@ -332,14 +329,13 @@ chk_fw_size_88xx(struct halmac_adapter *adapter, u8 *fw_bin, u32 size)
 		return HALMAC_RET_FW_SIZE_ERR;
 	}
 
-	dmem_size = *((u32 *)(fw_bin + WLAN_FW_HDR_DMEM_SIZE));
-	imem_size = *((u32 *)(fw_bin + WLAN_FW_HDR_IMEM_SIZE));
+	dmem_size =
+		rtk_le32_to_cpu(*((__le32 *)(fw_bin + WLAN_FW_HDR_DMEM_SIZE)));
+	imem_size =
+		rtk_le32_to_cpu(*((__le32 *)(fw_bin + WLAN_FW_HDR_IMEM_SIZE)));
 	if (0 != ((*(fw_bin + WLAN_FW_HDR_MEM_USAGE)) & BIT(4)))
-		emem_size = *((u32 *)(fw_bin + WLAN_FW_HDR_EMEM_SIZE));
-
-	dmem_size = rtk_le32_to_cpu(dmem_size);
-	imem_size = rtk_le32_to_cpu(imem_size);
-	emem_size = rtk_le32_to_cpu(emem_size);
+		emem_size =
+		rtk_le32_to_cpu(*((__le32 *)(fw_bin + WLAN_FW_HDR_EMEM_SIZE)));
 
 	dmem_size += WLAN_FW_HDR_CHKSUM_SIZE;
 	imem_size += WLAN_FW_HDR_CHKSUM_SIZE;
@@ -470,6 +466,28 @@ DL_FREE_FW_END:
 }
 
 /**
+ * reset_wifi_fw_88xx() - reset wifi fw
+ * @adapter : the adapter of halmac
+ * Author : LIN YONG-CHING
+ * Return : enum halmac_ret_status
+ * More details of status code can be found in prototype document
+ */
+enum halmac_ret_status
+reset_wifi_fw_88xx(struct halmac_adapter *adapter)
+{
+	PLTFM_MSG_TRACE("[TRACE]%s ===>\n", __func__);
+
+	wlan_cpu_en_88xx(adapter, 0);
+	pltfm_reset_88xx(adapter);
+	init_ofld_feature_state_machine_88xx(adapter);
+	wlan_cpu_en_88xx(adapter, 1);
+
+	PLTFM_MSG_TRACE("[TRACE]%s <===\n", __func__);
+
+	return HALMAC_RET_SUCCESS;
+}
+
+/**
  * get_fw_version_88xx() - get FW version
  * @adapter : the adapter of halmac
  * @ver : fw version info
@@ -507,18 +525,18 @@ update_fw_info_88xx(struct halmac_adapter *adapter, u8 *fw_bin)
 {
 	struct halmac_fw_version *info = &adapter->fw_ver;
 
-	info->version = *((u16 *)(fw_bin + WLAN_FW_HDR_VERSION));
-	info->version = rtk_le16_to_cpu(info->version);
+	info->version =
+		rtk_le16_to_cpu(*((__le16 *)(fw_bin + WLAN_FW_HDR_VERSION)));
 	info->sub_version = *(fw_bin + WLAN_FW_HDR_SUBVERSION);
 	info->sub_index = *(fw_bin + WLAN_FW_HDR_SUBINDEX);
-	info->h2c_version = *((u16 *)(fw_bin + WLAN_FW_HDR_H2C_FMT_VER));
-	info->h2c_version = rtk_le16_to_cpu(info->h2c_version);
+	info->h2c_version = rtk_le16_to_cpu(*((__le16 *)(fw_bin +
+					    WLAN_FW_HDR_H2C_FMT_VER)));
 	info->build_time.month = *(fw_bin + WLAN_FW_HDR_MONTH);
 	info->build_time.date = *(fw_bin + WLAN_FW_HDR_DATE);
 	info->build_time.hour = *(fw_bin + WLAN_FW_HDR_HOUR);
 	info->build_time.min = *(fw_bin + WLAN_FW_HDR_MIN);
-	info->build_time.year = *((u16 *)(fw_bin + WLAN_FW_HDR_YEAR));
-	info->build_time.year = rtk_le16_to_cpu(info->build_time.year);
+	info->build_time.year =
+		rtk_le16_to_cpu(*((__le16 *)(fw_bin + WLAN_FW_HDR_YEAR)));
 
 	PLTFM_MSG_TRACE("[TRACE]=== FW info ===\n");
 	PLTFM_MSG_TRACE("[TRACE]ver : %X\n", info->version);
@@ -560,7 +578,7 @@ dlfw_to_mem_88xx(struct halmac_adapter *adapter, u8 *fw_bin, u32 src, u32 dest,
 		status = send_fwpkt_88xx(adapter, (u16)(src >> 7),
 					 fw_bin + mem_offset, pkt_size);
 		if (status != HALMAC_RET_SUCCESS) {
-			PLTFM_MSG_ERR("[ERR]send fw pkt!!");
+			PLTFM_MSG_ERR("[ERR]send fw pkt!!\n");
 			return status;
 		}
 
@@ -570,7 +588,7 @@ dlfw_to_mem_88xx(struct halmac_adapter *adapter, u8 *fw_bin, u32 src, u32 dest,
 					 dest + mem_offset, pkt_size,
 					 first_part);
 		if (status != HALMAC_RET_SUCCESS) {
-			PLTFM_MSG_ERR("[ERR]iddma dlfw!!");
+			PLTFM_MSG_ERR("[ERR]iddma dlfw!!\n");
 			return status;
 		}
 
@@ -581,7 +599,7 @@ dlfw_to_mem_88xx(struct halmac_adapter *adapter, u8 *fw_bin, u32 src, u32 dest,
 
 	status = check_fw_chksum_88xx(adapter, dest);
 	if (status != HALMAC_RET_SUCCESS) {
-		PLTFM_MSG_ERR("[ERR]chk fw chksum!!");
+		PLTFM_MSG_ERR("[ERR]chk fw chksum!!\n");
 		return status;
 	}
 
@@ -691,7 +709,28 @@ static enum halmac_ret_status
 send_fwpkt_88xx(struct halmac_adapter *adapter, u16 pg_addr, u8 *fw_bin,
 		u32 size)
 {
+	u8 *fw_add_dum = NULL;
 	enum halmac_ret_status status;
+
+	if (adapter->intf == HALMAC_INTERFACE_USB &&
+	    !((size + TX_DESC_SIZE_88XX) & (512 - 1))) {
+		fw_add_dum = (u8 *)PLTFM_MALLOC(size + 1);
+		if (!fw_add_dum) {
+			PLTFM_MSG_ERR("[ERR]fw bin malloc!!\n");
+			return HALMAC_RET_MALLOC_FAIL;
+		}
+
+		PLTFM_MEMCPY(fw_add_dum, fw_bin, size);
+
+		status = dl_rsvd_page_88xx(adapter, pg_addr,
+					   fw_add_dum, size + 1);
+		if (status != HALMAC_RET_SUCCESS)
+			PLTFM_MSG_ERR("[ERR]dl rsvd page - dum!!\n");
+
+		PLTFM_FREE(fw_add_dum, size + 1);
+
+		return status;
+	}
 
 	status = dl_rsvd_page_88xx(adapter, pg_addr, fw_bin, size);
 	if (status != HALMAC_RET_SUCCESS)
@@ -803,7 +842,7 @@ check_fw_status_88xx(struct halmac_adapter *adapter, u8 *fw_status)
 
 	PLTFM_MSG_TRACE("[TRACE]%s ===>\n", __func__);
 
-	*fw_status = _TRUE;
+	*fw_status = 1;
 
 	fw_dbg6 = HALMAC_REG_R32(REG_FW_DBG6);
 
@@ -818,7 +857,7 @@ check_fw_status_88xx(struct halmac_adapter *adapter, u8 *fw_status)
 		if ((fw_dbg6 & FW_STATUS_CHK_FATAL) != 0) {
 			PLTFM_MSG_ERR("[ERR]fw status(fatal):%X\n", fw_dbg6);
 			fw_fatal_status_debug_88xx(adapter);
-			*fw_status = _FALSE;
+			*fw_status = 0;
 			return status;
 		}
 	}
@@ -837,7 +876,7 @@ check_fw_status_88xx(struct halmac_adapter *adapter, u8 *fw_status)
 			cnt--;
 			if (cnt == 0) {
 				PLTFM_MSG_ERR("[ERR]fw pc\n");
-				*fw_status = _FALSE;
+				*fw_status = 0;
 				return status;
 			}
 			PLTFM_DELAY_US(50);
@@ -996,6 +1035,8 @@ enum halmac_ret_status
 send_general_info_88xx(struct halmac_adapter *adapter,
 		       struct halmac_general_info *info)
 {
+	u8 h2cq_ele[4] = {0};
+	u32 h2cq_addr;
 	enum halmac_ret_status status = HALMAC_RET_SUCCESS;
 
 	if (halmac_fw_validate(adapter) != HALMAC_RET_SUCCESS)
@@ -1023,6 +1064,20 @@ send_general_info_88xx(struct halmac_adapter *adapter,
 		return status;
 	}
 
+	h2cq_addr = adapter->txff_alloc.rsvd_h2cq_addr;
+	h2cq_addr <<= TX_PAGE_SIZE_SHIFT_88XX;
+	status = dump_fifo_88xx(adapter, HAL_FIFO_SEL_TX,
+				h2cq_addr, 4, h2cq_ele);
+	if (status != HALMAC_RET_SUCCESS) {
+		PLTFM_MSG_ERR("[ERR]dump h2cq!!\n");
+		return status;
+	}
+
+	if ((h2cq_ele[0] & 0x7F) != 0x01 || h2cq_ele[1] != 0xFF) {
+		PLTFM_MSG_ERR("[ERR]h2cq compare!!\n");
+		return HALMAC_RET_SEND_H2C_FAIL;
+	}
+
 	if (adapter->halmac_state.dlfw_state == HALMAC_DLFW_DONE)
 		adapter->halmac_state.dlfw_state = HALMAC_GEN_INFO_SENT;
 
@@ -1048,7 +1103,7 @@ proc_send_general_info_88xx(struct halmac_adapter *adapter,
 
 	hdr_info.sub_cmd_id = SUB_CMD_ID_GENERAL_INFO;
 	hdr_info.content_size = 4;
-	hdr_info.ack = _FALSE;
+	hdr_info.ack = 0;
 	set_h2c_pkt_hdr_88xx(adapter, h2c_buf, &hdr_info, &seq_num);
 
 	status = send_h2c_pkt_88xx(adapter, h2c_buf);
@@ -1078,7 +1133,7 @@ proc_send_phydm_info_88xx(struct halmac_adapter *adapter,
 
 	hdr_info.sub_cmd_id = SUB_CMD_ID_PHYDM_INFO;
 	hdr_info.content_size = 8;
-	hdr_info.ack = _FALSE;
+	hdr_info.ack = 0;
 	set_h2c_pkt_hdr_88xx(adapter, h2c_buf, &hdr_info, &seq_num);
 
 	status = send_h2c_pkt_88xx(adapter, h2c_buf);

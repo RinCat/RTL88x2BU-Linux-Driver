@@ -13,8 +13,8 @@
  *
  *****************************************************************************/
 
-#ifndef	__PHYDMPOWERTRACKING_H__
-#define    __PHYDMPOWERTRACKING_H__
+#ifndef __HALRF_POWERTRACKING_H__
+#define __HALRF_POWERTRACKING_H__
 
 #define	DPK_DELTA_MAPPING_NUM	13
 #define	index_mapping_HP_NUM	15
@@ -30,6 +30,7 @@
 #define	CCK_TABLE_SIZE_88F	21
 /* JJ ADD 20161014 */
 #define	CCK_TABLE_SIZE_8710B   41
+#define	CCK_TABLE_SIZE_8192F   41
 
 
 #define	dm_check_txpowertracking	odm_txpowertracking_check
@@ -56,6 +57,7 @@ extern	u8 cck_swing_table_ch14_88f[CCK_TABLE_SIZE_88F][16];
 extern	u32 cck_swing_table_ch1_ch14_8723d[CCK_TABLE_SIZE_8723D];
 /* JJ ADD 20161014 */
 extern	u32 cck_swing_table_ch1_ch14_8710b[CCK_TABLE_SIZE_8710B];
+extern	u32 cck_swing_table_ch1_ch14_8192f[CCK_TABLE_SIZE_8192F];
 
 extern  u32 tx_scaling_table_jaguar[TXSCALE_TABLE_SIZE];
 
@@ -223,6 +225,7 @@ struct dm_rf_calibration_struct {
 	boolean			modify_tx_agc_flag_path_c;
 	boolean			modify_tx_agc_flag_path_d;
 	boolean			modify_tx_agc_flag_path_a_cck;
+	boolean			modify_tx_agc_flag_path_b_cck;
 
 	s8			kfree_offset[MAX_RF_PATH];
 
@@ -296,4 +299,4 @@ struct dm_rf_calibration_struct {
 
 
 
-#endif
+#endif	/*#ifndef __HALRF_POWER_TRACKING_H__*/

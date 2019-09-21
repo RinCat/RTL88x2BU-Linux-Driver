@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- * Copyright(c) 2015 - 2017 Realtek Corporation.
+ * Copyright(c) 2015 - 2018 Realtek Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
@@ -38,6 +38,7 @@ struct hw_port_reg {
 	u8 bcn_space_shift;
 	u16 bcn_space_mask;
 	u32	ps_aid;			/*reg_offset*/
+	u32	ta;			/*reg_offset*/
 };
 
 
@@ -53,6 +54,28 @@ u32 rtl8822b_deinit(PADAPTER);
 void rtl8822b_init_default_value(PADAPTER);
 
 /* rtl8822b_mac.c */
+/* RXERR_RPT */
+enum rx_rpt_type {
+	OFDM_MPDU_OK = 0,	/* 0 */
+	OFDM_MPDU_FAIL,
+	OFDM_FALSE_ALARM,
+	CCK_MPDU_OK,
+	CCK_MPDU_FAIL,
+	CCK_FALSE_ALARM,
+	HT_MPDU_OK,
+	HT_MPDU_FAIL,
+	HT_PPDU,
+	RX_FULL_DROP,		/* 10 */
+	FWFF_FULL_DROP,
+	VHT_SU_MPDU_OK = 16,	/* 16 */
+	VHT_SU_MPDU_FAIL,
+	VHT_SU_PPDU,
+	VHT_FALSE_ALARM,
+	VHT_MU_MPDU_OK,		/* 20 */
+	VHT_MU_MPDU_FAIL,
+	VHT_MU_PPDU		/* 22 */
+};
+
 u8 rtl8822b_rcr_config(PADAPTER, u32 rcr);
 u8 rtl8822b_rx_ba_ssn_appended(PADAPTER);
 u8 rtl8822b_rx_fcs_append_switch(PADAPTER, u8 enable);
@@ -62,6 +85,8 @@ s32 rtl8822b_fw_dl(PADAPTER, u8 wowlan);
 u8 rtl8822b_get_rx_drv_info_size(struct _ADAPTER *a);
 u32 rtl8822b_get_tx_desc_size(struct _ADAPTER *a);
 u32 rtl8822b_get_rx_desc_size(struct _ADAPTER *a);
+u16 rtl8822b_rx_report_get(struct _ADAPTER *a, enum rx_rpt_type type);
+void rtl8822b_rx_report_reset(struct _ADAPTER *a, enum rx_rpt_type type);
 
 /* rtl8822b_ops.c */
 u8 rtl8822b_read_efuse(PADAPTER);
@@ -74,6 +99,7 @@ u8 rtl8822b_gethaldefvar(PADAPTER, HAL_DEF_VARIABLE, void *pval);
 void rtl8822b_set_hal_ops(PADAPTER);
 
 /* tx */
+void rtl8822b_init_xmit_priv(_adapter *adapter);
 void rtl8822b_fill_txdesc_sectype(struct pkt_attrib *, u8 *ptxdesc);
 void rtl8822b_fill_txdesc_vcs(PADAPTER, struct pkt_attrib *, u8 *ptxdesc);
 void rtl8822b_fill_txdesc_phy(PADAPTER, struct pkt_attrib *, u8 *ptxdesc);
@@ -93,8 +119,6 @@ void rtl8822b_query_rx_desc(union recv_frame *, u8 *pdesc);
 
 /* rtl8822b_cmd.c */
 s32 rtl8822b_fillh2ccmd(PADAPTER, u8 id, u32 buf_len, u8 *pbuf);
-void rtl8822b_set_FwMediaStatusRpt_cmd(PADAPTER, u8 mstatus, u8 macid);
-void rtl8822b_set_FwRssiSetting_cmd(PADAPTER, u8 *param);
 void rtl8822b_set_FwPwrMode_cmd(PADAPTER, u8 psmode);
 
 #ifdef CONFIG_TDLS
@@ -104,10 +128,17 @@ void rtl8822b_set_BcnEarly_C2H_Rpt_cmd(PADAPTER padapter, u8 enable);
 #endif
 
 void rtl8822b_set_FwPwrModeInIPS_cmd(PADAPTER adapter, u8 cmd_param);
+#ifdef CONFIG_WOWLAN
+void rtl8822b_set_fw_pwrmode_inips_cmd_wowlan(PADAPTER padapter, u8 ps_mode);
+#endif /* CONFIG_WOWLAN */
 void rtl8822b_req_txrpt_cmd(PADAPTER, u8 macid);
-void rtl8822b_fw_update_beacon_cmd(PADAPTER);
 void rtl8822b_c2h_handler(PADAPTER, u8 *pbuf, u16 length);
 void rtl8822b_c2h_handler_no_io(PADAPTER, u8 *pbuf, u16 length);
+
+#ifdef CONFIG_LPS_PWR_TRACKING
+void rtl8822b_set_fw_thermal_rpt_cmd(_adapter *adapter, u8 enable, u8 thermal_value);
+void rtw_lps_pwr_tracking(_adapter *adapter, u8 thermal_value);
+#endif
 
 #ifdef CONFIG_BT_COEXIST
 void rtl8822b_download_BTCoex_AP_mode_rsvd_page(PADAPTER);

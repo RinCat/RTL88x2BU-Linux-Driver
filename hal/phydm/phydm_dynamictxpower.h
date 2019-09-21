@@ -23,112 +23,81 @@
  *
  *****************************************************************************/
 
-#ifndef	__PHYDMDYNAMICTXPOWER_H__
-#define    __PHYDMDYNAMICTXPOWER_H__
+#ifndef __PHYDMDYNAMICTXPOWER_H__
+#define __PHYDMDYNAMICTXPOWER_H__
 
-/*#define DYNAMIC_TXPWR_VERSION	"1.0"*/
-/*#define DYNAMIC_TXPWR_VERSION	"1.3" */ /*2015.08.26, Add 8814 Dynamic TX power*/
-#define DYNAMIC_TXPWR_VERSION	"1.4" /*2015.11.06, Add CE 8821A Dynamic TX power*/
+#ifdef CONFIG_DYNAMIC_TX_TWR
+/* @============================================================
+ *  Definition
+ * ============================================================
+ */
+
+/*@#define DYNAMIC_TXPWR_VERSION	"1.0"*/
+/*@#define DYNAMIC_TXPWR_VERSION	"1.3" */ /*@2015.08.26, Add 8814 Dynamic TX power*/
+#define DYNAMIC_TXPWR_VERSION "1.4" /*@2015.11.06, Add CE 8821A Dynamic TX power*/
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_AP)
-	#define		TX_POWER_NEAR_FIELD_THRESH_LVL2	74
-	#define		TX_POWER_NEAR_FIELD_THRESH_LVL1	60
-	#define		TX_POWER_NEAR_FIELD_THRESH_AP	0x3F
+#define TX_POWER_NEAR_FIELD_THRESH_LVL2 74
+#define TX_POWER_NEAR_FIELD_THRESH_LVL1 60
+#define TX_POWER_NEAR_FIELD_THRESH_AP 0x3F
 #elif (DM_ODM_SUPPORT_TYPE == ODM_WIN)
-	#define		TX_POWER_NEAR_FIELD_THRESH_LVL2	74
-	#define		TX_POWER_NEAR_FIELD_THRESH_LVL1	67
+#define TX_POWER_NEAR_FIELD_THRESH_LVL2 74
+#define TX_POWER_NEAR_FIELD_THRESH_LVL1 67
 #elif (DM_ODM_SUPPORT_TYPE == ODM_CE)
-	#define		TX_POWER_NEAR_FIELD_THRESH_LVL2	74
-	#define		TX_POWER_NEAR_FIELD_THRESH_LVL1	60
+#define TX_POWER_NEAR_FIELD_THRESH_LVL2 74
+#define TX_POWER_NEAR_FIELD_THRESH_LVL1 60
 #endif
 
-#define		tx_high_pwr_level_normal		0
-#define		tx_high_pwr_level_level1		1
-#define		tx_high_pwr_level_level2		2
+#define tx_high_pwr_level_normal 0
+#define tx_high_pwr_level_level1 1
+#define tx_high_pwr_level_level2 2
+#define tx_high_pwr_level_level3 3
+#define tx_high_pwr_level_unchange 4
 
-#define		tx_high_pwr_level_bt1			3
-#define		tx_high_pwr_level_bt2			4
-#define		tx_high_pwr_level_15			5
-#define		tx_high_pwr_level_35			6
-#define		tx_high_pwr_level_50			7
-#define		tx_high_pwr_level_70			8
-#define		tx_high_pwr_level_100			9
-
+/* @============================================================
+ * enumrate
+ * ============================================================
+ */
 enum phydm_dtp_power_offset {
 	PHYDM_OFFSET_ZERO = 0,
-	PHYDM_OFFSET_MINUS_3DB = 1, 
+	PHYDM_OFFSET_MINUS_3DB = 1,
 	PHYDM_OFFSET_MINUS_7DB = 2,
 	PHYDM_OFFSET_MINUS_11DB = 3,
 	PHYDM_OFFSET_ADD_3DB = 4,
 	PHYDM_OFFSET_ADD_6DB = 5
 };
 
-void
-phydm_pow_train_init(
-	void					*dm_void
-);
+enum phydm_dtp_power_offset_2ndtype {
+	PHYDM_2ND_OFFSET_ZERO = 0,
+	PHYDM_2ND_OFFSET_MINUS_3DB = 2,
+	PHYDM_2ND_OFFSET_MINUS_7DB = 3,
+	PHYDM_2ND_OFFSET_MINUS_11DB = 1
+};
 
-void
-phydm_dynamic_tx_power(
-	void					*dm_void
-);
 
-void
-odm_dynamic_tx_power_restore_power_index(
-	void					*dm_void
-);
+/* @============================================================
+ *  structure
+ * ============================================================
+ */
 
-void
-odm_dynamic_tx_power_nic(
-	void					*dm_void
-);
+/* @============================================================
+ *  Function Prototype
+ * ============================================================
+ */
 
-#if (DM_ODM_SUPPORT_TYPE & (ODM_WIN | ODM_CE))
-void
-odm_dynamic_tx_power_save_power_index(
-	void					*dm_void
-);
+extern void
+odm_set_dyntxpwr(void *dm_void, u8 *desc, u8 mac_id);
 
-void
-odm_dynamic_tx_power_write_power_index(
-	void					*dm_void,
-	u8		value);
+void phydm_dynamic_tx_power(void *dm_void);
 
-void
-odm_dynamic_tx_power_8821(
-	void					*dm_void,
-	u8					*desc,
-	u8					mac_id
-);
+void phydm_dynamic_tx_power_init(void *dm_void);
+
+void phydm_dtp_debug(void *dm_void, char input[][16], u32 *_used, char *output,
+			     u32 *_out_len);
+
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
-void
-odm_dynamic_tx_power_8814a(
-	void					*dm_void
-);
-
-
-void
-odm_set_tx_power_level8814(
-	void		*adapter,
-	u8			channel,
-	u8			pwr_lvl
-);
-#endif
+void odm_dynamic_tx_power_win(void *dm_void);
 #endif
 
-void
-odm_dynamic_tx_power(
-	void					*dm_void
-);
-
-void
-phydm_dynamic_tx_power(
-	void					*dm_void
-);
-
-void
-phydm_dynamic_tx_power_init(
-	void					*dm_void
-);
-
+#endif
 #endif

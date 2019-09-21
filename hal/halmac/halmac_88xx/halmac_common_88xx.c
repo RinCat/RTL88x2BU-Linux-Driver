@@ -19,9 +19,15 @@
 #include "halmac_cfg_wmac_88xx.h"
 #include "halmac_efuse_88xx.h"
 #include "halmac_bb_rf_88xx.h"
+#if HALMAC_USB_SUPPORT
 #include "halmac_usb_88xx.h"
+#endif
+#if HALMAC_SDIO_SUPPORT
 #include "halmac_sdio_88xx.h"
+#endif
+#if HALMAC_PCIE_SUPPORT
 #include "halmac_pcie_88xx.h"
+#endif
 #include "halmac_mimo_88xx.h"
 
 #if HALMAC_88XX_SUPPORT
@@ -202,6 +208,14 @@ wlhdr_data_valid_88xx(struct halmac_adapter *adapter,
 static void
 dump_reg_88xx(struct halmac_adapter *adapter);
 
+static u8
+packet_in_nlo_88xx(struct halmac_adapter *adapter,
+		   enum halmac_packet_id pkt_id);
+
+static enum halmac_packet_id
+get_real_pkt_id_88xx(struct halmac_adapter *adapter,
+		     enum halmac_packet_id pkt_id);
+
 /**
  * ofld_func_cfg_88xx() - config offload function
  * @adapter : the adapter of halmac
@@ -301,7 +315,7 @@ dl_rsvd_page_88xx(struct halmac_adapter *adapter, u16 pg_addr, u8 *buf,
 	value8 = (u8)(value8 & ~(BIT(6)));
 	HALMAC_REG_W8(REG_FWHW_TXQ_CTRL + 2, value8);
 
-	if (PLTFM_SEND_RSVD_PAGE(buf, size) == _FALSE) {
+	if (PLTFM_SEND_RSVD_PAGE(buf, size) == 0) {
 		PLTFM_MSG_ERR("[ERR]send rvsd pg(pltfm)!!\n");
 		status = HALMAC_RET_DL_RSVD_PAGE_FAIL;
 		goto DL_RSVD_PG_END;
@@ -455,8 +469,9 @@ enum halmac_ret_status
 set_hw_value_88xx(struct halmac_adapter *adapter, enum halmac_hw_id hw_id,
 		  void *value)
 {
-	enum halmac_ret_status status;
-	struct halmac_tx_page_threshold_info *tx_th_info;
+	enum halmac_ret_status status = HALMAC_RET_SUCCESS;
+	struct halmac_tx_page_threshold_info *th_info = NULL;
+	struct halmac_api *api = (struct halmac_api *)adapter->halmac_api;
 
 	PLTFM_MSG_TRACE("[TRACE]%s ===>\n", __func__);
 
@@ -466,12 +481,14 @@ set_hw_value_88xx(struct halmac_adapter *adapter, enum halmac_hw_id hw_id,
 	}
 
 	switch (hw_id) {
+#if HALMAC_USB_SUPPORT
 	case HALMAC_HW_USB_MODE:
 		status = set_usb_mode_88xx(adapter,
 					   *(enum halmac_usb_mode *)value);
 		if (status != HALMAC_RET_SUCCESS)
 			return status;
 		break;
+#endif
 	case HALMAC_HW_BANDWIDTH:
 		cfg_bw_88xx(adapter, *(enum halmac_bw *)value);
 		break;
@@ -482,12 +499,20 @@ set_hw_value_88xx(struct halmac_adapter *adapter, enum halmac_hw_id hw_id,
 		cfg_pri_ch_idx_88xx(adapter, *(enum halmac_pri_ch_idx *)value);
 		break;
 	case HALMAC_HW_EN_BB_RF:
-		enable_bb_rf_88xx(adapter, *(u8 *)value);
+		status = enable_bb_rf_88xx(adapter, *(u8 *)value);
+		if (status != HALMAC_RET_SUCCESS)
+			return status;
 		break;
+#if HALMAC_SDIO_SUPPORT
 	case HALMAC_HW_SDIO_TX_PAGE_THRESHOLD:
-		tx_th_info = (struct halmac_tx_page_threshold_info *)value;
-		cfg_sdio_tx_page_threshold_88xx(adapter, tx_th_info);
+		if (adapter->intf == HALMAC_INTERFACE_SDIO) {
+			th_info = (struct halmac_tx_page_threshold_info *)value;
+			cfg_sdio_tx_page_threshold_88xx(adapter, th_info);
+		} else {
+			return HALMAC_RET_FAIL;
+		}
 		break;
+#endif
 	case HALMAC_HW_RX_SHIFT:
 		rx_shift_88xx(adapter, *(u8 *)value);
 		break;
@@ -501,6 +526,15 @@ set_hw_value_88xx(struct halmac_adapter *adapter, enum halmac_hw_id hw_id,
 		fast_edca_cfg_88xx(adapter,
 				   (struct halmac_fast_edca_cfg *)value);
 		break;
+	case HALMAC_HW_RTS_FULL_BW:
+		rts_full_bw_88xx(adapter, *(u8 *)value);
+		break;
+	case HALMAC_HW_FREE_CNT_EN:
+		HALMAC_REG_W8_SET(REG_MISC_CTRL, BIT_EN_FREECNT);
+		break;
+	case HALMAC_HW_TXFIFO_LIFETIME:
+		cfg_txfifo_lt_88xx(adapter,
+				   (struct halmac_txfifo_lifetime_cfg *)value);
 	default:
 		return HALMAC_RET_PARA_NOT_SUPPORT;
 	}
@@ -531,8 +565,8 @@ set_h2c_pkt_hdr_88xx(struct halmac_adapter *adapter, u8 *hdr,
 	(adapter->h2c_info.seq_num)++;
 	PLTFM_MUTEX_UNLOCK(&adapter->h2c_seq_mutex);
 
-	if (info->ack == _TRUE)
-		FW_OFFLOAD_H2C_SET_ACK(hdr, _TRUE);
+	if (info->ack == 1)
+		FW_OFFLOAD_H2C_SET_ACK(hdr, 1);
 
 	return HALMAC_RET_SUCCESS;
 }
@@ -554,7 +588,7 @@ send_h2c_pkt_88xx(struct halmac_adapter *adapter, u8 *pkt)
 
 	cnt = 100;
 	do {
-		if (PLTFM_SEND_H2C_PKT(pkt, H2C_PKT_SIZE_88XX) == _TRUE)
+		if (PLTFM_SEND_H2C_PKT(pkt, H2C_PKT_SIZE_88XX) == 1)
 			break;
 		cnt--;
 		if (cnt == 0) {
@@ -578,8 +612,8 @@ get_h2c_buf_free_space_88xx(struct halmac_adapter *adapter)
 	struct halmac_h2c_info *info = &adapter->h2c_info;
 	struct halmac_api *api = (struct halmac_api *)adapter->halmac_api;
 
-	hw_wptr = HALMAC_REG_R32(REG_H2C_PKT_WRITEADDR) & BIT_MASK_H2C_WR_ADDR;
-	fw_rptr = HALMAC_REG_R32(REG_H2C_PKT_READADDR) & BIT_MASK_H2C_READ_ADDR;
+	hw_wptr = HALMAC_REG_R32(REG_H2C_PKT_WRITEADDR) & 0x3FFFF;
+	fw_rptr = HALMAC_REG_R32(REG_H2C_PKT_READADDR) & 0x3FFFF;
 
 	if (hw_wptr >= fw_rptr)
 		info->buf_fs = info->buf_size - (hw_wptr - fw_rptr);
@@ -594,6 +628,9 @@ get_h2c_buf_free_space_88xx(struct halmac_adapter *adapter)
  * @adapter : the adapter of halmac
  * @buf : RX Packet pointer
  * @size : RX Packet size
+ *
+ * Note : Don't use any IO or DELAY in this API
+ *
  * Author : KaiYuan Chang/Ivan Lin
  *
  * Used to process c2h packet info from RX path. After receiving the packet,
@@ -607,7 +644,7 @@ get_c2h_info_88xx(struct halmac_adapter *adapter, u8 *buf, u32 size)
 {
 	enum halmac_ret_status status = HALMAC_RET_SUCCESS;
 
-	if (GET_RX_DESC_C2H(buf) == _TRUE) {
+	if (GET_RX_DESC_C2H(buf) == 1) {
 		PLTFM_MSG_TRACE("[TRACE]Parse c2h pkt\n");
 
 		status = parse_c2h_pkt_88xx(adapter, buf, size);
@@ -623,7 +660,8 @@ get_c2h_info_88xx(struct halmac_adapter *adapter, u8 *buf, u32 size)
 static enum halmac_ret_status
 parse_c2h_pkt_88xx(struct halmac_adapter *adapter, u8 *buf, u32 size)
 {
-	u8 cmd_id, sub_cmd_id;
+	u8 cmd_id;
+	u8 sub_cmd_id;
 	u8 *c2h_pkt = buf + adapter->hw_cfg_info.rxdesc_size;
 	u32 c2h_size = size - adapter->hw_cfg_info.rxdesc_size;
 	enum halmac_ret_status status = HALMAC_RET_SUCCESS;
@@ -732,7 +770,8 @@ _ENDFOUND:
 static enum halmac_ret_status
 get_h2c_ack_88xx(struct halmac_adapter *adapter, u8 *buf, u32 size)
 {
-	u8 cmd_id, sub_cmd_id;
+	u8 cmd_id;
+	u8 sub_cmd_id;
 	u8 fw_rc;
 	enum halmac_ret_status status = HALMAC_RET_SUCCESS;
 
@@ -960,11 +999,10 @@ get_h2c_ack_ch_switch_88xx(struct halmac_adapter *adapter, u8 *buf, u32 size)
 }
 
 /**
- * mac_debug_88xx() - dump debug information
- * @adapter : the adapter of halmac
+ * mac_debug_88xx_v1() - read some registers for debug
+ * @adapter
  * Author : KaiYuan Chang/Ivan Lin
  * Return : enum halmac_ret_status
- * More details of status code can be found in prototype document
  */
 enum halmac_ret_status
 mac_debug_88xx(struct halmac_adapter *adapter)
@@ -1054,7 +1092,7 @@ dump_reg_88xx(struct halmac_adapter *adapter)
  * @info : cmd id, content
  * @full_fifo : parameter information
  *
- * If msk_en = _TRUE, the format of array is {reg_info, mask, value}.
+ * If msk_en = 1, the format of array is {reg_info, mask, value}.
  * If msk_en =_FAUSE, the format of array is {reg_info, value}
  * The format of reg_info is
  * reg_info[31]=rf_reg, 0: MAC_BB reg, 1: RF reg
@@ -1062,7 +1100,7 @@ dump_reg_88xx(struct halmac_adapter *adapter)
  * if rf_reg=0(MAC_BB reg), rf_path is meaningless.
  * ref_info[15:0]=offset
  *
- * Example: msk_en = _FALSE
+ * Example: msk_en = 0
  * {0x8100000a, 0x00001122}
  * =>Set RF register, path_B, offset 0xA to 0x00001122
  * {0x00000824, 0x11224433}
@@ -1124,7 +1162,7 @@ static enum halmac_ret_status
 proc_cfg_param_88xx(struct halmac_adapter *adapter,
 		    struct halmac_phy_parameter_info *param, u8 full_fifo)
 {
-	u8 end_cmd = _FALSE;
+	u8 end_cmd = 0;
 	u32 rsvd_size;
 	enum halmac_ret_status status = HALMAC_RET_SUCCESS;
 	struct halmac_cfg_param_info *info = &adapter->cfg_param_info;
@@ -1137,8 +1175,12 @@ proc_cfg_param_88xx(struct halmac_adapter *adapter,
 		return status;
 
 	if (cnv_cfg_param_state_88xx(adapter, HALMAC_CMD_CNSTR_CNSTR) !=
-	    HALMAC_RET_SUCCESS)
+	    HALMAC_RET_SUCCESS) {
+		PLTFM_FREE(info->buf, info->buf_size);
+		info->buf = NULL;
+		info->buf_wptr = NULL;
 		return HALMAC_RET_ERROR_STATE;
+	}
 
 	add_param_buf_88xx(adapter, param, info->buf_wptr, &end_cmd);
 	if (param->cmd_id != HALMAC_PARAMETER_CMD_END) {
@@ -1148,7 +1190,7 @@ proc_cfg_param_88xx(struct halmac_adapter *adapter,
 	}
 
 	rsvd_size = info->avl_buf_size - adapter->hw_cfg_info.txdesc_size;
-	if (rsvd_size > CFG_PARAM_H2C_INFO_SIZE && end_cmd == _FALSE)
+	if (rsvd_size > CFG_PARAM_H2C_INFO_SIZE && end_cmd == 0)
 		return HALMAC_RET_SUCCESS;
 
 	if (info->num == 0) {
@@ -1166,10 +1208,16 @@ proc_cfg_param_88xx(struct halmac_adapter *adapter,
 	}
 
 	status = send_cfg_param_h2c_88xx(adapter);
-	if (status != HALMAC_RET_SUCCESS)
+	if (status != HALMAC_RET_SUCCESS) {
+		if (info->buf) {
+			PLTFM_FREE(info->buf, info->buf_size);
+			info->buf = NULL;
+			info->buf_wptr = NULL;
+		}
 		return status;
+	}
 
-	if (end_cmd == _FALSE) {
+	if (end_cmd == 0) {
 		PLTFM_MSG_TRACE("[TRACE]send h2c-buf full\n");
 		return HALMAC_RET_PARA_SENDING;
 	}
@@ -1197,7 +1245,7 @@ send_cfg_param_h2c_88xx(struct halmac_adapter *adapter)
 
 	*proc_status = HALMAC_CMD_PROCESS_SENDING;
 
-	if (info->full_fifo_mode == _TRUE)
+	if (info->full_fifo_mode == 1)
 		pg_addr = 0;
 	else
 		pg_addr = adapter->txff_alloc.rsvd_h2c_info_addr;
@@ -1214,7 +1262,7 @@ send_cfg_param_h2c_88xx(struct halmac_adapter *adapter)
 
 	hdr_info.sub_cmd_id = SUB_CMD_ID_CFG_PARAM;
 	hdr_info.content_size = 4;
-	hdr_info.ack = _TRUE;
+	hdr_info.ack = 1;
 	set_h2c_pkt_hdr_88xx(adapter, h2c_buf, &hdr_info, &seq_num);
 
 	adapter->halmac_state.cfg_param_state.seq_num = seq_num;
@@ -1276,7 +1324,7 @@ add_param_buf_88xx(struct halmac_adapter *adapter,
 	struct halmac_cfg_param_info *info = &adapter->cfg_param_info;
 	union halmac_parameter_content *content = &param->content;
 
-	*end_cmd = _FALSE;
+	*end_cmd = 0;
 
 	PARAM_INFO_SET_LEN(buf, CFG_PARAM_H2C_INFO_SIZE);
 	PARAM_INFO_SET_IO_CMD(buf, param->cmd_id);
@@ -1311,7 +1359,7 @@ add_param_buf_88xx(struct halmac_adapter *adapter,
 		PARAM_INFO_SET_DELAY_VAL(buf, content->DELAY_TIME.delay_time);
 		break;
 	case HALMAC_PARAMETER_CMD_END:
-		*end_cmd = _TRUE;
+		*end_cmd = 1;
 		break;
 	default:
 		PLTFM_MSG_ERR("[ERR]cmd id!!\n");
@@ -1330,7 +1378,7 @@ gen_cfg_param_h2c_88xx(struct halmac_adapter *adapter, u8 *buff)
 
 	CFG_PARAM_SET_NUM(buff, info->num);
 
-	if (info->full_fifo_mode == _TRUE) {
+	if (info->full_fifo_mode == 1) {
 		CFG_PARAM_SET_INIT_CASE(buff, 0x1);
 		CFG_PARAM_SET_LOC(buff, 0);
 	} else {
@@ -1350,7 +1398,7 @@ malloc_cfg_param_buf_88xx(struct halmac_adapter *adapter, u8 full_fifo)
 	if (info->buf)
 		return HALMAC_RET_SUCCESS;
 
-	if (full_fifo == _TRUE)
+	if (full_fifo == 1)
 		info->buf_size = pltfm_info->malloc_size;
 	else
 		info->buf_size = CFG_PARAM_RSVDPG_SIZE;
@@ -1420,6 +1468,11 @@ update_packet_88xx(struct halmac_adapter *adapter, enum halmac_packet_id pkt_id,
 		return status;
 	}
 
+	if (packet_in_nlo_88xx(adapter, pkt_id)) {
+		*proc_status = HALMAC_CMD_PROCESS_DONE;
+		adapter->nlo_flag = 1;
+	}
+
 	PLTFM_MSG_TRACE("[TRACE]%s <===\n", __func__);
 
 	return HALMAC_RET_SUCCESS;
@@ -1435,6 +1488,7 @@ send_h2c_update_packet_88xx(struct halmac_adapter *adapter,
 	u16 pg_offset;
 	struct halmac_h2c_header_info hdr_info;
 	enum halmac_ret_status status = HALMAC_RET_SUCCESS;
+	enum halmac_packet_id real_pkt_id;
 
 	status = dl_rsvd_page_88xx(adapter, pg_addr, pkt, size);
 	if (status != HALMAC_RET_SUCCESS) {
@@ -1442,14 +1496,18 @@ send_h2c_update_packet_88xx(struct halmac_adapter *adapter,
 		return status;
 	}
 
+	real_pkt_id = get_real_pkt_id_88xx(adapter, pkt_id);
 	pg_offset = pg_addr - adapter->txff_alloc.rsvd_boundary;
 	UPDATE_PKT_SET_SIZE(h2c_buf, size + adapter->hw_cfg_info.txdesc_size);
-	UPDATE_PKT_SET_ID(h2c_buf, pkt_id);
+	UPDATE_PKT_SET_ID(h2c_buf, real_pkt_id);
 	UPDATE_PKT_SET_LOC(h2c_buf, pg_offset);
 
 	hdr_info.sub_cmd_id = SUB_CMD_ID_UPDATE_PKT;
 	hdr_info.content_size = 8;
-	hdr_info.ack = _TRUE;
+	if (packet_in_nlo_88xx(adapter, pkt_id))
+		hdr_info.ack = 0;
+	else
+		hdr_info.ack = 1;
 	set_h2c_pkt_hdr_88xx(adapter, h2c_buf, &hdr_info, &seq_num);
 	adapter->halmac_state.update_pkt_state.seq_num = seq_num;
 
@@ -1583,7 +1641,7 @@ dump_fifo_88xx(struct halmac_adapter *adapter, enum hal_fifo_sel sel,
 		return HALMAC_RET_NULL_POINTER;
 
 	tmp8 = HALMAC_REG_R8(REG_RCR + 2);
-	enable = _FALSE;
+	enable = 0;
 	status = api->halmac_set_hw_value(adapter, HALMAC_HW_RX_CLK_GATE,
 					  &enable);
 	if (status != HALMAC_RET_SUCCESS)
@@ -1702,8 +1760,8 @@ set_h2c_header_88xx(struct halmac_adapter *adapter, u8 *hdr, u16 *seq, u8 ack)
 	(adapter->h2c_info.seq_num)++;
 	PLTFM_MUTEX_UNLOCK(&adapter->h2c_seq_mutex);
 
-	if (ack == _TRUE)
-		H2C_CMD_HEADER_SET_ACK(hdr, _TRUE);
+	if (ack == 1)
+		H2C_CMD_HEADER_SET_ACK(hdr, 1);
 
 	return HALMAC_RET_SUCCESS;
 }
@@ -1898,7 +1956,7 @@ ctrl_ch_switch_88xx(struct halmac_adapter *adapter,
 
 	PLTFM_MSG_TRACE("[TRACE]%s ===>\n", __func__);
 
-	if (opt->switch_en == _FALSE)
+	if (opt->switch_en == 0)
 		*proc_status = HALMAC_CMD_PROCESS_IDLE;
 
 	if ((*proc_status == HALMAC_CMD_PROCESS_SENDING) ||
@@ -1908,7 +1966,7 @@ ctrl_ch_switch_88xx(struct halmac_adapter *adapter,
 	}
 
 	state = scan_cmd_cnstr_state_88xx(adapter);
-	if (opt->switch_en == _TRUE) {
+	if (opt->switch_en == 1) {
 		if (state != HALMAC_CMD_CNSTR_CNSTR) {
 			PLTFM_MSG_ERR("[ERR]state(en = 1)\n");
 			return HALMAC_RET_ERROR_STATE;
@@ -1946,6 +2004,9 @@ proc_ctrl_ch_switch_88xx(struct halmac_adapter *adapter,
 
 	PLTFM_MSG_TRACE("[TRACE]%s ===>\n", __func__);
 
+	if (opt->nlo_en == 1 && adapter->nlo_flag != 1)
+		PLTFM_MSG_WARN("[WARN]probe req is NOT nlo pkt!!\n");
+
 	if (cnv_scan_state_88xx(adapter, HALMAC_CMD_CNSTR_H2C_SENT) !=
 	    HALMAC_RET_SUCCESS)
 		return HALMAC_RET_ERROR_STATE;
@@ -1981,7 +2042,10 @@ proc_ctrl_ch_switch_88xx(struct halmac_adapter *adapter,
 
 	hdr_info.sub_cmd_id = SUB_CMD_ID_CH_SWITCH;
 	hdr_info.content_size = 20;
-	hdr_info.ack = _TRUE;
+	if (opt->nlo_en == 1)
+		hdr_info.ack = 0;
+	else
+		hdr_info.ack = 1;
 	set_h2c_pkt_hdr_88xx(adapter, h2c_buf, &hdr_info, &seq_num);
 	adapter->halmac_state.scan_state.seq_num = seq_num;
 
@@ -2003,6 +2067,8 @@ proc_ctrl_ch_switch_88xx(struct halmac_adapter *adapter,
 	if (cnv_scan_state_88xx(adapter, HALMAC_CMD_CNSTR_IDLE) !=
 	    HALMAC_RET_SUCCESS)
 		return HALMAC_RET_ERROR_STATE;
+
+	adapter->nlo_flag = 0;
 
 	return status;
 }
@@ -2060,7 +2126,7 @@ chk_txdesc_88xx(struct halmac_adapter *adapter, u8 *buf, u32 size)
 
 	PLTFM_MSG_TRACE("[TRACE]%s ===>\n", __func__);
 
-	if (GET_TX_DESC_BMC(buf) == _TRUE && GET_TX_DESC_AGG_EN(buf) == _TRUE)
+	if (GET_TX_DESC_BMC(buf) == 1 && GET_TX_DESC_AGG_EN(buf) == 1)
 		PLTFM_MSG_ERR("[ERR]txdesc - agg + bmc\n");
 
 	if (size < (GET_TX_DESC_TXPKTSIZE(buf) +
@@ -2121,15 +2187,15 @@ wlhdr_valid_88xx(struct halmac_adapter *adapter, u8 *buf)
 
 	switch (wlhdr->type) {
 	case WLHDR_TYPE_MGMT:
-		if (wlhdr_mgmt_valid_88xx(adapter, wlhdr) != _TRUE)
+		if (wlhdr_mgmt_valid_88xx(adapter, wlhdr) != 1)
 			status = HALMAC_RET_WLHDR_FAIL;
 		break;
 	case WLHDR_TYPE_CTRL:
-		if (wlhdr_ctrl_valid_88xx(adapter, wlhdr) != _TRUE)
+		if (wlhdr_ctrl_valid_88xx(adapter, wlhdr) != 1)
 			status = HALMAC_RET_WLHDR_FAIL;
 		break;
 	case WLHDR_TYPE_DATA:
-		if (wlhdr_data_valid_88xx(adapter, wlhdr) != _TRUE)
+		if (wlhdr_data_valid_88xx(adapter, wlhdr) != 1)
 			status = HALMAC_RET_WLHDR_FAIL;
 		break;
 	default:
@@ -2160,11 +2226,11 @@ wlhdr_mgmt_valid_88xx(struct halmac_adapter *adapter,
 	case WLHDR_SUB_TYPE_DEAUTH:
 	case WLHDR_SUB_TYPE_ACTION:
 	case WLHDR_SUB_TYPE_ACTION_NOACK:
-		state = _TRUE;
+		state = 1;
 		break;
 	default:
 		PLTFM_MSG_ERR("[ERR]mgmt invalid!!\n");
-		state = _FALSE;
+		state = 0;
 		break;
 	}
 
@@ -2180,11 +2246,11 @@ wlhdr_ctrl_valid_88xx(struct halmac_adapter *adapter,
 	switch (wlhdr->sub_type) {
 	case WLHDR_SUB_TYPE_BF_RPT_POLL:
 	case WLHDR_SUB_TYPE_NDPA:
-		state = _TRUE;
+		state = 1;
 		break;
 	default:
 		PLTFM_MSG_ERR("[ERR]ctrl invalid!!\n");
-		state = _FALSE;
+		state = 0;
 		break;
 	}
 
@@ -2202,11 +2268,11 @@ wlhdr_data_valid_88xx(struct halmac_adapter *adapter,
 	case WLHDR_SUB_TYPE_NULL:
 	case WLHDR_SUB_TYPE_QOS_DATA:
 	case WLHDR_SUB_TYPE_QOS_NULL:
-		state = _TRUE;
+		state = 1;
 		break;
 	default:
 		PLTFM_MSG_ERR("[ERR]data invalid!!\n");
-		state = _FALSE;
+		state = 0;
 		break;
 	}
 
@@ -2214,7 +2280,7 @@ wlhdr_data_valid_88xx(struct halmac_adapter *adapter,
 }
 
 /**
- * halmac_get_version() - get HALMAC version
+ * get_version_88xx() - get HALMAC version
  * @ver : return version of major, prototype and minor information
  * Author : KaiYuan Chang / Ivan Lin
  * Return : enum halmac_ret_status
@@ -2283,7 +2349,7 @@ proc_p2pps_88xx(struct halmac_adapter *adapter, struct halmac_p2pps *info)
 
 	hdr_info.sub_cmd_id = SUB_CMD_ID_P2PPS;
 	hdr_info.content_size = 24;
-	hdr_info.ack = _FALSE;
+	hdr_info.ack = 0;
 	set_h2c_pkt_hdr_88xx(adapter, h2c_buf, &hdr_info, &seq_num);
 
 	status = send_h2c_pkt_88xx(adapter, h2c_buf);
@@ -2423,6 +2489,9 @@ cfg_drv_rsvd_pg_num_88xx(struct halmac_adapter *adapter,
 		break;
 	case HALMAC_RSVD_PG_NUM128:
 		adapter->txff_alloc.rsvd_drv_pg_num = 128;
+		break;
+	case HALMAC_RSVD_PG_NUM256:
+		adapter->txff_alloc.rsvd_drv_pg_num = 256;
 		break;
 	}
 
@@ -2688,13 +2757,15 @@ parse_intf_phy_88xx(struct halmac_adapter *adapter,
 				HALMAC_REG_W8((u32)offset, (u8)value);
 			} else if (intf_phy == HAL_INTF_PHY_USB2 ||
 				   intf_phy == HAL_INTF_PHY_USB3) {
+#if HALMAC_USB_SUPPORT
 				result = usbphy_write_88xx(adapter, (u8)offset,
 							   value, intf_phy);
 				if (result != HALMAC_RET_SUCCESS)
 					PLTFM_MSG_ERR("[ERR]usb phy!!\n");
-
+#endif
 			} else if (intf_phy == HAL_INTF_PHY_PCIE_GEN1 ||
 				   intf_phy == HAL_INTF_PHY_PCIE_GEN2) {
+#if HALMAC_PCIE_SUPPORT
 				if (ip_sel == HALMAC_IP_INTF_PHY)
 					result = mdio_write_88xx(adapter,
 								 (u8)offset,
@@ -2705,7 +2776,7 @@ parse_intf_phy_88xx(struct halmac_adapter *adapter,
 							     (u8)value);
 				if (result != HALMAC_RET_SUCCESS)
 					PLTFM_MSG_ERR("[ERR]mdio/dbi!!\n");
-
+#endif
 			} else {
 				PLTFM_MSG_ERR("[ERR]intf phy sel!!\n");
 			}
@@ -2853,6 +2924,43 @@ pwr_state_88xx(struct halmac_adapter *adapter, enum halmac_mac_power *state)
 		*state = HALMAC_MAC_POWER_OFF;
 	else
 		*state = HALMAC_MAC_POWER_ON;
+}
+
+static u8
+packet_in_nlo_88xx(struct halmac_adapter *adapter,
+		   enum halmac_packet_id pkt_id)
+{
+	enum halmac_packet_id nlo_pkt = HALMAC_PACKET_PROBE_REQ_NLO;
+
+	if (pkt_id >= nlo_pkt)
+		return 1;
+	else
+		return 0;
+}
+
+static enum halmac_packet_id
+get_real_pkt_id_88xx(struct halmac_adapter *adapter,
+		     enum halmac_packet_id pkt_id)
+{
+	enum halmac_packet_id real_pkt_id;
+
+	PLTFM_MSG_TRACE("[TRACE]%s ===>\n", __func__);
+
+	switch (pkt_id) {
+	case HALMAC_PACKET_PROBE_REQ_NLO:
+		real_pkt_id = HALMAC_PACKET_PROBE_REQ;
+		break;
+	case HALMAC_PACKET_SYNC_BCN_NLO:
+		real_pkt_id = HALMAC_PACKET_SYNC_BCN;
+		break;
+	case HALMAC_PACKET_DISCOVERY_BCN_NLO:
+		real_pkt_id = HALMAC_PACKET_DISCOVERY_BCN;
+		break;
+	default:
+		real_pkt_id = pkt_id;
+	}
+	PLTFM_MSG_TRACE("[TRACE]%s <===\n", __func__);
+	return real_pkt_id;
 }
 
 #endif /* HALMAC_88XX_SUPPORT */

@@ -70,7 +70,8 @@ void stop_ap_mode(_adapter *padapter);
 #endif
 
 void rtw_ap_update_bss_chbw(_adapter *adapter, WLAN_BSSID_EX *bss, u8 ch, u8 bw, u8 offset);
-bool rtw_ap_chbw_decision(_adapter *adapter, s16 req_ch, s8 req_bw, s8 req_offset, u8 *ch, u8 *bw, u8 *offset, u8 *chbw_allow);
+u8 rtw_ap_chbw_decision(_adapter *adapter, u8 ifbmp, u8 excl_ifbmp
+	, s16 req_ch, s8 req_bw, s8 req_offset, u8 *ch, u8 *bw, u8 *offset, u8 *chbw_allow);
 
 #ifdef CONFIG_AUTO_AP_MODE
 void rtw_auto_ap_rx_msg_dump(_adapter *padapter, union recv_frame *precv_frame, u8 *ehdr_pos);
@@ -92,8 +93,15 @@ void rtw_update_bmc_sta_tx_rate(_adapter *adapter);
 
 void rtw_process_ht_action_smps(_adapter *padapter, u8 *ta, u8 ctrl_field);
 void rtw_process_public_act_bsscoex(_adapter *padapter, u8 *pframe, uint frame_len);
+#ifdef CONFIG_80211N_HT
 int rtw_ht_operation_update(_adapter *padapter);
-u8 rtw_ap_sta_linking_state_check(_adapter *adapter);
+#endif /* CONFIG_80211N_HT */
+u8 rtw_ap_sta_states_check(_adapter *adapter);
+
+#ifdef CONFIG_FW_HANDLE_TXBCN
+#define rtw_ap_get_nums(adapter)	(adapter_to_dvobj(adapter)->nr_ap_if)
+bool rtw_ap_nums_check(_adapter *adapter);
+#endif
 
 #ifdef CONFIG_SWTIMER_BASED_TXBCN
 void tx_beacon_handlder(struct dvobj_priv *pdvobj);

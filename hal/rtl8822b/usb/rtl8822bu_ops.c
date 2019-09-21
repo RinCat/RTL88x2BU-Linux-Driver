@@ -115,19 +115,6 @@ static u8 sethwreg(PADAPTER padapter, u8 variable, u8 *val)
 			}
 		}
 		break;
-	case HW_VAR_SET_REQ_FW_PS:
-	{
-		/*
-		 * 1. driver write 0x8f[4]=1
-		 *    request fw ps state (only can write bit4)
-		 */
-		u8 req_fw_ps = 0;
-
-		req_fw_ps = rtw_read8(padapter, 0x8f);
-		req_fw_ps |= 0x10;
-		rtw_write8(padapter, 0x8f, req_fw_ps);
-	}
-	break;
 	default:
 		ret = rtl8822b_sethwreg(padapter, variable, val);
 		break;
@@ -154,10 +141,6 @@ static void gethwreg(PADAPTER padapter, u8 variable, u8 *val)
 #endif /* CONFIG_LPS_LCLK */
 		break;
 
-	case HW_VAR_FW_PS_STATE:
-		/* driver read dword 0x88 to get fw ps state */
-		*((u16 *)val) = rtw_read16(padapter, 0x88);
-		break;
 	default:
 		rtl8822b_gethwreg(padapter, variable, val);
 		break;

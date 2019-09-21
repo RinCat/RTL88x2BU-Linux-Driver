@@ -88,145 +88,10 @@ extern unsigned char P2P_OUI[];
 extern unsigned char WMM_INFO_OUI[];
 extern unsigned char WMM_PARA_OUI[];
 
-typedef enum _RT_CHANNEL_DOMAIN {
-	/* ===== 0x00 ~ 0x1F, legacy channel plan ===== */
-	RTW_CHPLAN_FCC = 0x00,
-	RTW_CHPLAN_IC = 0x01,
-	RTW_CHPLAN_ETSI = 0x02,
-	RTW_CHPLAN_SPAIN = 0x03,
-	RTW_CHPLAN_FRANCE = 0x04,
-	RTW_CHPLAN_MKK = 0x05,
-	RTW_CHPLAN_MKK1 = 0x06,
-	RTW_CHPLAN_ISRAEL = 0x07,
-	RTW_CHPLAN_TELEC = 0x08,
-	RTW_CHPLAN_GLOBAL_DOAMIN = 0x09,
-	RTW_CHPLAN_WORLD_WIDE_13 = 0x0A,
-	RTW_CHPLAN_TAIWAN = 0x0B,
-	RTW_CHPLAN_CHINA = 0x0C,
-	RTW_CHPLAN_SINGAPORE_INDIA_MEXICO = 0x0D,
-	RTW_CHPLAN_KOREA = 0x0E,
-	RTW_CHPLAN_TURKEY = 0x0F,
-	RTW_CHPLAN_JAPAN = 0x10,
-	RTW_CHPLAN_FCC_NO_DFS = 0x11,
-	RTW_CHPLAN_JAPAN_NO_DFS = 0x12,
-	RTW_CHPLAN_WORLD_WIDE_5G = 0x13,
-	RTW_CHPLAN_TAIWAN_NO_DFS = 0x14,
-
-	/* ===== 0x20 ~ 0x7F, new channel plan ===== */
-	RTW_CHPLAN_WORLD_NULL = 0x20,
-	RTW_CHPLAN_ETSI1_NULL = 0x21,
-	RTW_CHPLAN_FCC1_NULL = 0x22,
-	RTW_CHPLAN_MKK1_NULL = 0x23,
-	RTW_CHPLAN_ETSI2_NULL = 0x24,
-	RTW_CHPLAN_FCC1_FCC1 = 0x25,
-	RTW_CHPLAN_WORLD_ETSI1 = 0x26,
-	RTW_CHPLAN_MKK1_MKK1 = 0x27,
-	RTW_CHPLAN_WORLD_KCC1 = 0x28,
-	RTW_CHPLAN_WORLD_FCC2 = 0x29,
-	RTW_CHPLAN_FCC2_NULL = 0x2A,
-	RTW_CHPLAN_IC1_IC2 = 0x2B,
-	RTW_CHPLAN_MKK2_NULL = 0x2C,
-	RTW_CHPLAN_WORLD_CHILE1= 0x2D,
-	RTW_CHPLAN_WORLD1_WORLD1 = 0x2E,
-	RTW_CHPLAN_WORLD_CHILE2 = 0x2F,
-	RTW_CHPLAN_WORLD_FCC3 = 0x30,
-	RTW_CHPLAN_WORLD_FCC4 = 0x31,
-	RTW_CHPLAN_WORLD_FCC5 = 0x32,
-	RTW_CHPLAN_WORLD_FCC6 = 0x33,
-	RTW_CHPLAN_FCC1_FCC7 = 0x34,
-	RTW_CHPLAN_WORLD_ETSI2 = 0x35,
-	RTW_CHPLAN_WORLD_ETSI3 = 0x36,
-	RTW_CHPLAN_MKK1_MKK2 = 0x37,
-	RTW_CHPLAN_MKK1_MKK3 = 0x38,
-	RTW_CHPLAN_FCC1_NCC1 = 0x39,
-	RTW_CHPLAN_ETSI1_ETSI1 = 0x3A,
-	RTW_CHPLAN_ETSI1_ACMA1 = 0x3B,
-	RTW_CHPLAN_ETSI1_ETSI6 = 0x3C,
-	RTW_CHPLAN_ETSI1_ETSI12 = 0x3D,
-	RTW_CHPLAN_FCC1_NCC2 = 0x40,
-	RTW_CHPLAN_GLOBAL_NULL = 0x41,
-	RTW_CHPLAN_ETSI1_ETSI4 = 0x42,
-	RTW_CHPLAN_FCC1_FCC2 = 0x43,
-	RTW_CHPLAN_FCC1_NCC3 = 0x44,
-	RTW_CHPLAN_WORLD_ACMA1 = 0x45,
-	RTW_CHPLAN_FCC1_FCC8 = 0x46,
-	RTW_CHPLAN_WORLD_ETSI6 = 0x47,
-	RTW_CHPLAN_WORLD_ETSI7 = 0x48,
-	RTW_CHPLAN_WORLD_ETSI8 = 0x49,
-	RTW_CHPLAN_WORLD_ETSI9 = 0x50,
-	RTW_CHPLAN_WORLD_ETSI10 = 0x51,
-	RTW_CHPLAN_WORLD_ETSI11 = 0x52,
-	RTW_CHPLAN_FCC1_NCC4 = 0x53,
-	RTW_CHPLAN_WORLD_ETSI12 = 0x54,
-	RTW_CHPLAN_FCC1_FCC9 = 0x55,
-	RTW_CHPLAN_WORLD_ETSI13 = 0x56,
-	RTW_CHPLAN_FCC1_FCC10 = 0x57,
-	RTW_CHPLAN_MKK2_MKK4 = 0x58,
-	RTW_CHPLAN_WORLD_ETSI14 = 0x59,
-	RTW_CHPLAN_FCC1_FCC5 = 0x60,
-	RTW_CHPLAN_FCC2_FCC7 = 0x61,
-	RTW_CHPLAN_FCC2_FCC1 = 0x62,
-	RTW_CHPLAN_WORLD_ETSI15 = 0x63,
-	RTW_CHPLAN_MKK2_MKK5 = 0x64,
-	RTW_CHPLAN_ETSI1_ETSI16 = 0x65,
-	RTW_CHPLAN_FCC1_FCC14 = 0x66,
-	RTW_CHPLAN_FCC1_FCC12 = 0x67,
-	RTW_CHPLAN_FCC2_FCC14 = 0x68,
-	RTW_CHPLAN_FCC2_FCC12 = 0x69,
-	RTW_CHPLAN_ETSI1_ETSI17 = 0x6A,
-	RTW_CHPLAN_WORLD_FCC16 = 0x6B,
-	RTW_CHPLAN_WORLD_FCC13 = 0x6C,
-	RTW_CHPLAN_FCC2_FCC15 = 0x6D,
-	RTW_CHPLAN_WORLD_FCC12 = 0x6E,
-	RTW_CHPLAN_NULL_ETSI8 = 0x6F,
-	RTW_CHPLAN_NULL_ETSI18 = 0x70,
-	RTW_CHPLAN_NULL_ETSI17 = 0x71,
-	RTW_CHPLAN_NULL_ETSI19 = 0x72,
-	RTW_CHPLAN_WORLD_FCC7 = 0x73,
-	RTW_CHPLAN_FCC2_FCC17 = 0x74,
-	RTW_CHPLAN_WORLD_ETSI20 = 0x75,
-	RTW_CHPLAN_FCC2_FCC11 = 0x76,
-	RTW_CHPLAN_WORLD_ETSI21 = 0x77,
-	RTW_CHPLAN_FCC1_FCC18 = 0x78,
-	RTW_CHPLAN_MKK2_MKK1 = 0x79,
-
-	RTW_CHPLAN_MAX,
-	RTW_CHPLAN_REALTEK_DEFINE = 0x7F,
-	RTW_CHPLAN_UNSPECIFIED = 0xFF,
-} RT_CHANNEL_DOMAIN, *PRT_CHANNEL_DOMAIN;
-
-bool rtw_chplan_is_empty(u8 id);
-#define rtw_is_channel_plan_valid(chplan) (((chplan) < RTW_CHPLAN_MAX || (chplan) == RTW_CHPLAN_REALTEK_DEFINE) && !rtw_chplan_is_empty(chplan))
-#define rtw_is_legacy_channel_plan(chplan) ((chplan) < 0x20)
-
 typedef struct _RT_CHANNEL_PLAN {
 	unsigned char	Channel[MAX_CHANNEL_NUM];
 	unsigned char	Len;
 } RT_CHANNEL_PLAN, *PRT_CHANNEL_PLAN;
-
-struct ch_list_t {
-	u8 *len_ch;
-};
-
-#define CH_LIST_ENT(_len, arg...) \
-	{.len_ch = (u8[_len + 1]) {_len, ##arg}, }
-
-#define CH_LIST_LEN(_ch_list) (_ch_list.len_ch[0])
-#define CH_LIST_CH(_ch_list, _i) (_ch_list.len_ch[_i + 1])
-
-typedef struct _RT_CHANNEL_PLAN_MAP {
-	u8 Index2G;
-#ifdef CONFIG_IEEE80211_BAND_5GHZ
-	u8 Index5G;
-#endif
-	u8 regd; /* value of REGULATION_TXPWR_LMT */
-} RT_CHANNEL_PLAN_MAP, *PRT_CHANNEL_PLAN_MAP;
-
-#ifdef CONFIG_IEEE80211_BAND_5GHZ
-#define CHPLAN_ENT(i2g, i5g, regd) {i2g, i5g, regd}
-#else
-#define CHPLAN_ENT(i2g, i5g, regd) {i2g, regd}
-#endif
 
 enum Associated_AP {
 	atherosAP	= 0,
@@ -261,6 +126,24 @@ typedef enum _HT_IOT_PEER {
 	HT_IOT_PEER_REALTEK_JAGUAR_CCUTAP = 17,
 	HT_IOT_PEER_MAX				= 18
 } HT_IOT_PEER_E, *PHTIOT_PEER_E;
+
+
+typedef enum _RT_HT_INF0_CAP {
+	RT_HT_CAP_USE_TURBO_AGGR = 0x01,
+	RT_HT_CAP_USE_LONG_PREAMBLE = 0x02,
+	RT_HT_CAP_USE_AMPDU = 0x04,
+	RT_HT_CAP_USE_WOW = 0x8,
+	RT_HT_CAP_USE_SOFTAP = 0x10,
+	RT_HT_CAP_USE_92SE = 0x20,
+	RT_HT_CAP_USE_88C_92C = 0x40,
+	RT_HT_CAP_USE_AP_CLIENT_MODE = 0x80,	/* AP team request to reserve this bit, by Emily */
+} RT_HT_INF0_CAPBILITY, *PRT_HT_INF0_CAPBILITY;
+
+typedef enum _RT_HT_INF1_CAP {
+	RT_HT_CAP_USE_VIDEO_CLIENT = 0x01,
+	RT_HT_CAP_USE_JAGUAR_BCUT = 0x02,
+	RT_HT_CAP_USE_JAGUAR_CCUT = 0x04,
+} RT_HT_INF1_CAPBILITY, *PRT_HT_INF1_CAPBILITY;
 
 struct mlme_handler {
 	unsigned int   num;
@@ -325,7 +208,12 @@ struct ss_res {
 	u8 igi_before_scan; /* used for restoring IGI value without enable DIG & FA_CNT */
 #ifdef CONFIG_SCAN_BACKOP
 	u8 backop_flags_sta; /* policy for station mode*/
+	#ifdef CONFIG_AP_MODE
 	u8 backop_flags_ap; /* policy for ap mode */
+	#endif
+	#ifdef CONFIG_RTW_MESH
+	u8 backop_flags_mesh; /* policy for mesh mode */
+	#endif
 	u8 backop_flags; /* per backop runtime decision */
 	u8 scan_cnt;
 	u8 scan_cnt_max;
@@ -427,6 +315,7 @@ struct mlme_ext_info {
 	u32	link_count;
 	u32	auth_seq;
 	u32	auth_algo;	/* 802.11 auth, could be open, shared, auto */
+	u16 auth_status;
 	u32	authModeToggle;
 	u32	enc_algo;/* encrypt algorithm; */
 	u32	key_index;	/* this is only valid for legendary wep, 0~3 for key id. */
@@ -466,6 +355,11 @@ struct mlme_ext_info {
 	struct HT_caps_element	HT_caps;
 	struct HT_info_element		HT_info;
 	WLAN_BSSID_EX			network;/* join network or bss_network, if in ap mode, it is the same to cur_network.network */
+#ifdef ROKU_PRIVATE
+	/*infra mode, store supported rates from AssocRsp*/
+	NDIS_802_11_RATES_EX	SupportedRates_infra_ap;
+	u8 ht_vht_received;/*ht_vht_received used to show debug msg BIT(0):HT BIT(1):VHT */
+#endif /* ROKU_PRIVATE */
 };
 
 /* The channel information about this channel including joining, scanning, and power constraints. */
@@ -484,15 +378,8 @@ typedef struct _RT_CHANNEL_INFO {
 	#endif
 	u8 hidden_bss_cnt; /* per scan count */
 #endif
-
-#ifdef CONFIG_RTW_MESH
-	#if CONFIG_RTW_MESH_OFFCH_CAND
-	u8 mesh_candidate_cnt; /* update at scan done for specific mesh iface */
-	#endif
-#endif /* CONFIG_RTW_MESH */
 } RT_CHANNEL_INFO, *PRT_CHANNEL_INFO;
 
-#define DFS_MASTER_TIMER_MS 100
 #define CAC_TIME_MS (60*1000)
 #define CAC_TIME_CE_MS (10*60*1000)
 #define NON_OCP_TIME_MS (30*60*1000)
@@ -506,19 +393,21 @@ void rtw_rfctl_deinit(_adapter *adapter);
 #ifdef CONFIG_DFS_MASTER
 struct rf_ctl_t;
 #define CH_IS_NON_OCP(rt_ch_info) (rtw_time_after((rt_ch_info)->non_ocp_end_time, rtw_get_current_time()))
-bool rtw_is_cac_reset_needed(_adapter *adapter, u8 ch, u8 bw, u8 offset);
+bool rtw_is_cac_reset_needed(struct rf_ctl_t *rfctl, u8 ch, u8 bw, u8 offset);
 bool _rtw_rfctl_overlap_radar_detect_ch(struct rf_ctl_t *rfctl, u8 ch, u8 bw, u8 offset);
 bool rtw_rfctl_overlap_radar_detect_ch(struct rf_ctl_t *rfctl);
 bool rtw_rfctl_is_tx_blocked_by_ch_waiting(struct rf_ctl_t *rfctl);
-bool rtw_chset_is_ch_non_ocp(RT_CHANNEL_INFO *ch_set, u8 ch, u8 bw, u8 offset);
+bool rtw_chset_is_chbw_non_ocp(RT_CHANNEL_INFO *ch_set, u8 ch, u8 bw, u8 offset);
+bool rtw_chset_is_ch_non_ocp(RT_CHANNEL_INFO *ch_set, u8 ch);
 void rtw_chset_update_non_ocp(RT_CHANNEL_INFO *ch_set, u8 ch, u8 bw, u8 offset);
 void rtw_chset_update_non_ocp_ms(RT_CHANNEL_INFO *ch_set, u8 ch, u8 bw, u8 offset, int ms);
-u32 rtw_get_ch_waiting_ms(_adapter *adapter, u8 ch, u8 bw, u8 offset, u32 *r_non_ocp_ms, u32 *r_cac_ms);
-void rtw_reset_cac(_adapter *adapter, u8 ch, u8 bw, u8 offset);
-u32 rtw_force_stop_cac(_adapter *adapter, u32 timeout_ms);
+u32 rtw_get_ch_waiting_ms(struct rf_ctl_t *rfctl, u8 ch, u8 bw, u8 offset, u32 *r_non_ocp_ms, u32 *r_cac_ms);
+void rtw_reset_cac(struct rf_ctl_t *rfctl, u8 ch, u8 bw, u8 offset);
+u32 rtw_force_stop_cac(struct rf_ctl_t *rfctl, u32 timeout_ms);
 #else
 #define CH_IS_NON_OCP(rt_ch_info) 0
-#define rtw_chset_is_ch_non_ocp(ch_set, ch, bw, offset) _FALSE
+#define rtw_chset_is_chbw_non_ocp(ch_set, ch, bw, offset) _FALSE
+#define rtw_chset_is_ch_non_ocp(ch_set, ch) _FALSE
 #define rtw_rfctl_is_tx_blocked_by_ch_waiting(rfctl) _FALSE
 #endif
 
@@ -532,16 +421,12 @@ enum {
 	RTW_CHF_NON_OCP = BIT6,
 };
 
-bool rtw_choose_shortest_waiting_ch(_adapter *adapter, u8 sel_ch, u8 max_bw
+bool rtw_choose_shortest_waiting_ch(struct rf_ctl_t *rfctl, u8 sel_ch, u8 max_bw
 	, u8 *dec_ch, u8 *dec_bw, u8 *dec_offset
-	, u8 d_flags, u8 cur_ch, u8 same_band_prefer);
+	, u8 d_flags, u8 cur_ch, u8 same_band_prefer, u8 mesh_only);
 
-void dump_country_chplan(void *sel, const struct country_chplan *ent);
-void dump_country_chplan_map(void *sel);
-void dump_chplan_id_list(void *sel);
-void dump_chplan_test(void *sel);
 void dump_chset(void *sel, RT_CHANNEL_INFO *ch_set);
-void dump_cur_chset(void *sel, _adapter *adapter);
+void dump_cur_chset(void *sel, struct rf_ctl_t *rfctl);
 
 int rtw_chset_search_ch(RT_CHANNEL_INFO *ch_set, const u32 ch);
 u8 rtw_chset_is_chbw_valid(RT_CHANNEL_INFO *ch_set, u8 ch, u8 bw, u8 offset);
@@ -637,15 +522,16 @@ struct mlme_ext_priv {
 	u32	retry; /* retry for issue probereq */
 
 	u64 TSFValue;
-
-	/* for LPS-32K to adaptive bcn early and timeout */
-	u8 adaptive_tsf_done;
-	u32 bcn_delay_cnt[9];
-	u32 bcn_delay_ratio[9];
 	u32 bcn_cnt;
-	u8 DrvBcnEarly;
-	u8 DrvBcnTimeOut;
-
+	u32 last_bcn_cnt;
+	u8 cur_bcn_cnt;/*2s*/
+	u8 dtim;/*DTIM Period*/
+#ifdef DBG_RX_BCN
+	u8 tim[4];
+#endif
+#ifdef CONFIG_BCN_RECV_TIME
+	u16 bcn_rx_time;
+#endif
 #ifdef CONFIG_AP_MODE
 	unsigned char bstart_bss;
 #endif
@@ -663,8 +549,34 @@ struct mlme_ext_priv {
 #ifdef DBG_FIXED_CHAN
 	u8 fixed_chan;
 #endif
-	/* set hw sync bcn tsf register or not */
-	u8 en_hw_update_tsf;
+
+	u8 tsf_update_required:1;
+	u8 en_hw_update_tsf:1; /* set hw sync bcn tsf register or not */
+	systime tsf_update_pause_stime;
+	u8 tsf_update_pause_factor; /* num of bcn intervals to stay TSF update pause status */
+	u8 tsf_update_restore_factor; /* num of bcn interval to stay TSF update restore status */
+#ifdef CONFIG_SUPPORT_STATIC_SMPS
+	u8 ssmps_en;
+	u16 ssmps_tx_tp_th;/*Mbps*/
+	u16 ssmps_rx_tp_th;/*Mbps*/
+	#ifdef DBG_STATIC_SMPS
+	u8 ssmps_test;
+	u8 ssmps_test_en;
+	#endif
+#endif
+#ifdef CONFIG_CTRL_TXSS_BY_TP
+	u8 txss_ctrl_en;
+	u16 txss_tp_th;/*Mbps*/
+	u8 txss_tp_chk_cnt;/*unit 2s*/
+	u8 txss_1ss;
+	u8 txss_momi_type_bk;
+#endif
+};
+
+struct support_rate_handler {
+	u8 rate;
+	bool basic;
+	bool existence;
 };
 
 static inline u8 check_mlmeinfo_state(struct mlme_ext_priv *plmeext, sint state)
@@ -712,13 +624,6 @@ void sitesurvey_set_offch_state(_adapter *adapter, u8 scan_state);
 	do { \
 		((mlmeext)->sitesurvey_res.backop_flags_sta = (flags)); \
 	} while (0)
-
-#define mlmeext_scan_backop_flags_ap(mlmeext) ((mlmeext)->sitesurvey_res.backop_flags_ap)
-#define mlmeext_chk_scan_backop_flags_ap(mlmeext, flags) ((mlmeext)->sitesurvey_res.backop_flags_ap & (flags))
-#define mlmeext_assign_scan_backop_flags_ap(mlmeext, flags) \
-	do { \
-		((mlmeext)->sitesurvey_res.backop_flags_ap = (flags)); \
-	} while (0)
 #else
 #define mlmeext_scan_backop_flags(mlmeext) (0)
 #define mlmeext_chk_scan_backop_flags(mlmeext, flags) (0)
@@ -727,11 +632,34 @@ void sitesurvey_set_offch_state(_adapter *adapter, u8 scan_state);
 #define mlmeext_scan_backop_flags_sta(mlmeext) (0)
 #define mlmeext_chk_scan_backop_flags_sta(mlmeext, flags) (0)
 #define mlmeext_assign_scan_backop_flags_sta(mlmeext, flags) do {} while (0)
+#endif /* CONFIG_SCAN_BACKOP */
 
+#if defined(CONFIG_SCAN_BACKOP) && defined(CONFIG_AP_MODE)
+#define mlmeext_scan_backop_flags_ap(mlmeext) ((mlmeext)->sitesurvey_res.backop_flags_ap)
+#define mlmeext_chk_scan_backop_flags_ap(mlmeext, flags) ((mlmeext)->sitesurvey_res.backop_flags_ap & (flags))
+#define mlmeext_assign_scan_backop_flags_ap(mlmeext, flags) \
+	do { \
+		((mlmeext)->sitesurvey_res.backop_flags_ap = (flags)); \
+	} while (0)
+#else
 #define mlmeext_scan_backop_flags_ap(mlmeext) (0)
 #define mlmeext_chk_scan_backop_flags_ap(mlmeext, flags) (0)
 #define mlmeext_assign_scan_backop_flags_ap(mlmeext, flags) do {} while (0)
-#endif
+#endif /* defined(CONFIG_SCAN_BACKOP) && defined(CONFIG_AP_MODE) */
+
+#if defined(CONFIG_SCAN_BACKOP) && defined(CONFIG_RTW_MESH)
+#define mlmeext_scan_backop_flags_mesh(mlmeext) ((mlmeext)->sitesurvey_res.backop_flags_mesh)
+#define mlmeext_chk_scan_backop_flags_mesh(mlmeext, flags) ((mlmeext)->sitesurvey_res.backop_flags_mesh & (flags))
+#define mlmeext_assign_scan_backop_flags_mesh(mlmeext, flags) \
+	do { \
+		((mlmeext)->sitesurvey_res.backop_flags_mesh = (flags)); \
+	} while (0)
+#else
+#define mlmeext_scan_backop_flags_mesh(mlmeext) (0)
+#define mlmeext_chk_scan_backop_flags_mesh(mlmeext, flags) (0)
+#define mlmeext_assign_scan_backop_flags_mesh(mlmeext, flags) do {} while (0)
+#endif /* defined(CONFIG_SCAN_BACKOP) && defined(CONFIG_RTW_MESH) */
+
 u32 rtw_scan_timeout_decision(_adapter *padapter);
 
 void init_mlme_default_rate_set(_adapter *padapter);
@@ -800,6 +728,13 @@ int is_client_associated_to_ibss(_adapter *padapter);
 int is_IBSS_empty(_adapter *padapter);
 
 unsigned char check_assoc_AP(u8 *pframe, uint len);
+void get_assoc_AP_Vendor(char *vendor, u8 assoc_AP_vendor);
+#ifdef CONFIG_RTS_FULL_BW
+void rtw_parse_sta_vendor_ie_8812(_adapter *adapter, struct sta_info *sta, u8 *tlv_ies, u16 tlv_ies_len);
+#endif/*CONFIG_RTS_FULL_BW*/
+#ifdef CONFIG_80211AC_VHT
+unsigned char get_vht_mu_bfer_cap(u8 *pframe, uint len);
+#endif
 
 int WMM_param_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs	pIE);
 #ifdef CONFIG_WFD
@@ -809,13 +744,24 @@ void rtw_process_wfd_ies(_adapter *adapter, u8 *ies, u8 ies_len, const char *tag
 void WMMOnAssocRsp(_adapter *padapter);
 
 void HT_caps_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE);
+#ifdef ROKU_PRIVATE
+void HT_caps_handler_infra_ap(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE);
+#endif
 void HT_info_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE);
 void HTOnAssocRsp(_adapter *padapter);
+
+#ifdef ROKU_PRIVATE
+void Supported_rate_infra_ap(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE);
+void Extended_Supported_rate_infra_ap(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE);
+#endif
 
 void ERP_IE_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE);
 void VCS_update(_adapter *padapter, struct sta_info *psta);
 void	update_ldpc_stbc_cap(struct sta_info *psta);
 
+bool rtw_validate_value(u16 EID, u8 *p, u16 len);
+bool hidden_ssid_ap(WLAN_BSSID_EX *snetwork);
+void rtw_absorb_ssid_ifneed(_adapter *padapter, WLAN_BSSID_EX *bssid, u8 *pframe);
 int rtw_get_bcn_keys(ADAPTER *Adapter, u8 *pframe, u32 packet_len,
 		struct beacon_keys *recv_beacon);
 int validate_beacon_len(u8 *pframe, uint len);
@@ -848,6 +794,8 @@ int support_short_GI(_adapter *padapter, struct HT_caps_element *pHT_caps, u8 bw
 unsigned int is_ap_in_tkip(_adapter *padapter);
 unsigned int is_ap_in_wep(_adapter *padapter);
 unsigned int should_forbid_n_rate(_adapter *padapter);
+
+void parsing_eapol_packet(_adapter *padapter, u8 *key_payload, struct sta_info *psta, u8 trx_type);
 
 bool _rtw_camctl_chk_cap(_adapter *adapter, u8 cap);
 void _rtw_camctl_set_flags(_adapter *adapter, u32 flags);
@@ -906,7 +854,7 @@ bool rtw_tim_map_anyone_be_set(_adapter *padapter, const u8 *map);
 bool rtw_tim_map_anyone_be_set_exclude_aid0(_adapter *padapter, const u8 *map);
 #endif /* CONFIG_AP_MODE */
 
-u32 report_join_res(_adapter *padapter, int res);
+u32 report_join_res(_adapter *padapter, int aid_res, u16 status);
 void report_survey_event(_adapter *padapter, union recv_frame *precv_frame);
 void report_surveydone_event(_adapter *padapter);
 u32 report_del_sta_event(_adapter *padapter, unsigned char *MacAddr, unsigned short reason, bool enqueue, u8 locally_generated);
@@ -1059,6 +1007,10 @@ void mlmeext_sta_add_event_callback(_adapter *padapter, struct sta_info *psta);
 
 void linked_status_chk(_adapter *padapter, u8 from_timer);
 
+#define rtw_get_bcn_cnt(adapter)	(adapter->mlmeextpriv.cur_bcn_cnt)
+#define rtw_get_bcn_dtim_period(adapter)	(adapter->mlmeextpriv.dtim)
+void rtw_collect_bcn_info(_adapter *adapter);
+
 void _linked_info_dump(_adapter *padapter);
 
 void survey_timer_hdl(void *ctx);
@@ -1097,8 +1049,10 @@ extern int cckratesonly_included(unsigned char *rate, int ratelen);
 extern void process_addba_req(_adapter *padapter, u8 *paddba_req, u8 *addr);
 
 extern void update_TSF(struct mlme_ext_priv *pmlmeext, u8 *pframe, uint len);
-extern void correct_TSF(_adapter *padapter, struct mlme_ext_priv *pmlmeext);
-extern void adaptive_early_32k(struct mlme_ext_priv *pmlmeext, u8 *pframe, uint len);
+extern void correct_TSF(_adapter *padapter, u8 mlme_state);
+#ifdef CONFIG_BCN_RECV_TIME
+void rtw_rx_bcn_time_update(_adapter *adapter, uint bcn_len, u8 data_rate);
+#endif
 extern u8 traffic_status_watchdog(_adapter *padapter, u8 from_timer);
 
 void rtw_process_bar_frame(_adapter *padapter, union recv_frame *precv_frame);
@@ -1226,7 +1180,7 @@ struct cmd_hdl wlancmds[] = {
 	GEN_MLME_EXT_HANDLER(sizeof(struct SetChannelPlan_param), set_chplan_hdl) /*59*/
 	GEN_MLME_EXT_HANDLER(sizeof(struct LedBlink_param), led_blink_hdl) /*60*/
 
-	GEN_MLME_EXT_HANDLER(sizeof(struct SetChannelSwitch_param), set_csa_hdl) /*61*/
+	GEN_MLME_EXT_HANDLER(0, set_csa_hdl) /*61*/
 	GEN_MLME_EXT_HANDLER(sizeof(struct TDLSoption_param), tdls_hdl) /*62*/
 	GEN_MLME_EXT_HANDLER(0, chk_bmc_sleepq_hdl) /*63*/
 	GEN_MLME_EXT_HANDLER(sizeof(struct RunInThread_param), run_in_thread_hdl) /*64*/

@@ -29,7 +29,7 @@
 #define REG_C2HEVT_MSG_NORMAL		0x1A0			/* hal_com.c */
 #define REG_C2HEVT_CLEAR			0x1AF			/* hal_com.c */
 #define REG_BCN_CTRL_1				REG_BCN_CTRL_CLINT0_8821C/* hal_com.c */
-#define REG_TSFTR1					REG_FREERUN_CNT_8821C	/* hal_com.c */
+
 #define REG_WOWLAN_WAKE_REASON	0x01C7
 #define REG_GPIO_PIN_CTRL_2			REG_GPIO_EXT_CTRL_8821C
 
@@ -187,8 +187,8 @@
 struct hw_port_reg {
 	u32 net_type;	/*reg_offset*/
 	u8 net_type_shift;
-	u32 macaddr;	/*reg_offset*/
-	u32 bssid;	/*reg_offset*/
+	u32 macaddr;		/*reg_offset*/
+	u32 bssid;		/*reg_offset*/
 	u32 bcn_ctl;			/*reg_offset*/
 	u32 tsf_rst;			/*reg_offset*/
 	u8 tsf_rst_bit;
@@ -196,6 +196,7 @@ struct hw_port_reg {
 	u8 bcn_space_shift;
 	u16 bcn_space_mask;
 	u32	ps_aid;			/*reg_offset*/
+	u32	ta;				/*reg_offset*/
 };
 
 #endif /* __RTL8192E_SPEC_H__ */

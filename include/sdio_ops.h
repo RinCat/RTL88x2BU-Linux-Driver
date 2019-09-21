@@ -146,6 +146,20 @@ extern void ClearInterrupt8723DSdio(PADAPTER padapter);
 #endif /* CONFIG_WOWLAN */
 #endif
 
+#ifdef CONFIG_RTL8192F
+extern void InitInterrupt8192FSdio(PADAPTER padapter);
+extern void InitSysInterrupt8192FSdio(PADAPTER padapter);
+extern void EnableInterrupt8192FSdio(PADAPTER padapter);
+extern void DisableInterrupt8192FSdio(PADAPTER padapter);
+extern void UpdateInterruptMask8192FSdio(PADAPTER padapter, u32 AddMSR, u32 RemoveMSR);
+extern u8 HalQueryTxBufferStatus8192FSdio(PADAPTER padapter);
+extern u8 HalQueryTxOQTBufferStatus8192FSdio(PADAPTER padapter);
+#if defined(CONFIG_WOWLAN) || defined(CONFIG_AP_WOWLAN)
+extern void DisableInterruptButCpwm2192fSdio(PADAPTER padapter);
+extern void ClearInterrupt8192FSdio(PADAPTER padapter);
+#endif /* CONFIG_WOWLAN */
+#endif
+
 #ifdef CONFIG_RTL8188F
 extern void InitInterrupt8188FSdio(PADAPTER padapter);
 extern void InitSysInterrupt8188FSdio(PADAPTER padapter);
@@ -156,6 +170,19 @@ extern u8 HalQueryTxOQTBufferStatus8188FSdio(PADAPTER padapter);
 #if defined(CONFIG_WOWLAN) || defined(CONFIG_AP_WOWLAN)
 extern void DisableInterruptButCpwm28188FSdio(PADAPTER padapter);
 extern void ClearInterrupt8188FSdio(PADAPTER padapter);
+#endif /* defined(CONFIG_WOWLAN) || defined(CONFIG_AP_WOWLAN) */
+#endif
+
+#ifdef CONFIG_RTL8188GTV
+extern void InitInterrupt8188GTVSdio(PADAPTER padapter);
+extern void InitSysInterrupt8188GTVSdio(PADAPTER padapter);
+extern void EnableInterrupt8188GTVSdio(PADAPTER padapter);
+extern void DisableInterrupt8188GTVSdio(PADAPTER padapter);
+extern u8 HalQueryTxBufferStatus8188GTVSdio(PADAPTER padapter);
+extern u8 HalQueryTxOQTBufferStatus8188GTVSdio(PADAPTER padapter);
+#if defined(CONFIG_WOWLAN) || defined(CONFIG_AP_WOWLAN)
+extern void DisableInterruptButCpwm28188GTVSdio(PADAPTER padapter);
+extern void ClearInterrupt8188GTVSdio(PADAPTER padapter);
 #endif /* defined(CONFIG_WOWLAN) || defined(CONFIG_AP_WOWLAN) */
 #endif
 

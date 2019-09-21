@@ -68,6 +68,10 @@ enum halmac_ret_status
 cfg_bw_88xx(struct halmac_adapter *adapter, enum halmac_bw bw);
 
 void
+cfg_txfifo_lt_88xx(struct halmac_adapter *adapter,
+		   struct halmac_txfifo_lifetime_cfg *cfg);
+
+enum halmac_ret_status
 enable_bb_rf_88xx(struct halmac_adapter *adapter, u8 enable);
 
 enum halmac_ret_status
@@ -117,6 +121,12 @@ fast_edca_cfg_88xx(struct halmac_adapter *adapter,
 enum halmac_ret_status
 get_mac_addr_88xx(struct halmac_adapter *adapter, u8 port,
 		  union halmac_wlan_addr *addr);
+
+void
+rts_full_bw_88xx(struct halmac_adapter *adapter, u8 enable);
+
+void
+cfg_mac_clk_88xx(struct halmac_adapter *adapter);
 
 #endif/* HALMAC_88XX_SUPPORT */
 

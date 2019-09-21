@@ -27,6 +27,7 @@
 
 	#if defined CONFIG_SDIO_HCI
 		#define NR_XMITBUFF	(16)
+		#define SDIO_TX_DIV_NUM (2)
 	#endif
 	#if defined(CONFIG_GSPI_HCI)
 		#define NR_XMITBUFF	(128)
@@ -90,6 +91,8 @@
 #else
 	#define MAX_CMDBUF_SZ	(5120)	/* (4096) */
 #endif
+
+#define MAX_BEACON_LEN	512
 
 #define MAX_NUMBLKS		(1)
 
@@ -182,7 +185,8 @@
 #if defined(CONFIG_RTL8812A) || defined(CONFIG_RTL8821A) ||\
 	defined(CONFIG_RTL8723B) || defined(CONFIG_RTL8192E) ||\
 	defined(CONFIG_RTL8814A) || defined(CONFIG_RTL8703B) ||\
-	defined(CONFIG_RTL8188F) || defined(CONFIG_RTL8723D)
+	defined(CONFIG_RTL8188F) || defined(CONFIG_RTL8188GTV) || defined(CONFIG_RTL8723D) ||\
+	defined(CONFIG_RTL8710B) || defined(CONFIG_RTL8192F)
 	#define TXDESC_SIZE 40
 #elif defined(CONFIG_RTL8822B)
 	#define TXDESC_SIZE 48		/* HALMAC_TX_DESC_SIZE_8822B */
@@ -236,7 +240,8 @@ enum TXDESC_SC {
 		#define TXDESC_64_BYTES
 	#endif
 #elif defined(CONFIG_RTL8812A) || defined(CONFIG_RTL8821A) || defined(CONFIG_RTL8723B) \
-	|| defined(CONFIG_RTL8188F) || defined(CONFIG_RTL8723D)
+	|| defined(CONFIG_RTL8188F) || defined(CONFIG_RTL8188GTV) || defined(CONFIG_RTL8723D) \
+	|| defined(CONFIG_RTL8192F)
 	#define TXDESC_40_BYTES
 #endif
 
@@ -390,9 +395,6 @@ struct pkt_attrib {
 	u16	seqnum;
 
 	struct sta_info *psta;
-#ifdef CONFIG_TCP_CSUM_OFFLOAD_TX
-	u8	hw_tcp_csum;
-#endif
 };
 #else
 /* reduce size */
@@ -436,6 +438,9 @@ struct pkt_attrib {
 	u8 mfwd_ttl;
 	u32 mseq;
 #endif
+#ifdef CONFIG_TX_CSUM_OFFLOAD
+	u8	hw_csum;
+#endif
 	u8	key_idx;
 	u8	qos_en;
 	u8	ht_en;
@@ -464,9 +469,6 @@ struct pkt_attrib {
 #endif /* CONFIG_WMMPS_STA */
 	
 	struct sta_info *psta;
-#ifdef CONFIG_TCP_CSUM_OFFLOAD_TX
-	u8	hw_tcp_csum;
-#endif
 
 	u8 rtsen;
 	u8 cts2self;
@@ -905,6 +907,30 @@ extern struct xmit_frame *__rtw_alloc_cmdxmitframe_8822be(struct xmit_priv *pxmi
 extern struct xmit_frame *__rtw_alloc_cmdxmitframe_8821ce(struct xmit_priv *pxmitpriv,
 		enum cmdbuf_type buf_type);
 #define rtw_alloc_bcnxmitframe(p) __rtw_alloc_cmdxmitframe_8821ce(p, CMDBUF_BEACON)
+#elif defined(CONFIG_RTL8192F) && defined(CONFIG_PCI_HCI)
+extern struct xmit_frame *__rtw_alloc_cmdxmitframe_8192fe(struct xmit_priv *pxmitpriv,
+		enum cmdbuf_type buf_type);
+#define rtw_alloc_bcnxmitframe(p) __rtw_alloc_cmdxmitframe_8192fe(p, CMDBUF_BEACON)
+#elif defined(CONFIG_RTL8812A) && defined(CONFIG_PCI_HCI)
+extern struct xmit_frame *__rtw_alloc_cmdxmitframe_8812ae(struct xmit_priv *pxmitpriv,
+		enum cmdbuf_type buf_type);
+#define rtw_alloc_bcnxmitframe(p) __rtw_alloc_cmdxmitframe_8812ae(p, CMDBUF_BEACON)
+#elif defined(CONFIG_RTL8723D) && defined(CONFIG_PCI_HCI)
+extern struct xmit_frame *__rtw_alloc_cmdxmitframe_8723de(struct xmit_priv *pxmitpriv,
+		enum cmdbuf_type buf_type);
+#define rtw_alloc_bcnxmitframe(p) __rtw_alloc_cmdxmitframe_8723de(p, CMDBUF_BEACON)
+#elif defined(CONFIG_RTL8723B) && defined(CONFIG_PCI_HCI)
+extern struct xmit_frame *__rtw_alloc_cmdxmitframe_8723be(struct xmit_priv *pxmitpriv,
+		enum cmdbuf_type buf_type);
+#define rtw_alloc_bcnxmitframe(p) __rtw_alloc_cmdxmitframe_8723be(p, CMDBUF_BEACON)
+#elif defined(CONFIG_RTL8814A) && defined(CONFIG_PCI_HCI)
+extern struct xmit_frame *__rtw_alloc_cmdxmitframe_8814ae(struct xmit_priv *pxmitpriv,
+		enum cmdbuf_type buf_type);
+#define rtw_alloc_bcnxmitframe(p) __rtw_alloc_cmdxmitframe_8814ae(p, CMDBUF_BEACON)
+#elif defined(CONFIG_RTL8188E) && defined(CONFIG_PCI_HCI)
+extern struct xmit_frame *__rtw_alloc_cmdxmitframe_8188ee(struct xmit_priv *pxmitpriv,
+		enum cmdbuf_type buf_type);
+#define rtw_alloc_bcnxmitframe(p) __rtw_alloc_cmdxmitframe_8188ee(p, CMDBUF_BEACON)
 #else
 #define rtw_alloc_bcnxmitframe(p) __rtw_alloc_cmdxmitframe(p, CMDBUF_BEACON)
 #endif
@@ -917,8 +943,6 @@ extern s32 rtw_free_xmitbuf(struct xmit_priv *pxmitpriv, struct xmit_buf *pxmitb
 
 void rtw_count_tx_stats(_adapter *padapter, struct xmit_frame *pxmitframe, int sz);
 extern void rtw_update_protection(_adapter *padapter, u8 *ie, uint ie_len);
-static s32 update_attrib_sec_info(_adapter *padapter, struct pkt_attrib *pattrib, struct sta_info *psta);
-static void update_attrib_phy_info(_adapter *padapter, struct pkt_attrib *pattrib, struct sta_info *psta);
 
 #ifdef CONFIG_WMMPS_STA
 static void update_attrib_trigger_frame_info(_adapter *padapter, struct pkt_attrib *pattrib);
@@ -1022,7 +1046,6 @@ void rtw_tx_desc_backup_reset(void);
 u8 rtw_get_tx_desc_backup(_adapter *padapter, u8 hwq, struct rtw_tx_desc_backup **pbak);
 #endif
 
-static void do_queue_select(_adapter *padapter, struct pkt_attrib *pattrib);
 u32	rtw_get_ff_hwaddr(struct xmit_frame	*pxmitframe);
 
 #ifdef CONFIG_XMIT_ACK

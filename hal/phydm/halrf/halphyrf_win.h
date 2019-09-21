@@ -13,43 +13,33 @@
  *
  *****************************************************************************/
 
-#ifndef __HAL_PHY_RF_H__
-#define __HAL_PHY_RF_H__
+#ifndef __HALPHYRF_H__
+#define __HALPHYRF_H__
 
 #if (RTL8814A_SUPPORT == 1)
-    #if RT_PLATFORM == PLATFORM_MACOSX
-        #include "rtl8814a/halrf_iqk_8814a.h"
-    #else
-        #include "halrf/rtl8814a/halrf_iqk_8814a.h"
-    #endif
+	#include "halrf/rtl8814a/halrf_iqk_8814a.h"
 #endif
 
 #if (RTL8822B_SUPPORT == 1)
-    #if RT_PLATFORM == PLATFORM_MACOSX
-        #include "rtl8822b/halrf_iqk_8822b.h"
-        #include "../../MAC/Halmac_type.h"
-    #else
-        #include "halrf/rtl8822b/halrf_iqk_8822b.h"
-        #include "../mac/Halmac_type.h"
-    #endif
+	#include "halrf/rtl8822b/halrf_iqk_8822b.h"
+	#include "../mac/Halmac_type.h"
 #endif
-
-#if RT_PLATFORM == PLATFORM_MACOSX
-    #include "halrf_powertracking_win.h"
-    #include "halrf_kfree.h"
-    #include "halrf_txgapcal.h"
-#else
-    #include "halrf/halrf_powertracking_win.h"
-    #include "halrf/halrf_kfree.h"
-    #include "halrf/halrf_txgapcal.h"
-#endif
-
+#include "halrf/halrf_powertracking_win.h"
+#include "halrf/halrf_kfree.h"
+#include "halrf/halrf_txgapcal.h"
 #if (RTL8821C_SUPPORT == 1)
-    #if RT_PLATFORM == PLATFORM_MACOSX
-        #include "rtl8821c/halrf_iqk_8821c.h"
-    #else
-        #include "halrf/rtl8821c/halrf_iqk_8821c.h"
-    #endif
+	#include "halrf/rtl8821c/halrf_iqk_8821c.h"
+#endif
+
+#if (RTL8195B_SUPPORT == 1)
+//	#include "halrf/rtl8195b/halrf.h"
+	#include "halrf/rtl8195b/halrf_iqk_8195b.h"
+	#include "halrf/rtl8195b/halrf_txgapk_8195b.h"
+	#include "halrf/rtl8195b/halrf_dpk_8195b.h"
+#endif
+
+#if (RTL8814B_SUPPORT == 1)
+	#include "halrf/rtl8814b/halrf_iqk_8814b.h"
 #endif
 
 enum spur_cal_method {
@@ -132,4 +122,4 @@ void odm_iq_calibrate(struct dm_struct	*dm);
 void phydm_rf_init(struct dm_struct		*dm);
 void phydm_rf_watchdog(struct dm_struct		*dm);
 
-#endif	/*  #ifndef __HAL_PHY_RF_H__ */
+#endif	/*#ifndef __HALPHYRF_H__*/

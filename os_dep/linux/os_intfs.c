@@ -1338,15 +1338,9 @@ unsigned int rtw_classify8021d(struct sk_buff *skb)
 
 static u16 rtw_select_queue(struct net_device *dev, struct sk_buff *skb
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0)
-    #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
-    , struct net_device *sb_dev
-    #else
 	, void *accel_priv
-    #endif
 	#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)
-		#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
-		, select_queue_fallback_t fallback
-		#endif
+	, select_queue_fallback_t fallback
 	#endif
 #endif
 )
@@ -4757,6 +4751,11 @@ int rtw_resume_process_wow(_adapter *padapter)
 	if (pwrpriv->wowlan_pno_enable)
 		rtw_set_fw_in_ips_mode(padapter, _FALSE);
 #endif /* CONFIG_FWLPS_IN_IPS */
+#if defined(CONFIG_LPS_LCLK) && defined(RTW_HALMAC)
+	if (pwrpriv->wowlan_pno_enable)
+		rtw_set_fw_config_32k(padapter, _FALSE);
+
+#endif
 #endif/* CONFIG_PNO_SUPPORT */
 
 	if (pwrpriv->wowlan_mode == _TRUE) {

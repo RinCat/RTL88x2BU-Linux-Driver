@@ -1069,6 +1069,11 @@ s32 c2h_handler(_adapter *adapter, u8 id, u8 seq, u8 plen, u8 *payload)
 		c2h_per_rate_rpt_hdl(adapter, payload, plen);
 		break;
 #endif
+#ifdef CONFIG_LPS_ACK
+	case C2H_LPS_STATUS_RPT:
+		c2h_lps_status_rpt(adapter, payload, plen);
+		break;
+#endif
 	case C2H_EXTEND:
 		sub_id = payload[0];
 		/* no handle, goto default */

@@ -1848,7 +1848,6 @@ unsigned int OnBeacon(_adapter *padapter, union recv_frame *precv_frame)
 					struct beacon_keys recv_beacon;
 
 					update_network(&(pmlmepriv->cur_network.network), pbss, padapter, _TRUE);
-					rtw_get_bcn_info(&(pmlmepriv->cur_network));
 
 					/* update bcn keys */
 					if (rtw_get_bcn_keys(padapter, pframe, len, &recv_beacon) == _TRUE) {
@@ -2087,9 +2086,9 @@ unsigned int OnAuth(_adapter *padapter, union recv_frame *precv_frame)
 		goto auth_fail;
 	}
 
-	if (auth_mode == 2 &&
-	    psecuritypriv->dot11PrivacyAlgrthm != _WEP40_ &&
-	    psecuritypriv->dot11PrivacyAlgrthm != _WEP104_)
+	if ((auth_mode == 2) && (algorithm != WLAN_AUTH_SAE) &&
+	    (psecuritypriv->dot11PrivacyAlgrthm != _WEP40_) &&
+	    (psecuritypriv->dot11PrivacyAlgrthm != _WEP104_))
 		auth_mode = 0;
 
 	if ((algorithm > 0 && auth_mode == 0) ||	/* rx a shared-key auth but shared not enabled */
@@ -2163,6 +2162,17 @@ unsigned int OnAuth(_adapter *padapter, union recv_frame *precv_frame)
 	if (pstat->auth_seq == 0)
 		pstat->expire_to = pstapriv->auth_to;
 
+#ifdef CONFIG_IOCTL_CFG80211
+	if (GET_CFG80211_REPORT_MGMT(adapter_wdev_data(padapter), IEEE80211_STYPE_AUTH) == _TRUE) {
+		if ((algorithm == WLAN_AUTH_SAE) &&
+			(auth_mode == dot11AuthAlgrthm_8021X)) {
+			pstat->authalg = algorithm;
+
+			rtw_cfg80211_rx_mframe(padapter, precv_frame, NULL);
+			return _SUCCESS;
+		}
+	}
+#endif /* CONFIG_IOCTL_CFG80211 */
 
 	if ((pstat->auth_seq + 1) != seq) {
 		RTW_INFO("(1)auth rejected because out of seq [rx_seq=%d, exp_seq=%d]!\n",
@@ -2283,6 +2293,21 @@ unsigned int OnAuthClient(_adapter *padapter, union recv_frame *precv_frame)
 	uint pkt_len = precv_frame->u.hdr.len;
 
 	RTW_INFO("%s\n", __FUNCTION__);
+
+#ifdef CONFIG_IOCTL_CFG80211
+	if (GET_CFG80211_REPORT_MGMT(adapter_wdev_data(padapter), IEEE80211_STYPE_AUTH) == _TRUE) {
+		if (rtw_sec_chk_auth_type(padapter, NL80211_AUTHTYPE_SAE)) {
+			if (rtw_cached_pmkid(padapter, get_my_bssid(&pmlmeinfo->network)) != -1) {
+				RTW_INFO("SAE: PMKSA cache entry found\n");
+				goto normal;
+			}
+			rtw_cfg80211_rx_mframe(padapter, precv_frame, NULL);
+			return _SUCCESS;
+		}
+	}
+
+normal:
+#endif /* CONFIG_IOCTL_CFG80211 */
 
 	/* check A1 matches or not */
 	if (!_rtw_memcmp(adapter_mac_addr(padapter), get_da(pframe), ETH_ALEN))
@@ -2420,6 +2445,17 @@ unsigned int OnAssocReq(_adapter *padapter, union recv_frame *precv_frame)
 	}
 
 	RTW_INFO("%s\n", __FUNCTION__);
+
+	if (pstat->authalg == WLAN_AUTH_SAE) {
+		/* WPA3-SAE */
+		if (((pstat->state) & WIFI_FW_AUTH_NULL)) {
+			/* TODO:
+			   Queue AssocReq and Proccess
+			   by external auth trigger. */
+			RTW_INFO("%s: wait external auth trigger\n", __func__);
+			return _SUCCESS;
+		}
+	}
 
 	/* check if this stat has been successfully authenticated/assocated */
 	if (!((pstat->state) & WIFI_FW_AUTH_SUCCESS)) {
@@ -9142,7 +9178,18 @@ void _issue_assocreq(_adapter *padapter, u8 is_reassoc)
 				rtw_ft_update_rsnie(padapter, _TRUE, pattrib, &pframe);
 			} else
 #endif
+			{
+#ifdef CONFIG_IOCTL_CFG80211
+				if (rtw_sec_chk_auth_alg(padapter, WLAN_AUTH_OPEN) &&
+					rtw_sec_chk_auth_type(padapter, NL80211_AUTHTYPE_SAE)) {
+					s32 entry = rtw_cached_pmkid(padapter, pmlmepriv->assoc_bssid);
+
+					rtw_rsn_sync_pmkid(padapter, (u8 *)pIE, (pIE->Length + 2), entry);
+				}
+#endif /* CONFIG_IOCTL_CFG80211 */
+
 				pframe = rtw_set_ie(pframe, EID_WPA2, pIE->Length, pIE->data, &(pattrib->pktlen));
+			}
 			break;
 #ifdef CONFIG_80211N_HT
 		case EID_HTCapability:
@@ -10323,7 +10370,7 @@ void issue_action_BSSCoexistPacket(_adapter *padapter)
 	u8 InfoContent[16] = {0};
 	u8 ICS[8][15];
 #ifdef CONFIG_80211N_HT
-	if ((pmlmepriv->num_FortyMHzIntolerant == 0) || (pmlmepriv->num_sta_no_ht == 0))
+	if ((pmlmepriv->num_FortyMHzIntolerant == 0) && (pmlmepriv->num_sta_no_ht == 0))
 		return;
 
 	if (_TRUE == pmlmeinfo->bwmode_updated)
@@ -10368,17 +10415,14 @@ void issue_action_BSSCoexistPacket(_adapter *padapter)
 	pframe = rtw_set_fixed_ie(pframe, 1, &(category), &(pattrib->pktlen));
 	pframe = rtw_set_fixed_ie(pframe, 1, &(action), &(pattrib->pktlen));
 
-
-	/*  */
-	if (pmlmepriv->num_FortyMHzIntolerant > 0) {
+	/* TODO calculate 40Mhz intolerant via ch and ch offset */
+	/* if (pmlmepriv->num_FortyMHzIntolerant > 0) */
+	{
 		u8 iedata = 0;
 
 		iedata |= BIT(2);/* 20 MHz BSS Width Request */
-
 		pframe = rtw_set_ie(pframe, EID_BSSCoexistence,  1, &iedata, &(pattrib->pktlen));
-
 	}
-
 
 	/*  */
 	_rtw_memset(ICS, 0, sizeof(ICS));
@@ -11305,6 +11349,7 @@ void start_clnt_auth(_adapter *padapter)
 {
 	struct mlme_ext_priv	*pmlmeext = &padapter->mlmeextpriv;
 	struct mlme_ext_info	*pmlmeinfo = &(pmlmeext->mlmext_info);
+	struct wifidirect_info *pwdinfo = &(padapter->wdinfo);
 
 	_cancel_timer_ex(&pmlmeext->link_timer);
 
@@ -11324,6 +11369,22 @@ void start_clnt_auth(_adapter *padapter)
 	} else
 #endif
 		RTW_PRINT("start auth\n");
+
+#ifdef CONFIG_IOCTL_CFG80211
+	if (rtw_sec_chk_auth_type(padapter, NL80211_AUTHTYPE_SAE)) {
+		if (rtw_cached_pmkid(padapter, get_my_bssid(&pmlmeinfo->network)) != -1) {
+			RTW_INFO("SAE: PMKSA cache entry found\n");
+			padapter->securitypriv.auth_alg = WLAN_AUTH_OPEN;
+			goto no_external_auth;
+		}
+
+		RTW_PRINT("SAE: start external auth\n");
+		rtw_cfg80211_external_auth_request(padapter, NULL);
+		return;
+	}
+no_external_auth:
+#endif /* CONFIG_IOCTL_CFG80211 */
+
 	issue_auth(padapter, NULL, 0);
 
 	set_link_timer(pmlmeext, REAUTH_TO);
@@ -13005,6 +13066,12 @@ void link_timer_hdl(void *ctx)
 		pmlmeinfo->state = WIFI_FW_NULL_STATE;
 		report_join_res(padapter, -3, WLAN_STATUS_UNSPECIFIED_FAILURE);
 	} else if (pmlmeinfo->state & WIFI_FW_AUTH_STATE) {
+
+#ifdef CONFIG_IOCTL_CFG80211
+		if (rtw_sec_chk_auth_type(padapter, NL80211_AUTHTYPE_SAE))
+			return;
+#endif /* CONFIG_IOCTL_CFG80211 */
+
 		/* re-auth timer */
 		if (++pmlmeinfo->reauth_count > REAUTH_LIMIT) {
 			/* if (pmlmeinfo->auth_algo != dot11AuthAlgrthm_Auto) */
@@ -13183,7 +13250,6 @@ void rtw_ft_update_bcn(_adapter *padapter, union recv_frame *precv_frame)
 				struct beacon_keys recv_beacon;
 
 				update_network(&(pmlmepriv->cur_network.network), pbss, padapter, _TRUE);
-				rtw_get_bcn_info(&(pmlmepriv->cur_network));
 				
 				/* update bcn keys */
 				if (rtw_get_bcn_keys(padapter, pframe, len, &recv_beacon) == _TRUE) {
@@ -16204,11 +16270,48 @@ exit:
 		*ch = u_ch;
 		*bw = u_bw;
 		*offset = u_offset;
+
+#if defined(CONFIG_IOCTL_CFG80211) && (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0))
+		{
+			u8 ht_option = 0;
+
+#ifdef CONFIG_80211N_HT
+			ht_option = adapter->mlmepriv.htpriv.ht_option;
+#endif /* CONFIG_80211N_HT */
+
+			/* 
+				when supplicant send the mlme frame,
+				the bss freq is updated by channel switch event.
+			*/
+			rtw_cfg80211_ch_switch_notify(adapter,
+				cur_ch, cur_bw, cur_ch_offset, ht_option);
+		}
+#endif
 	}
 
 	return connect_allow == _TRUE ? _SUCCESS : _FAIL;
 }
 
+void rtw_set_external_auth_status(_adapter *padapter,
+	const void *data, int len)
+{
+#ifdef CONFIG_IOCTL_CFG80211
+	struct net_device *dev = padapter->pnetdev;
+	struct wiphy *wiphy = adapter_to_wiphy(padapter);
+	struct rtw_external_auth_params params;
+
+	/* convert data to external_auth_params */
+	params.action = RTW_GET_BE32((u8 *)data);
+	_rtw_memcpy(&params.bssid, (u8 *)data + 4, ETH_ALEN);
+	_rtw_memcpy(&params.ssid.ssid, (u8 *)data + 10, WLAN_SSID_MAXLEN);
+	params.ssid.ssid_len = RTW_GET_BE64((u8 *)data + 42);
+	params.key_mgmt_suite = RTW_GET_BE32((u8 *)data + 58);
+	params.status = RTW_GET_BE16((u8 *)data + 62);
+	_rtw_memcpy(&params.pmkid, (u8 *)data + 64, PMKID_LEN);
+
+	rtw_cfg80211_external_auth_status(wiphy, dev, &params);
+#endif /* CONFIG_IOCTL_CFG80211 */
+}
 
 u8 rtw_set_chbw_hdl(_adapter *padapter, u8 *pbuf)
 {
@@ -16591,3 +16694,65 @@ u8 rtw_getmacreg_hdl(_adapter *padapter, u8 *pbuf)
 
 	return H2C_SUCCESS;
 }
+
+int rtw_sae_preprocess(_adapter *adapter, const u8 *buf, u32 len, u8 tx)
+{
+#ifdef CONFIG_IOCTL_CFG80211
+	const u8 *frame_body = buf + sizeof(struct rtw_ieee80211_hdr_3addr);
+	u16 alg;
+	u16 seq;
+	u16 status;
+	int ret = _FAIL;
+
+	alg = RTW_GET_LE16(frame_body);
+	if (alg != WLAN_AUTH_SAE)
+		goto exit;
+
+	seq = RTW_GET_LE16(frame_body + 2);
+	status = RTW_GET_LE16(frame_body + 4);
+
+	RTW_INFO("RTW_%s:AUTH alg:0x%04x, seq:0x%04x, status:0x%04x, mesg:%s\n",
+		(tx == _TRUE) ? "Tx" : "Rx", alg, seq, status,
+		(seq == 1) ? "Commit" : "Confirm");
+
+	ret = _SUCCESS;
+
+#ifdef CONFIG_RTW_MESH
+	if (MLME_IS_MESH(adapter)) {
+		rtw_mesh_sae_check_frames(adapter, buf, len, tx, alg, seq, status);
+		goto exit;
+	}
+#endif
+
+	if (tx && (seq == 2) && (status == 0)) {
+		/* quere commit frame until external auth statue update */
+		struct sta_priv *pstapriv = &adapter->stapriv;
+		struct sta_info	*psta = NULL;
+		_irqL irqL;
+
+		psta = rtw_get_stainfo(pstapriv, GetAddr1Ptr(buf));
+		if (psta) {
+			_enter_critical_bh(&psta->lock, &irqL);
+			if (psta->pauth_frame) {
+				rtw_mfree(psta->pauth_frame, psta->auth_len);
+				psta->pauth_frame = NULL;
+				psta->auth_len = 0;
+			}
+
+			psta->pauth_frame =  rtw_zmalloc(len);
+			if (psta->pauth_frame) {
+				_rtw_memcpy(psta->pauth_frame, buf, len);
+				psta->auth_len = len;
+			}
+			_exit_critical_bh(&psta->lock, &irqL);
+
+			ret = 2;
+		}
+	}
+exit:
+	return ret;
+#else
+	return _SUCCESS;
+#endif /* CONFIG_IOCTL_CFG80211 */
+}
+

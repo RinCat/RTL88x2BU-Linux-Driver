@@ -3724,6 +3724,17 @@ exit:
 }
 #endif /* CONFIG_RTW_TPT_MODE */
 
+int proc_get_cur_beacon_keys(struct seq_file *m, void *v)
+{
+	struct net_device *dev = m->private;
+	_adapter *adapter = rtw_netdev_priv(dev);
+	struct mlme_priv *mlme = &adapter->mlmepriv;
+
+	rtw_dump_bcn_keys(m, &mlme->cur_beacon_keys);
+
+	return 0;
+}
+
 /*
 * rtw_adapter_proc:
 * init/deinit when register/unregister net_device
@@ -4089,6 +4100,7 @@ const struct rtw_proc_hdl adapter_proc_hdls[] = {
 	#endif
 #endif
 
+	RTW_PROC_HDL_SSEQ("cur_beacon_keys", proc_get_cur_beacon_keys, NULL),
 };
 
 const int adapter_proc_hdls_num = sizeof(adapter_proc_hdls) / sizeof(struct rtw_proc_hdl);

@@ -248,6 +248,7 @@ static struct usb_device_id rtw_usb_id_tbl[] = {
 	{USB_DEVICE_AND_INTERFACE_INFO(0x0b05, 0x1841, 0xff, 0xff, 0xff), .driver_info = RTL8822B}, /* ASUS AC1300 USB-AC55 B1 */
 	{USB_DEVICE_AND_INTERFACE_INFO(0x0b05, 0x184C, 0xff, 0xff, 0xff), .driver_info = RTL8822B}, /* ASUS U2*/
 	{USB_DEVICE_AND_INTERFACE_INFO(0x2001, 0x331c, 0xff, 0xff, 0xff), .driver_info = RTL8822B}, /* Dlink - DWA-182*/
+	{USB_DEVICE_AND_INTERFACE_INFO(0x0846, 0x9055, 0xff, 0xff, 0xff), .driver_info = RTL8822B}, /* NetGear A6150 */
 #endif /* CONFIG_RTL8822B */
 
 #ifdef CONFIG_RTL8723D

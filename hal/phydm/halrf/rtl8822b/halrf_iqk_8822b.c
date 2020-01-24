@@ -318,13 +318,13 @@ void _iqk_restore_rf_8822b(struct dm_struct *dm, u32 *backup_rf_reg,
 	odm_set_rf_reg(dm, RF_PATH_B, RF_0xef, MASK20BITS, 0x0);
 	/*0xdf[4]=0*/
 	_iqk_rf_set_check_8822b(dm, RF_PATH_A, 0xdf,
-				RF_backup[0][RF_PATH_A] & (!BIT(4)));
+				RF_backup[0][RF_PATH_A] & (~BIT(4)));
 	_iqk_rf_set_check_8822b(dm, RF_PATH_B, 0xdf,
-				RF_backup[0][RF_PATH_B] & (!BIT(4)));
+				RF_backup[0][RF_PATH_B] & (~BIT(4)));
 
 #if 0
-	/*odm_set_rf_reg(dm, RF_PATH_A, RF_0xdf, MASK20BITS, RF_backup[0][RF_PATH_A] & (!BIT(4)));*/
-	/*odm_set_rf_reg(dm, RF_PATH_B, RF_0xdf, MASK20BITS, RF_backup[0][RF_PATH_B] & (!BIT(4)));*/
+	/*odm_set_rf_reg(dm, RF_PATH_A, RF_0xdf, MASK20BITS, RF_backup[0][RF_PATH_A] & (~BIT(4)));*/
+	/*odm_set_rf_reg(dm, RF_PATH_B, RF_0xdf, MASK20BITS, RF_backup[0][RF_PATH_B] & (~BIT(4)));*/
 #endif
 
 	for (i = 1; i < RF_REG_NUM_8822B; i++) {
@@ -443,11 +443,11 @@ void _iqk_reload_iqk_setting_8822b(struct dm_struct *dm, u8 ch,
 				odm_write_4byte(dm, 0x1bd8, data);
 			}
 			if (idx == 0) {
-				report = !(iqk->iqk_fail_report[ch][path][idx]);
+				report = ~(iqk->iqk_fail_report[ch][path][idx]);
 				odm_set_bb_reg(dm, iqk_apply[path],
 					       BIT(0), report);
 			} else {
-				report = !(iqk->iqk_fail_report[ch][path][idx]);
+				report = ~(iqk->iqk_fail_report[ch][path][idx]);
 				odm_set_bb_reg(dm, iqk_apply[path],
 					       BIT(10), report);
 			}
@@ -528,7 +528,7 @@ void _iqk_rf_setting_8822b(struct dm_struct *dm)
 		/*0xdf:B11 = 1,B4 = 0, B1 = 1*/
 		tmp = odm_get_rf_reg(dm, (enum rf_path)path,
 				     RF_0xdf, MASK20BITS);
-		tmp = (tmp & (!BIT(4))) | BIT(1) | BIT(11);
+		tmp = (tmp & (~BIT(4))) | BIT(1) | BIT(11);
 		_iqk_rf_set_check_8822b(dm, (enum rf_path)path, 0xdf, tmp);
 #if 0
 		/*odm_set_rf_reg(dm, (enum rf_path)path, RF_0xdf, MASK20BITS, tmp);*/

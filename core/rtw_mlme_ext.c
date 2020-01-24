@@ -105,6 +105,7 @@ unsigned char WMM_OUI[] = {0x00, 0x50, 0xf2, 0x02};
 unsigned char	WPS_OUI[] = {0x00, 0x50, 0xf2, 0x04};
 unsigned char	P2P_OUI[] = {0x50, 0x6F, 0x9A, 0x09};
 unsigned char	WFD_OUI[] = {0x50, 0x6F, 0x9A, 0x0A};
+unsigned char	DPP_OUI[] = {0x50, 0x6F, 0x9A, 0x1A};
 
 unsigned char	WMM_INFO_OUI[] = {0x00, 0x50, 0xf2, 0x02, 0x00, 0x01};
 unsigned char	WMM_PARA_OUI[] = {0x00, 0x50, 0xf2, 0x02, 0x01, 0x01};
@@ -6543,6 +6544,9 @@ unsigned int on_action_public_vendor(union recv_frame *precv_frame)
 	unsigned int ret = _FAIL;
 	u8 *pframe = precv_frame->u.hdr.rx_data;
 	u8 *frame_body = pframe + sizeof(struct rtw_ieee80211_hdr_3addr);
+	_adapter *adapter = precv_frame->u.hdr.adapter;
+	int cnt = 0;
+	char msg[64];
 
 	if (_rtw_memcmp(frame_body + 2, P2P_OUI, 4) == _TRUE) {
 		if (rtw_action_public_decache(precv_frame, 7) == _FAIL)
@@ -6552,6 +6556,13 @@ unsigned int on_action_public_vendor(union recv_frame *precv_frame)
 			rtw_rframe_del_wfd_ie(precv_frame, 8);
 
 		ret = on_action_public_p2p(precv_frame);
+	} else if (_rtw_memcmp(frame_body + 2, DPP_OUI, 4) == _TRUE) {
+		u8 dpp_type = frame_body[7];
+
+#ifdef CONFIG_IOCTL_CFG80211
+		cnt += sprintf((msg + cnt), "DPP(type:%u)", dpp_type);
+		rtw_cfg80211_rx_action(adapter, precv_frame, msg);
+#endif
 	}
 
 exit:
@@ -8937,6 +8948,23 @@ void issue_asocrsp(_adapter *padapter, unsigned short status, struct sta_info *p
 #endif
 }
 
+static u32 rtw_append_assoc_req_owe_ie(_adapter *adapter, u8 *pbuf)
+{
+	struct security_priv *sec = &adapter->securitypriv;
+	u32 len = 0;
+
+	if (sec == NULL)
+		goto exit;
+
+	if (sec->owe_ie && sec->owe_ie_len > 0) {
+		len = sec->owe_ie_len;
+		_rtw_memcpy(pbuf, sec->owe_ie, len);
+	}
+
+exit:
+	return len;
+}
+
 void _issue_assocreq(_adapter *padapter, u8 is_reassoc)
 {
 	int ret = _FAIL;
@@ -9382,6 +9410,15 @@ void _issue_assocreq(_adapter *padapter, u8 is_reassoc)
 	pattrib->pktlen += wfdielen;
 #endif
 #endif /* CONFIG_P2P */
+
+	/* OWE */
+	{
+	u32 owe_ie_len;
+	
+	owe_ie_len = rtw_append_assoc_req_owe_ie(padapter, pframe);
+	pframe += owe_ie_len;
+	pattrib->pktlen += owe_ie_len;
+	}
 
 #ifdef CONFIG_RTW_REPEATER_SON
 	rtw_rson_append_ie(padapter, pframe, &pattrib->pktlen);
@@ -16066,7 +16103,7 @@ void rtw_join_done_chk_ch(_adapter *adapter, int join_res)
 
 						rtw_cfg80211_ch_switch_notify(iface
 							, mlmeext->cur_channel, mlmeext->cur_bwmode, mlmeext->cur_ch_offset
-							, ht_option);
+							, ht_option, 0);
 						#endif
 					}
 				}
@@ -16279,12 +16316,12 @@ exit:
 			ht_option = adapter->mlmepriv.htpriv.ht_option;
 #endif /* CONFIG_80211N_HT */
 
-			/* 
+			/*
 				when supplicant send the mlme frame,
 				the bss freq is updated by channel switch event.
 			*/
 			rtw_cfg80211_ch_switch_notify(adapter,
-				cur_ch, cur_bw, cur_ch_offset, ht_option);
+				cur_ch, cur_bw, cur_ch_offset, ht_option, 1);
 		}
 #endif
 	}

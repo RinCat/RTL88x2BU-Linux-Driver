@@ -813,6 +813,8 @@ struct ieee80211_snap_hdr {
 #define WLAN_EID_VHT_CAPABILITY 191
 #define WLAN_EID_VHT_OPERATION 192
 #define WLAN_EID_VHT_OP_MODE_NOTIFY 199
+#define WLAN_EID_EXTENSION 255
+#define WLAN_EID_EXT_OWE_DH_PARAM 32
 
 #define IEEE80211_MGMT_HDR_LEN 24
 #define IEEE80211_DATA_HDR3_LEN 24
@@ -1488,6 +1490,7 @@ struct ieee80211_txb {
 
 #define MAX_WPA_IE_LEN (256)
 #define MAX_WPS_IE_LEN (512)
+#define MAX_OWE_IE_LEN (128)
 #define MAX_P2P_IE_LEN (256)
 #define MAX_WFD_IE_LEN (128)
 
@@ -2112,6 +2115,8 @@ u8 *rtw_get_wps_ie_from_scan_queue(u8 *in_ie, uint in_len, u8 *wps_ie, uint *wps
 u8 *rtw_get_wps_ie(const u8 *in_ie, uint in_len, u8 *wps_ie, uint *wps_ielen);
 u8 *rtw_get_wps_attr(u8 *wps_ie, uint wps_ielen, u16 target_attr_id , u8 *buf_attr, u32 *len_attr);
 u8 *rtw_get_wps_attr_content(u8 *wps_ie, uint wps_ielen, u16 target_attr_id , u8 *buf_content, uint *len_content);
+
+u8 *rtw_get_owe_ie(const u8 *in_ie, uint in_len, u8 *owe_ie, uint *owe_ielen);
 
 /**
  * for_each_ie - iterate over continuous IEs

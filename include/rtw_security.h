@@ -164,6 +164,8 @@ struct security_priv {
 	u8 wps_ie[MAX_WPS_IE_LEN];/* added in assoc req */
 	int wps_ie_len;
 
+	u8 owe_ie[MAX_OWE_IE_LEN];/* added in assoc req */
+	int owe_ie_len;
 
 	u8	binstallGrpkey;
 #ifdef CONFIG_GTK_OL

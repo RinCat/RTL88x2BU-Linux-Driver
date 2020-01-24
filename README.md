@@ -1,5 +1,5 @@
 # REALTEK RTL88x2B USB Linux Driver  
-**Current Driver Version**: 5.6.1.5  
+**Current Driver Version**: 5.6.1.6  
 **Support Kernel**: 2.6.24 ~ 5.4 (with unofficial patches)  
 
 Official release note please check ReleaseNotes.pdf  

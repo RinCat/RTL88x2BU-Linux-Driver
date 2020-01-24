@@ -8,6 +8,7 @@ Official release note please check ReleaseNotes.pdf
 
 
 # How to use this kernel module
+* Make sure you have installed the kernel headers
 * All commands need to be run in the driver directory
 * The following commands only build module for the current running kernel
 * You need rebuild the kernel module everytime you update/change the kernel

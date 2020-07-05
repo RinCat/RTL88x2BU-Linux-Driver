@@ -20,7 +20,7 @@
 #include "hal_data.h"
 
 #ifdef RTW_HALMAC
-#include "../../hal/hal_halmac.h"
+#include "../hal/hal_halmac.h"
 #endif
 
 void rtw_dump_fw_info(void *sel, _adapter *adapter)

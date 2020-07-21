@@ -175,6 +175,9 @@ struct rtw_wdev_priv {
 	u16 mgmt_tx_cookie;
 
 	_mutex roch_mutex;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0))
+	u32 mgmt_mask;
+#endif
 
 #ifdef CONFIG_CONCURRENT_MODE
 	ATOMIC_T switch_ch_to;

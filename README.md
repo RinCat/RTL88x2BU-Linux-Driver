@@ -16,6 +16,7 @@ Official release note please check ReleaseNotes.pdf
 * Edimax EW-7822UTC
 * TP-Link Archer T3U
 * TP-Link Archer T4U V3
+
 And more.
 
 # How to use this kernel module

@@ -1,11 +1,22 @@
 # REALTEK RTL88x2B USB Linux Driver  
 **Current Driver Version**: 5.6.1.6  
-**Support Kernel**: 2.6.24 ~ 5.6 (with unofficial patches)  
+**Support Kernel**: 2.6.24 ~ 5.8 (with unofficial patches)  
 
 Official release note please check ReleaseNotes.pdf  
 
 **Note:** if you believe your device is **RTL8812BU** or **RTL8822BU** but after loaded the module no NIC shows up, the device ID maybe not in the driver whitelist. In this case please submit a new issue with `lsusb` result, and your device name, brand, website, etc.
 
+## Support devices
+* ASUS AC1300 USB-AC55 B1
+* ASUS U2
+* Dlink - DWA-181
+* Dlink - DWA-182
+* NetGear A6150
+* Edimax EW-7822ULC
+* Edimax EW-7822UTC
+* TP-Link Archer T3U
+* TP-Link Archer T4U V3
+And more.
 
 # How to use this kernel module
 * Make sure you have installed the kernel headers

@@ -339,6 +339,7 @@ static u8 rtw_chbw_to_cfg80211_chan_def(struct wiphy *wiphy, struct cfg80211_cha
 	chdef->chan = chan;
 	chdef->center_freq1 = cfreq;
 	chdef->center_freq2 = 0;
+	memset(&chdef->edmg, 0, sizeof(chdef->edmg));
 
 	ret = _SUCCESS;
 

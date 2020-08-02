@@ -768,7 +768,7 @@ __inline static union recv_frame *rxmem_to_recvframe(u8 *rxmem)
 __inline static union recv_frame *pkt_to_recvframe(_pkt *pkt)
 {
 
-	u8 *buf_star;
+	u8 *buf_star = NULL;
 	union recv_frame *precv_frame;
 	precv_frame = rxmem_to_recvframe((unsigned char *)buf_star);
 

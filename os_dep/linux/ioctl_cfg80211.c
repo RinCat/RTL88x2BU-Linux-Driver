@@ -7767,6 +7767,7 @@ exit:
 	return ret;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0))
 static void cfg80211_rtw_mgmt_frame_register(struct wiphy *wiphy,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0))
 	struct wireless_dev *wdev,
@@ -7774,6 +7775,11 @@ static void cfg80211_rtw_mgmt_frame_register(struct wiphy *wiphy,
 	struct net_device *ndev,
 #endif
 	u16 frame_type, bool reg)
+#else
+static void cfg80211_rtw_update_mgmt_frame_register(struct wiphy *wiphy,
+	struct wireless_dev *wdev,
+	struct mgmt_frame_regs *upd)
+#endif
 {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0))
 	struct net_device *ndev = wdev_to_ndev(wdev);
@@ -7789,10 +7795,22 @@ static void cfg80211_rtw_mgmt_frame_register(struct wiphy *wiphy,
 	pwdev_priv = adapter_wdev_data(adapter);
 
 #ifdef CONFIG_DEBUG_CFG80211
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0))
 	RTW_INFO(FUNC_ADPT_FMT" frame_type:%x, reg:%d\n", FUNC_ADPT_ARG(adapter),
 		frame_type, reg);
+#else
+	RTW_INFO(FUNC_ADPT_FMT" new_reg:%x, old_reg:%x\n", FUNC_ADPT_ARG(adapter),
+		pwdev_priv->mgmt_mask, upd->interface_stypes);
+#endif
 #endif
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0))
+	u32 rtw_mask = BIT(IEEE80211_STYPE_AUTH >> 4);
+	if ((upd->interface_stypes & rtw_mask) 
+		== (pwdev_priv->mgmt_mask & rtw_mask))
+		return;
+	pwdev_priv->mgmt_mask = upd->interface_stypes;
+#else
 	switch (frame_type) {
 	case IEEE80211_STYPE_AUTH: /* 0x00B0 */
 		if (reg > 0)
@@ -7817,6 +7835,7 @@ static void cfg80211_rtw_mgmt_frame_register(struct wiphy *wiphy,
 	default:
 		break;
 	}
+#endif
 
 exit:
 	return;
@@ -10200,9 +10219,14 @@ static struct cfg80211_ops rtw_cfg80211_ops = {
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) || defined(COMPAT_KERNEL_RELEASE)
 	.mgmt_tx = cfg80211_rtw_mgmt_tx,
-	.mgmt_frame_register = cfg80211_rtw_mgmt_frame_register,
 #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34) && LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 35))
 	.action = cfg80211_rtw_mgmt_tx,
+#endif
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0))
+	.update_mgmt_frame_registrations = cfg80211_rtw_update_mgmt_frame_register,
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) || defined(COMPAT_KERNEL_RELEASE)
+	.mgmt_frame_register = cfg80211_rtw_mgmt_frame_register,
 #endif
 
 #if defined(CONFIG_TDLS) && (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0))

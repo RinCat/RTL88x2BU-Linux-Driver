@@ -7792,6 +7792,9 @@ static void cfg80211_rtw_update_mgmt_frame_register(struct wiphy *wiphy,
 	_adapter *adapter;
 
 	struct rtw_wdev_priv *pwdev_priv;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0))
+	u32 rtw_mask;
+#endif
 
 	if (ndev == NULL)
 		goto exit;
@@ -7810,7 +7813,7 @@ static void cfg80211_rtw_update_mgmt_frame_register(struct wiphy *wiphy,
 #endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0))
-	u32 rtw_mask = BIT(IEEE80211_STYPE_AUTH >> 4);
+	rtw_mask = BIT(IEEE80211_STYPE_AUTH >> 4);
 	if ((upd->interface_stypes & rtw_mask) 
 		== (pwdev_priv->mgmt_mask & rtw_mask))
 		return;

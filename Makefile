@@ -824,7 +824,7 @@ ifeq ($(CONFIG_USB_HCI), y)
 ifeq ($(CONFIG_BT_COEXIST), n)
 MODULE_NAME = 8812bu
 else
-MODULE_NAME = DWA-181
+MODULE_NAME = 88x2bu
 endif
 endif
 ifeq ($(CONFIG_PCI_HCI), y)

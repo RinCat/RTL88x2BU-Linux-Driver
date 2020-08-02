@@ -5986,7 +5986,7 @@ ssize_t proc_set_tx_deauth(struct file *file, const char __user *buffer, size_t 
 	char tmp[16];
 	u8	mac_addr[NUM_STA][ETH_ALEN];
 	u8 bc_addr[ETH_ALEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-	u32 key_type;
+	u32 key_type = -1;
 	u8 index;
 
 

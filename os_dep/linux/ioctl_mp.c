@@ -3002,7 +3002,7 @@ int rtw_mp_link(struct net_device *dev,
 		/* tmp[0],[1],[2] */
 		/* txdata,00e04c871200........... */
 		if (strcmp(tmp[0], "txdata") == 0) {
-			if ((tmp[1] == NULL)) {
+			if (tmp[1] == NULL) {
 				ret = -EINVAL;
 				goto exit;
 			}

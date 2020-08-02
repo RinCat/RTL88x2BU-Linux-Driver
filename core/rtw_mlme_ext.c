@@ -10191,6 +10191,9 @@ static int issue_action_ba(_adapter *padapter, unsigned char *raddr, unsigned ch
 
 				BA_starting_seqctrl = start_seq << 4;
 			}
+			else {
+				break;
+			}
 
 			BA_starting_seqctrl = cpu_to_le16(BA_starting_seqctrl);
 			pframe = rtw_set_fixed_ie(pframe, 2, (unsigned char *)(&(BA_starting_seqctrl)), &(pattrib->pktlen));
@@ -15030,7 +15033,7 @@ operation_by_state:
 
 #ifdef CONFIG_SCAN_BACKOP
 	case SCAN_BACKING_OP: {
-		u8 back_ch, back_bw, back_ch_offset;
+		u8 back_ch = 0, back_bw = 0, back_ch_offset = 0;
 		u8 need_ch_setting_union = _TRUE;
 
 #ifdef CONFIG_MCC_MODE

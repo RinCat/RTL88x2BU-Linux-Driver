@@ -11,10 +11,11 @@ Official release note please check ReleaseNotes.pdf
 * ASUS U2
 * Dlink - DWA-181
 * Dlink - DWA-182
-* NetGear A6150
 * Edimax EW-7822ULC
 * Edimax EW-7822UTC
+* NetGear A6150
 * TP-Link Archer T3U
+* TP-Link Archer T3U Plus
 * TP-Link Archer T4U V3
 
 And more.

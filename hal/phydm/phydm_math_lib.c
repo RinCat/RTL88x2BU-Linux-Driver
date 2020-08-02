@@ -179,7 +179,6 @@ u32 odm_convert_to_db(u64 value)
 	} else {
 		if (db_invert_table[i][j] - value >
 		    value - db_invert_table[i][j - 1]) {
-			i = i;
 			j = j - 1;
 		}
 	}

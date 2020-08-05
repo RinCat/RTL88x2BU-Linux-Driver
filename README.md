@@ -40,11 +40,8 @@ sudo make install
 sudo make uninstall
 ```
 
-
-For more details please refer to Linux Kernel Documentation.
-
-https://www.kernel.org/doc/Documentation/kbuild/modules.txt
-
+# USB 3.0 Support
+You can try use `modprobe 88x2bu rtw_switch_usb_mode=1` to force the adapter run under USB 3.0. But if your adapter/port/motherboard not support it, the driver will be in restart loop. Remove the parameter and reload the driver to restore.
 
 # Distribution
 * Archlinux AUR https://aur.archlinux.org/packages/rtl88x2bu-dkms-git/

@@ -434,7 +434,7 @@ u8 rtw_cfg80211_ch_switch_notify(_adapter *adapter, u8 ch, u8 bw, u8 offset,
 	u8 ret = _SUCCESS;
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
-	struct cfg80211_chan_def chdef;
+	struct cfg80211_chan_def chdef = {};
 
 	ret = rtw_chbw_to_cfg80211_chan_def(wiphy, &chdef, ch, bw, offset, ht);
 	if (ret != _SUCCESS)
@@ -6267,6 +6267,7 @@ static int cfg80211_rtw_set_monitor_channel(struct wiphy *wiphy
 
 	switch (chandef->width) {
 	case NL80211_CHAN_WIDTH_20_NOHT:
+		/* fall through */
 	case NL80211_CHAN_WIDTH_20:
 		target_width = CHANNEL_WIDTH_20;
 		target_offset = HAL_PRIME_CHNL_OFFSET_DONT_CARE;

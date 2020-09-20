@@ -56,6 +56,10 @@
 #include <linux/list.h>
 #include <linux/vmalloc.h>
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+	#include <uapi/linux/sched/types.h>
+#endif
+
 #if (LINUX_VERSION_CODE <= KERNEL_VERSION(2, 5, 41))
 	#include <linux/tqueue.h>
 #endif

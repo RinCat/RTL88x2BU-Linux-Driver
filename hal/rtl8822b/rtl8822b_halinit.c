@@ -351,9 +351,6 @@ void rtl8822b_init_default_value(PADAPTER adapter)
 	/* init default value */
 	hal->fw_ractrl = _FALSE;
 
-	if (!adapter_to_pwrctl(adapter)->bkeepfwalive)
-		hal->LastHMEBoxNum = 0;
-
 	/* init phydm default value */
 	hal->bIQKInitialized = _FALSE;
 

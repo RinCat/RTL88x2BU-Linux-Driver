@@ -9828,6 +9828,10 @@ static int rtw_mp_efuse_set(struct net_device *dev,
 			err = -EINVAL;
 			goto exit;
 		}
+		pHalData->current_channel = 0;
+		pHalData->current_channel_bw = CHANNEL_WIDTH_MAX;
+		pHalData->current_band_type = BAND_MAX;
+
 		_rtw_memset(extra, '\0', strlen(extra));
 		sprintf(extra, "eFuse Update OK\n");
 	} else if (strcmp(tmp[0], "analyze") == 0) {

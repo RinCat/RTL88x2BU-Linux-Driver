@@ -24,21 +24,41 @@ And more.
 # How to use this kernel module
 * Make sure you have installed the kernel headers
 * All commands need to be run in the driver directory
-* The following commands only build module for the current running kernel
-* You need rebuild the kernel module everytime you update/change the kernel
-## Building
+* You need rebuild the kernel module everytime you update/change the kernel if you are not using DKMS
+
+## Manual installation
+### Clean
+* Make sure you cleaned old build files before builds new one
+```
+make clean
+```
+
+### Building module for current running kernel
 ```
 make
 ```
 
-## Installing
+### Building module for other kernels
+```
+make KSRC=/lib/modules/YOUR_KERNEL_VERSION/build
+```
+
+### Installing
 ```
 sudo make install
 ```
 
-## Uninstalling
+### Uninstalling
 ```
 sudo make uninstall
+```
+
+## Manual DKMS installation
+```
+git clone "https://github.com/RinCat/RTL88x2BU-Linux-Driver.git" /usr/src/rtl88x2bu-git
+sed -i 's/PACKAGE_VERSION="@PKGVER@"/PACKAGE_VERSION="git"/g' /usr/src/rtl88x2bu-git/dkms.conf
+dkms add -m rtl88x2bu -v git
+dkms autoinstall
 ```
 
 # USB 3.0 Support

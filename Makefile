@@ -89,6 +89,7 @@ CONFIG_IP_R_MONITOR = n #arp VOQ and high rate
 CONFIG_RTW_UP_MAPPING_RULE = tos
 # Enable VHT rate on 2.4G channel or not
 CONFIG_RTW_VHT_2G4 = y
+CONFIG_RTW_IOCTL_SET_COUNTRY = y
 
 ########################## Debug ###########################
 CONFIG_RTW_DEBUG = y
@@ -1292,6 +1293,10 @@ ifeq ($(CONFIG_RTW_VHT_2G4), y)
 EXTRA_CFLAGS += -DRTW_VHT_2G4=1
 else
 EXTRA_CFLAGS += -DRTW_VHT_2G4=0
+endif
+
+ifeq ($(CONFIG_RTW_IOCTL_SET_COUNTRY), y)
+EXTRA_CFLAGS += -DCONFIG_RTW_IOCTL_SET_COUNTRY
 endif
 
 ifeq ($(CONFIG_PLATFORM_I386_PC), y)

@@ -877,6 +877,7 @@ exit:
 #endif /* CONFIG_CUSTOMIZED_COUNTRY_CHPLAN_MAP or RTW_DEF_MODULE_REGULATORY_CERT */
 
 static const struct country_chplan country_chplan_map[] = {
+	COUNTRY_CHPLAN_ENT("00", 0x7F, 1, 0x000), /* Unspecified */
 	COUNTRY_CHPLAN_ENT("AD", 0x26, 1, 0x000), /* Andorra */
 	COUNTRY_CHPLAN_ENT("AE", 0x35, 1, 0xFFB), /* United Arab Emirates */
 	COUNTRY_CHPLAN_ENT("AF", 0x42, 1, 0x000), /* Afghanistan */

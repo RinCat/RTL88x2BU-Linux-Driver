@@ -1933,9 +1933,9 @@ inline u8 rtw_set_chplan_cmd(_adapter *adapter, int flags, u8 chplan, u8 swconfi
 inline u8 rtw_set_country_cmd(_adapter *adapter, int flags, const char *country_code, u8 swconfig)
 {
 	const struct country_chplan *ent;
-
-	if (is_alpha(country_code[0]) == _FALSE
-	    || is_alpha(country_code[1]) == _FALSE
+	if ((is_alpha(country_code[0]) == _FALSE
+	    || is_alpha(country_code[1]) == _FALSE)
+		&& (strncmp(country_code, "00", 2) != 0)
 	   ) {
 		RTW_PRINT("%s input country_code is not alpha2\n", __func__);
 		return _FAIL;

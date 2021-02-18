@@ -25,6 +25,7 @@ And more.
 * Make sure you have installed the kernel headers
 * All commands need to be run in the driver directory
 * You need rebuild the kernel module everytime you update/change the kernel if you are not using DKMS
+* Ensure you have `make` and `build-essential` installed - `sudo apt install make build-essential`
 
 ## Manual installation
 ### Clean

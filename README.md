@@ -22,10 +22,11 @@ Official release note please check ReleaseNotes.pdf
 And more.
 
 # How to use this kernel module
-* Make sure you have installed the kernel headers
+* Ensure you have C compiler & toolchains, e.g. `build-essential` for Debian/Ubuntu, `base-devel` for Arch, etc.
+* Make sure you have installed the corresponding kernel headers
 * All commands need to be run in the driver directory
 * You need rebuild the kernel module everytime you update/change the kernel if you are not using DKMS
-* Ensure you have `make` and `build-essential` installed - `sudo apt install make build-essential`
+
 
 ## Manual installation
 ### Clean

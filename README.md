@@ -17,6 +17,7 @@ Official release note please check ReleaseNotes.pdf
 * TP-Link Archer T3U
 * TP-Link Archer T3U Plus
 * TP-Link Archer T4U V3
+* TP-Link Archer T4U PLus
 * TRENDnet TEW-808UBM
 
 And more.

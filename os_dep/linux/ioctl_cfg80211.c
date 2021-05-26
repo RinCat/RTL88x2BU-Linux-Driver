@@ -10126,6 +10126,10 @@ static int rtw_cfg80211_init_wiphy(_adapter *adapter, struct wiphy *wiphy)
 	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_RRM);
 #endif
 
+#ifdef CONFIG_NET_NS
+    wiphy->flags |= WIPHY_FLAG_NETNS_OK;
+#endif // NETNS
+
 #if (KERNEL_VERSION(3, 8, 0) <= LINUX_VERSION_CODE)
 	wiphy->features |= NL80211_FEATURE_SAE;
 #endif

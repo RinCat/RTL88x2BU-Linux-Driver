@@ -3088,6 +3088,7 @@ void rtw_sta_mstatus_disc_rpt(_adapter *adapter, u8 mac_id)
 			, mac_id, id_is_shared ? " shared" : "");
 
 		if (!id_is_shared) {
+			rtw_hal_macid_drop(adapter, mac_id);
 			rtw_hal_set_FwMediaStatusRpt_single_cmd(adapter, 0, 0, 0, 0, mac_id);
 			/*
 			 * For safety, prevent from keeping macid sleep.

@@ -3822,8 +3822,6 @@ u8 ap_free_sta(_adapter *padapter, struct sta_info *psta, bool active, u16 reaso
 	psta->htpriv.candidate_tid_bitmap = 0x0;/* reset */
 #endif
 
-	/* clear cam entry / key */
-	rtw_clearstakey_cmd(padapter, psta, enqueue);
 
 
 	_enter_critical_bh(&psta->lock, &irqL);
@@ -3855,6 +3853,9 @@ u8 ap_free_sta(_adapter *padapter, struct sta_info *psta, bool active, u16 reaso
 	beacon_updated = bss_cap_update_on_sta_leave(padapter, psta);
 
 	report_del_sta_event(padapter, psta->cmn.mac_addr, reason, enqueue, _FALSE);
+
+	/* clear cam entry / key */
+	rtw_clearstakey_cmd(padapter, psta, enqueue);
 
 	return beacon_updated;
 

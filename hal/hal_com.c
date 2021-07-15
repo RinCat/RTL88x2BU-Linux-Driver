@@ -14817,6 +14817,7 @@ void dump_hal_spec(void *sel, _adapter *adapter)
 	int i;
 
 	RTW_PRINT_SEL(sel, "macid_num:%u\n", hal_spec->macid_num);
+	RTW_PRINT_SEL(sel, "macid_cap:%u\n", hal_spec->macid_cap);
 	RTW_PRINT_SEL(sel, "sec_cap:0x%02x\n", hal_spec->sec_cap);
 	RTW_PRINT_SEL(sel, "sec_cam_ent_num:%u\n", hal_spec->sec_cam_ent_num);
 

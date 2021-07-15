@@ -122,6 +122,10 @@ void rtl8822b_query_rx_desc(union recv_frame *, u8 *pdesc);
 s32 rtl8822b_fillh2ccmd(PADAPTER, u8 id, u32 buf_len, u8 *pbuf);
 void rtl8822b_set_FwPwrMode_cmd(PADAPTER, u8 psmode);
 
+#ifdef CONFIG_USB_CONFIG_OFFLOAD_8822B
+void rtl8822b_set_usb_config_offload(PADAPTER adapter);
+#endif
+
 #ifdef CONFIG_TDLS
 #ifdef CONFIG_TDLS_CH_SW
 void rtl8822b_set_BcnEarly_C2H_Rpt_cmd(PADAPTER padapter, u8 enable);

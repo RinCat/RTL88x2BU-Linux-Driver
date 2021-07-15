@@ -3666,6 +3666,16 @@ void beacon_timing_control(_adapter *padapter)
 	rtw_hal_bcn_related_reg_setting(padapter);
 }
 
+inline bool _rtw_macid_ctl_chk_cap(_adapter *adapter, u8 cap)
+{
+	struct dvobj_priv *dvobj = adapter_to_dvobj(adapter);
+	struct macid_ctl_t *macid_ctl = &dvobj->macid_ctl;
+
+	if (macid_ctl->macid_cap & cap)
+		return _TRUE;
+	return _FALSE;
+}
+
 void dump_macid_map(void *sel, struct macid_bmp *map, u8 max_num)
 {
 	RTW_PRINT_SEL(sel, "0x%08x\n", map->m0);
@@ -3682,6 +3692,7 @@ void dump_macid_map(void *sel, struct macid_bmp *map, u8 max_num)
 		RTW_PRINT_SEL(sel, "0x%08x\n", map->m3);
 #endif
 }
+
 
 inline bool rtw_macid_is_set(struct macid_bmp *map, u8 id)
 {
@@ -4129,6 +4140,11 @@ inline void rtw_macid_ctl_init_sleep_reg(struct macid_ctl_t *macid_ctl, u16 reg_
 	macid_ctl->reg_sleep_ctrl = reg_ctrl;
 	macid_ctl->reg_sleep_info = reg_info;
 }
+inline void rtw_macid_ctl_init_drop_reg(struct macid_ctl_t *macid_ctl, u16 reg_ctrl, u16 reg_info)
+{
+	macid_ctl->reg_drop_ctrl = reg_ctrl;
+	macid_ctl->reg_drop_info = reg_info;
+}
 #else
 inline void rtw_macid_ctl_init_sleep_reg(struct macid_ctl_t *macid_ctl, u16 m0, u16 m1, u16 m2, u16 m3)
 {
@@ -4141,6 +4157,19 @@ inline void rtw_macid_ctl_init_sleep_reg(struct macid_ctl_t *macid_ctl, u16 m0, 
 #endif
 #if (MACID_NUM_SW_LIMIT > 96)
 	macid_ctl->reg_sleep_m3 = m3;
+#endif
+}
+inline void rtw_macid_ctl_init_drop_reg(struct macid_ctl_t *macid_ctl, u16 m0, u16 m1, u16 m2, u16 m3)
+{
+	macid_ctl->reg_drop_m0 = m0;
+#if (MACID_NUM_SW_LIMIT > 32)
+	macid_ctl->reg_drop_m1 = m1;
+#endif
+#if (MACID_NUM_SW_LIMIT > 64)
+	macid_ctl->reg_drop_m2 = m2;
+#endif
+#if (MACID_NUM_SW_LIMIT > 96)
+	macid_ctl->reg_drop_m3 = m3;
 #endif
 }
 #endif

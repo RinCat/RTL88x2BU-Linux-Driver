@@ -4573,8 +4573,7 @@ s32 rtw_monitor_xmit_entry(struct sk_buff *skb, struct net_device *ndev)
 #ifdef CONFIG_MONITOR_MODE_XMIT
     int consume;
 #endif  /* CONFIG_MONITOR_MODE_XMIT */
-	if (likely(skb))
-		rtw_mstat_update(MSTAT_TYPE_SKB, MSTAT_ALLOC_SUCCESS, skb->truesize);
+	rtw_mstat_update(MSTAT_TYPE_SKB, MSTAT_ALLOC_SUCCESS, skb->truesize);
 
 #ifndef CONFIG_CUSTOMER_ALIBABA_GENERAL
 	if (unlikely(skb->len < sizeof(struct ieee80211_radiotap_header)))

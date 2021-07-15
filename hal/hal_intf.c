@@ -1635,6 +1635,170 @@ inline s32 rtw_hal_macid_wakeup_all_used(_adapter *adapter)
 	return _rtw_hal_macid_bmp_sleep(adapter, &macid_ctl->used, 0);
 }
 
+static s32 _rtw_hal_macid_drop(_adapter *adapter, u8 macid, u8 drop)
+{
+	struct macid_ctl_t *macid_ctl = adapter_to_macidctl(adapter);
+#ifndef CONFIG_PROTSEL_MACSLEEP
+	u16 reg_drop = 0;
+#else
+	u16 reg_drop_info = macid_ctl->reg_drop_info;
+	u16 reg_drop_ctrl = macid_ctl->reg_drop_ctrl;
+	const u32 sel_mask_sel = BIT(0) | BIT(1) | BIT(2);
+#endif /* CONFIG_PROTSEL_MACSLEEP */
+	u8 bit_shift;
+	u32 val32;
+	s32 ret = _FAIL;
+/* some IC doesn't have this register */
+#ifndef REG_PKT_BUFF_ACCESS_CTRL
+#define REG_PKT_BUFF_ACCESS_CTRL 0
+#endif
+
+	if (macid >= macid_ctl->num) {
+		RTW_ERR(ADPT_FMT" %s invalid macid(%u)\n"
+			, ADPT_ARG(adapter), drop ? "drop" : "undrop" , macid);
+		goto exit;
+	}
+
+	if(_rtw_macid_ctl_chk_cap(adapter, MACID_DROP)) {
+		if (macid < 32) {
+#ifndef CONFIG_PROTSEL_MACSLEEP
+			reg_drop = macid_ctl->reg_drop_m0;
+#endif /* CONFIG_PROTSEL_MACSLEEP */
+			bit_shift = macid;
+		#if (MACID_NUM_SW_LIMIT > 32)
+		} else if (macid < 64) {
+#ifndef CONFIG_PROTSEL_MACSLEEP
+			reg_drop = macid_ctl->reg_drop_m1;
+#endif /* CONFIG_PROTSEL_MACSLEEP */
+			bit_shift = macid - 32;
+		#endif
+		#if (MACID_NUM_SW_LIMIT > 64)
+		} else if (macid < 96) {
+#ifndef CONFIG_PROTSEL_MACSLEEP
+			reg_drop = macid_ctl->reg_drop_m2;
+#endif /* CONFIG_PROTSEL_MACSLEEP */
+			bit_shift = macid - 64;
+		#endif
+		#if (MACID_NUM_SW_LIMIT > 96)
+		} else if (macid < 128) {
+#ifndef CONFIG_PROTSEL_MACSLEEP
+			reg_drop = macid_ctl->reg_drop_m3;
+#endif /* CONFIG_PROTSEL_MACSLEEP */
+			bit_shift = macid - 96;
+		#endif
+		} else {
+			rtw_warn_on(1);
+			goto exit;
+		}
+
+#ifndef CONFIG_PROTSEL_MACSLEEP
+		if (!reg_drop) {
+			rtw_warn_on(1);
+			goto exit;
+		}
+		val32 = rtw_read32(adapter, reg_drop);
+		/*RTW_INFO(ADPT_FMT" %s macid=%d, ori reg_0x%03x=0x%08x \n"
+			, ADPT_ARG(adapter), drop ? "drop" : "undrop"
+			, macid, reg_drop, val32);*/
+#else
+		if (!reg_drop_ctrl || !reg_drop_info) {
+			rtw_warn_on(1);
+			goto exit;
+		}
+
+		val32 = rtw_read32(adapter, reg_drop_ctrl);
+		val32 = (val32 &~sel_mask_sel) | ((macid / 32) & sel_mask_sel);
+		rtw_write32(adapter, reg_drop_ctrl, val32);
+
+		val32 = rtw_read32(adapter, reg_drop_info);
+		/*RTW_INFO(ADPT_FMT" %s macid=%d, ori reg_0x%03x=0x%08x\n"
+			, ADPT_ARG(adapter), drop ? "drop" : "undrop"
+			, macid, reg_drop_info, val32);*/
+#endif /* CONFIG_PROTSEL_MACSLEEP */
+		ret = _SUCCESS;
+
+		if (drop) {
+			if (val32 & BIT(bit_shift))
+				goto exit;
+			val32 |= BIT(bit_shift);
+		} else {
+			if (!(val32 & BIT(bit_shift)))
+				goto exit;
+			val32 &= ~BIT(bit_shift);
+		}
+
+#ifndef CONFIG_PROTSEL_MACSLEEP
+		rtw_write32(adapter, reg_drop, val32);
+		RTW_INFO(ADPT_FMT" %s macid=%d, done reg_0x%03x=0x%08x\n"
+			, ADPT_ARG(adapter), drop ? "drop" : "undrop"
+			, macid, reg_drop, val32);
+#else
+		rtw_write32(adapter, reg_drop_info, val32);
+		RTW_INFO(ADPT_FMT" %s macid=%d, done reg_0x%03x=0x%08x\n"
+			, ADPT_ARG(adapter), drop ? "drop" : "undrop"
+			, macid, reg_drop_info, val32);
+#endif /* CONFIG_PROTSEL_MACSLEEP */
+
+	} else if(_rtw_macid_ctl_chk_cap(adapter, MACID_DROP_INDIRECT)) {
+		u16 start_addr = macid_ctl->macid_txrpt/8;
+		u32 txrpt_h4b = 0;
+		u8 i;
+
+		/* each address means 1 byte */
+		start_addr += macid*(macid_ctl->macid_txrpt_pgsz/8);
+		/* select tx report buffer */
+		rtw_write8(adapter, REG_PKT_BUFF_ACCESS_CTRL, TXREPORT_BUF_SELECT);
+		/* set tx report buffer start address for reading */
+		rtw_write32(adapter, REG_PKTBUF_DBG_CTRL, start_addr);
+		txrpt_h4b = rtw_read32(adapter, REG_PKTBUF_DBG_DATA_H);
+		/* OFFSET5 BIT2 is BIT10 of high 4 bytes */
+		if (drop) {
+			if (txrpt_h4b & BIT(10))
+				goto exit;
+			txrpt_h4b |= BIT(10);
+		} else {
+			if (!(txrpt_h4b & BIT(10)))
+				goto exit;
+			txrpt_h4b &= ~BIT(10);
+		}
+		/* set to macid drop field */
+		rtw_write32(adapter, REG_PKTBUF_DBG_DATA_H, txrpt_h4b);
+		/* 0x20800000 only write BIT10 of tx report buf */
+		rtw_write32(adapter, REG_PKTBUF_DBG_CTRL, 0x20800000 | start_addr);
+#if 0 /* some ICs doesn't clear the write done bit */
+		/* checking TX queue status */
+		for (i = 0 ; i < 50 ; i++) {
+			txrpt_h4b = rtw_read32(adapter, REG_PKTBUF_DBG_CTRL);
+			if (txrpt_h4b & BIT(23)) {
+				RTW_INFO("%s: wait to write TX RTP buf (%d)!\n", __func__, i);
+				rtw_mdelay_os(10);
+			} else {
+				RTW_INFO("%s: wait to write TX RTP buf done (%d)!\n", __func__, i);
+				break;
+			}
+		}
+#endif
+		rtw_write32(adapter, REG_PKTBUF_DBG_CTRL, start_addr);
+		RTW_INFO("start_addr=%x, data_H:%08x, data_L:%08x, macid=%d, txrpt_h4b=%x\n", start_addr
+		,rtw_read32(adapter, REG_PKTBUF_DBG_DATA_H), rtw_read32(adapter, REG_PKTBUF_DBG_DATA_L), macid, txrpt_h4b);
+	} else {
+		RTW_INFO("There is no definition for camctl cap , please correct it\n");
+	}
+exit:
+	return ret;
+}
+
+inline s32 rtw_hal_macid_drop(_adapter *adapter, u8 macid)
+{
+	return _rtw_hal_macid_drop(adapter, macid, 1);
+}
+
+inline s32 rtw_hal_macid_undrop(_adapter *adapter, u8 macid)
+{
+	return _rtw_hal_macid_drop(adapter, macid, 0);
+}
+
+
 s32 rtw_hal_fill_h2c_cmd(PADAPTER padapter, u8 ElementID, u32 CmdLen, u8 *pCmdBuffer)
 {
 	_adapter *pri_adapter = GET_PRIMARY_ADAPTER(padapter);

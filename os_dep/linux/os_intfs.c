@@ -2594,6 +2594,9 @@ u8 rtw_init_drv_sw(_adapter *padapter)
 
 		dvobj->macid_ctl.num = rtw_min(hal_spec->macid_num, MACID_NUM_SW_LIMIT);
 
+		dvobj->macid_ctl.macid_cap = hal_spec->macid_cap;
+		dvobj->macid_ctl.macid_txrpt = hal_spec->macid_txrpt;
+		dvobj->macid_ctl.macid_txrpt_pgsz = hal_spec->macid_txrpt_pgsz;
 		dvobj->cam_ctl.sec_cap = hal_spec->sec_cap;
 		dvobj->cam_ctl.num = rtw_min(hal_spec->sec_cam_ent_num, SEC_CAM_ENT_NUM_SW_LIMIT);
 

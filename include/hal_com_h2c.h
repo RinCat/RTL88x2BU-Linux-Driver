@@ -120,6 +120,7 @@ enum h2c_cmd {
 	H2C_CUSTOMER_STR_W1 = 0xC6,
 	H2C_CUSTOMER_STR_W2 = 0xC7,
 	H2C_CUSTOMER_STR_W3 = 0xC8,
+	H2C_BT_UNKNOWN_DEVICE_WA = 0xD1,
 #ifdef DBG_FW_DEBUG_MSG_PKT
 	H2C_FW_DBG_MSG_PKT = 0xE1,
 #endif /*DBG_FW_DEBUG_MSG_PKT*/
@@ -185,6 +186,7 @@ enum h2c_cmd {
 #define H2C_BTC_WL_PORT_ID_LEN	1
 #endif
 
+#define H2C_BT_UNKNOWN_DEVICE_WA_LEN 1
 #ifdef DBG_FW_DEBUG_MSG_PKT
 	#define H2C_FW_DBG_MSG_PKT_LEN	2
 #endif /*DBG_FW_DEBUG_MSG_PKT*/
@@ -565,6 +567,16 @@ s32 rtw_hal_customer_str_write(_adapter *adapter, const u8 *cs);
 #define SET_H2CCMD_LPSPG_DPK_INFO_LOC(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+2, 0, 8, __Value)/*Loc_LPS_PG_DPK_info*/
 #define SET_H2CCMD_LPSPG_IQK_INFO_LOC(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 3, 0, 8, __Value)/*Loc_IQK_result*/
 #endif
+
+/* BT_UNKNOWN_DEVICE_WA_0xD1 */
+#define SET_H2CCMD_BT_UNKNOWN_DEVICE_WA_HANG_CHK_EN(__pH2CCmd, __Value) \
+	SET_BITS_TO_LE_1BYTE(__pH2CCmd, 0, 1, __Value)
+#define SET_H2CCMD_BT_UNKNOWN_DEVICE_WA_FORCE_IB_EN(__pH2CCmd, __Value) \
+	SET_BITS_TO_LE_1BYTE(__pH2CCmd, 1, 1, __Value)
+#define SET_H2CCMD_BT_UNKNOWN_DEVICE_WA_HWID_CHK_EN(__pH2CCmd, __Value) \
+	SET_BITS_TO_LE_1BYTE(__pH2CCmd, 2, 1, __Value)
+#define SET_H2CCMD_BT_UNKNOWN_DEVICE_WA_ONE_TIME_CHK(__pH2CCmd, __Value) \
+	SET_BITS_TO_LE_1BYTE(__pH2CCmd, 3, 1, __Value)
 
 #ifdef DBG_FW_DEBUG_MSG_PKT
 #define SET_H2CCMD_FW_DBG_MSG_PKT_EN(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE(__pH2CCmd, 0, 1, __Value)/*sniffer_dbg_en*/

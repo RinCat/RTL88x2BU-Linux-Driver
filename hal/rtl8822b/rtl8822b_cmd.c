@@ -308,6 +308,20 @@ void rtl8822b_set_fw_pwrmode_inips_cmd_wowlan(PADAPTER padapter, u8 ps_mode)
 }
 #endif /* CONFIG_WOWLAN */
 
+#ifdef CONFIG_USB_CONFIG_OFFLOAD_8822B
+void rtl8822b_set_usb_config_offload(PADAPTER padapter)
+{
+	u8 h2c_data_bt_unknown[H2C_BT_UNKNOWN_DEVICE_WA_LEN] = {0};
+	s32 ret;
+
+	SET_H2CCMD_BT_UNKNOWN_DEVICE_WA_HANG_CHK_EN(h2c_data_bt_unknown, 1);
+	ret = rtw_hal_fill_h2c_cmd(padapter, H2C_BT_UNKNOWN_DEVICE_WA,
+			H2C_BT_UNKNOWN_DEVICE_WA_LEN, h2c_data_bt_unknown);
+	if (ret != _SUCCESS)
+		RTW_ERR("%s(): H2C failed\n", __func__);
+}
+#endif
+
 #ifdef CONFIG_LPS_PWR_TRACKING
 #define CLASS_FW_THERMAL_RPT	0x06
 #define CMD_ID_FW_THERMAL_RPT	0x0B

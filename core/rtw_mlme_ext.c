@@ -13983,11 +13983,12 @@ u8 disconnect_hdl(_adapter *padapter, unsigned char *pbuf)
 	}
 #endif
 
+	rtw_sta_mstatus_report(padapter);
+
 	rtw_mlmeext_disconnect(padapter);
 
 	rtw_free_uc_swdec_pending_queue(padapter);
 
-	rtw_sta_mstatus_report(padapter);
 
 	return	H2C_SUCCESS;
 }

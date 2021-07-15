@@ -224,6 +224,9 @@ struct hal_spec_t {
 
 	u8 sec_cam_ent_num;
 	u8 sec_cap;
+	u8 macid_cap;
+	u16 macid_txrpt;
+	u8 macid_txrpt_pgsz;
 
 	u8 rfpath_num_2g:4;	/* used for tx power index path */
 	u8 rfpath_num_5g:4;	/* used for tx power index path */

@@ -32,6 +32,7 @@ void rtl8822b_init_hal_spec(PADAPTER adapter)
 	hal_spec->macid_num = 128;
 	/* hal_spec->sec_cam_ent_num follow halmac setting */
 	hal_spec->sec_cap = SEC_CAP_CHK_BMC;
+	hal_spec->macid_cap = MACID_DROP;
 
 	hal_spec->rfpath_num_2g = 2;
 	hal_spec->rfpath_num_5g = 2;
@@ -70,6 +71,11 @@ void rtl8822b_init_hal_spec(PADAPTER adapter)
 		, REG_MACID_SLEEP1_8822B
 		, REG_MACID_SLEEP2_8822B
 		, REG_MACID_SLEEP3_8822B);
+	rtw_macid_ctl_init_drop_reg(adapter_to_macidctl(adapter)
+		, REG_MACID_DROP0_8822B
+		, REG_MACID_DROP1_8822B
+		, REG_MACID_DROP2_8822B
+		, REG_MACID_DROP3_8822B);
 }
 
 u32 rtl8822b_power_on(PADAPTER adapter)

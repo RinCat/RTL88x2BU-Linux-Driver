@@ -842,6 +842,7 @@ u8 rtw_get_sec_camid(_adapter *adapter, u8 max_bk_key_num, u8 *sec_key_id);
 
 struct macid_bmp;
 struct macid_ctl_t;
+bool _rtw_macid_ctl_chk_cap(_adapter *adapter, u8 cap);
 void dump_macid_map(void *sel, struct macid_bmp *map, u8 max_num);
 bool rtw_macid_is_set(struct macid_bmp *map, u8 id);
 void rtw_macid_map_clr(struct macid_bmp *map, u8 id);
@@ -861,8 +862,10 @@ void rtw_macid_ctl_set_rate_bmp0(struct macid_ctl_t *macid_ctl, u8 id, u32 bmp);
 void rtw_macid_ctl_set_rate_bmp1(struct macid_ctl_t *macid_ctl, u8 id, u32 bmp);
 #ifdef CONFIG_PROTSEL_MACSLEEP
 void rtw_macid_ctl_init_sleep_reg(struct macid_ctl_t *macid_ctl, u16 reg_ctrl, u16 reg_info);
+void rtw_macid_ctl_init_drop_reg(struct macid_ctl_t *macid_ctl, u16 reg_ctrl, u16 reg_info);
 #else
 void rtw_macid_ctl_init_sleep_reg(struct macid_ctl_t *macid_ctl, u16 m0, u16 m1, u16 m2, u16 m3);
+void rtw_macid_ctl_init_drop_reg(struct macid_ctl_t *macid_ctl, u16 m0, u16 m1, u16 m2, u16 m3);
 #endif
 void rtw_macid_ctl_init(struct macid_ctl_t *macid_ctl);
 void rtw_macid_ctl_deinit(struct macid_ctl_t *macid_ctl);

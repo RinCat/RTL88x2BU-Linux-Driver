@@ -614,11 +614,11 @@ fail:
 }
 #endif
 
-int rtw_xmit_entry(_pkt *pkt, _nic_hdl pnetdev)
+inline netdev_tx_t rtw_xmit_entry(struct sk_buff *pkt, struct net_device *pnetdev)
 {
 	_adapter *padapter = (_adapter *)rtw_netdev_priv(pnetdev);
 	struct	mlme_priv	*pmlmepriv = &(padapter->mlmepriv);
-	int ret = 0;
+	netdev_tx_t ret = 0;
 
 	if (pkt) {
 #ifdef CONFIG_CUSTOMER_ALIBABA_GENERAL

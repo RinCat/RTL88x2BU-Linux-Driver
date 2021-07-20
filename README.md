@@ -13,6 +13,7 @@ Official release note please check ReleaseNotes.pdf
 * Dlink - DWA-182
 * Edimax EW-7822ULC
 * Edimax EW-7822UTC
+* Edimax EW-7822UAD
 * NetGear A6150
 * TP-Link Archer T3U
 * TP-Link Archer T3U Plus

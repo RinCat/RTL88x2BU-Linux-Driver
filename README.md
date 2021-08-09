@@ -70,6 +70,9 @@ You can try use `modprobe 88x2bu rtw_switch_usb_mode=1` to force the adapter run
 
 Notice: If you had already loaded the moduel, use `modprobe -r 88x2bu` to unload it first.
 
+If you want to force a given mode permanently (even when switching the adapter across devices), create the file `/etc/modprobe.d/99-RTL88x2BU.conf` with the following content:
+`options 88x2bu rtw_switch_usb_mode=1`
+
 
 # Debug
 Set debug log use `echo 5 > /proc/net/rtl88x2bu/log_level` or `modprobe 88x2bu rtw_drv_log_level=5`

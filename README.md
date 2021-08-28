@@ -9,6 +9,7 @@ Official release note please check ReleaseNotes.pdf
 ## Supported Devices
 * ASUS AC1300 USB-AC55 B1
 * ASUS U2
+* ASUS USB-AC58
 * Dlink - DWA-181
 * Dlink - DWA-182
 * Edimax EW-7822ULC

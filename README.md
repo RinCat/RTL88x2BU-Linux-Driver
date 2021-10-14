@@ -21,6 +21,7 @@ Official release note please check ReleaseNotes.pdf
 * TP-Link Archer T4U V3
 * TP-Link Archer T4U PLus
 * TRENDnet TEW-808UBM
+* ZYXEL NWD6602
 
 And more.
 

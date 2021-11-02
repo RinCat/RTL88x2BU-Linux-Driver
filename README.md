@@ -1,8 +1,8 @@
-# REALTEK RTL88x2B USB Linux Driver  
-**Current Driver Version**: 5.8.7.4  
-**Support Kernel**: 2.6.24 ~ 5.14 (with unofficial patches)  
+# REALTEK RTL88x2B USB Linux Driver
+**Current Driver Version**: 5.8.7.4
+**Support Kernel**: 2.6.24 ~ 5.15 (with unofficial patches)
 
-Official release note please check ReleaseNotes.pdf  
+Official release note please check ReleaseNotes.pdf
 
 **Note:** if you believe your device is **RTL8812BU** or **RTL8822BU** but after loaded the module no NIC shows up, the device ID maybe not in the driver whitelist. In this case please submit a new issue with `lsusb` result, and your device name, brand, website, etc.
 
@@ -68,7 +68,7 @@ dkms autoinstall
 ```
 
 # USB 3.0 Support
-You can try use `modprobe 88x2bu rtw_switch_usb_mode=1` to force the adapter run under USB 3.0. But if your adapter/port/motherboard not support it, the driver will be in restart loop. Remove the parameter and reload the driver to restore. Alternatively, `modprobe 88x2bu rtw_switch_usb_mode=2` let\'s it run as USB 2 device. 
+You can try use `modprobe 88x2bu rtw_switch_usb_mode=1` to force the adapter run under USB 3.0. But if your adapter/port/motherboard not support it, the driver will be in restart loop. Remove the parameter and reload the driver to restore. Alternatively, `modprobe 88x2bu rtw_switch_usb_mode=2` let\'s it run as USB 2 device.
 
 Notice: If you had already loaded the moduel, use `modprobe -r 88x2bu` to unload it first.
 

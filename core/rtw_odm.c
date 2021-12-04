@@ -178,6 +178,11 @@ void rtw_odm_releasespinlock(_adapter *adapter,	enum rt_spinlock_type type)
 	}
 }
 
+s16 rtw_odm_get_tx_power_mbm(struct dm_struct *dm, u8 rfpath, u8 rate, u8 bw, u8 cch)
+{
+	return phy_get_txpwr_single_mbm(dm->adapter, rfpath, mgn_rate_to_rs(rate), rate, bw, cch, 0, 0, 0, NULL);
+}
+
 #ifdef CONFIG_DFS_MASTER
 inline void rtw_odm_radar_detect_reset(_adapter *adapter)
 {
@@ -198,6 +203,20 @@ inline void rtw_odm_radar_detect_enable(_adapter *adapter)
 inline BOOLEAN rtw_odm_radar_detect(_adapter *adapter)
 {
 	return phydm_radar_detect(adapter_to_phydm(adapter));
+}
+
+static enum phydm_dfs_region_domain _rtw_dfs_regd_to_phydm[] = {
+	[RTW_DFS_REGD_NONE]	= PHYDM_DFS_DOMAIN_UNKNOWN,
+	[RTW_DFS_REGD_FCC]	= PHYDM_DFS_DOMAIN_FCC,
+	[RTW_DFS_REGD_MKK]	= PHYDM_DFS_DOMAIN_MKK,
+	[RTW_DFS_REGD_ETSI]	= PHYDM_DFS_DOMAIN_ETSI,
+};
+
+#define rtw_dfs_regd_to_phydm(region) (((region) >= RTW_DFS_REGD_NUM) ? _rtw_dfs_regd_to_phydm[RTW_DFS_REGD_NONE] : _rtw_dfs_regd_to_phydm[(region)])
+
+void rtw_odm_update_dfs_region(struct dvobj_priv *dvobj)
+{
+	odm_cmn_info_init(dvobj_to_phydm(dvobj), ODM_CMNINFO_DFS_REGION_DOMAIN, rtw_dfs_regd_to_phydm(rtw_rfctl_get_dfs_domain(dvobj_to_rfctl(dvobj))));
 }
 
 inline u8 rtw_odm_radar_detect_polling_int_ms(struct dvobj_priv *dvobj)

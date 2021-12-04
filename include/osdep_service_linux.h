@@ -96,6 +96,10 @@
 #ifdef CONFIG_IOCTL_CFG80211
 	/*	#include <linux/ieee80211.h> */
 	#include <net/cfg80211.h>
+#else
+	#ifdef CONFIG_REGD_SRC_FROM_OS
+	#error "CONFIG_REGD_SRC_FROM_OS requires CONFIG_IOCTL_CFG80211"
+	#endif
 #endif /* CONFIG_IOCTL_CFG80211 */
 
 
@@ -126,11 +130,6 @@
 
 #ifdef CONFIG_USB_HCI
 	typedef struct urb   *PURB;
-	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22))
-		#ifdef CONFIG_USB_SUSPEND
-			#define CONFIG_AUTOSUSPEND	1
-		#endif
-	#endif
 #endif
 
 #if defined(CONFIG_RTW_GRO) && (!defined(CONFIG_RTW_NAPI))
@@ -222,6 +221,7 @@ typedef void *timer_hdl_context;
 #endif
 
 typedef unsigned long systime;
+typedef ktime_t sysptime;
 typedef struct tasklet_struct _tasklet;
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 22))
@@ -351,13 +351,13 @@ __inline static _list	*get_list_head(_queue	*queue)
 	return &(queue->queue);
 }
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
 static inline void timer_hdl(struct timer_list *in_timer)
 #else
 static inline void timer_hdl(unsigned long cntx)
 #endif
 {
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
 	_timer *ptimer = from_timer(ptimer, in_timer, timer);
 #else
 	_timer *ptimer = (_timer *)cntx;
@@ -370,7 +370,7 @@ __inline static void _init_timer(_timer *ptimer, _nic_hdl nic_hdl, void *pfunc, 
 	ptimer->function = pfunc;
 	ptimer->arg = cntx;
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
 	timer_setup(&ptimer->timer, timer_hdl, 0);
 #else
 	/* setup_timer(ptimer, pfunc,(u32)cntx);	 */
@@ -388,6 +388,11 @@ __inline static void _set_timer(_timer *ptimer, u32 delay_time)
 __inline static void _cancel_timer(_timer *ptimer, u8 *bcancelled)
 {
 	*bcancelled = del_timer_sync(&ptimer->timer) == 1 ? 1 : 0;
+}
+
+__inline static void _cancel_timer_async(_timer *ptimer)
+{
+	del_timer(&ptimer->timer);
 }
 
 static inline void _init_workitem(_workitem *pwork, void *pfunc, void *cntx)

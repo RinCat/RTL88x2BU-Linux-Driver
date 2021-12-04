@@ -410,11 +410,12 @@ void usb_read_port_cancel(struct intf_hdl *pintfhdl)
 	int i;
 	struct recv_buf *precvbuf;
 	_adapter	*padapter = pintfhdl->padapter;
+	struct registry_priv *regsty = adapter_to_regsty(padapter);
 	precvbuf = (struct recv_buf *)padapter->recvpriv.precv_buf;
 
 	RTW_INFO("%s\n", __func__);
 
-	for (i = 0; i < NR_RECVBUFF ; i++) {
+	for (i = 0; i < regsty->recvbuf_nr ; i++) {
 
 		if (precvbuf->purb)	 {
 			/* RTW_INFO("usb_read_port_cancel : usb_kill_urb\n"); */

@@ -198,11 +198,6 @@ static u8 rtl8822bu_ps_func(PADAPTER padapter, HAL_INTF_PS_FUNC efunc_id, u8 *va
 
 	switch (efunc_id) {
 
-#if defined(CONFIG_AUTOSUSPEND) && defined(SUPPORT_HW_RFOFF_DETECTED)
-	case HAL_USB_SELECT_SUSPEND:
-		break;
-#endif /* CONFIG_AUTOSUSPEND && SUPPORT_HW_RFOFF_DETECTED */
-
 	default:
 		break;
 	}
@@ -321,6 +316,9 @@ void rtl8822bu_set_hal_ops(PADAPTER padapter)
 
 	ops->hal_xmit = rtl8822bu_hal_xmit;
 	ops->mgnt_xmit = rtl8822bu_mgnt_xmit;
+#ifdef CONFIG_RTW_MGMT_QUEUE
+	ops->hal_mgmt_xmitframe_enqueue = rtl8822bu_hal_mgmt_xmitframe_enqueue;
+#endif
 	ops->hal_xmitframe_enqueue = rtl8822bu_hal_xmitframe_enqueue;
 
 #ifdef CONFIG_HOSTAPD_MLME

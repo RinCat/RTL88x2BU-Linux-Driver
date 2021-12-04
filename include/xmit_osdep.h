@@ -68,8 +68,7 @@ struct xmit_frame;
 struct xmit_buf;
 
 extern int _rtw_xmit_entry(_pkt *pkt, _nic_hdl pnetdev);
-extern inline netdev_tx_t rtw_xmit_entry(struct sk_buff *pkt,
-					 struct net_device *pnetdev);
+extern int rtw_xmit_entry(_pkt *pkt, _nic_hdl pnetdev);
 
 #endif /* PLATFORM_LINUX */
 
@@ -88,6 +87,8 @@ extern sint rtw_endofpktfile(struct pkt_file *pfile);
 extern void rtw_os_pkt_complete(_adapter *padapter, _pkt *pkt);
 extern void rtw_os_xmit_complete(_adapter *padapter, struct xmit_frame *pxframe);
 
+void rtw_os_check_wakup_queue(_adapter *adapter, u16 os_qid);
+bool rtw_os_check_stop_queue(_adapter *adapter, u16 os_qid);
 void rtw_os_wake_queue_at_free_stainfo(_adapter *padapter, int *qcnt_freed);
 
 void dump_os_queue(void *sel, _adapter *padapter);

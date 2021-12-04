@@ -628,7 +628,7 @@ static inline u8 is_valid_id_status(enum halmac_feature_id id, enum halmac_cmd_p
 		if (status == HALMAC_CMD_PROCESS_RCVD)
 			return _FALSE;
 		if ((status != HALMAC_CMD_PROCESS_DONE)
-		    || (status != HALMAC_CMD_PROCESS_ERROR))
+		    && (status != HALMAC_CMD_PROCESS_ERROR))
 			RTW_WARN("%s: %s unexpected status(0x%x)!\n",
 				 __FUNCTION__, RTW_HALMAC_FEATURE_NAME[id],
 				 status);

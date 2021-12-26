@@ -7,21 +7,71 @@ Official release note please check ReleaseNotes.pdf
 **Note:** if you believe your device is **RTL8812BU** or **RTL8822BU** but after loaded the module no NIC shows up, the device ID maybe not in the driver whitelist. In this case please submit a new issue with `lsusb` result, and your device name, brand, website, etc.
 
 ## Supported Devices
+<details>
+  <summary>
+    ASUS
+  </summary>
+  
 * ASUS AC1300 USB-AC55 B1
 * ASUS U2
+* ASUS USB-AC53 Nano
 * ASUS USB-AC58
+</details>
+
+<details>
+  <summary>
+    Dlink
+  </summary>
+  
 * Dlink - DWA-181
 * Dlink - DWA-182
+</details>
+
+<details>
+  <summary>
+    Edimax
+  </summary>
+  
 * Edimax EW-7822ULC
 * Edimax EW-7822UTC
 * Edimax EW-7822UAD
+</details>
+
+<details>
+  <summary>
+    NetGear
+  </summary>
+  
 * NetGear A6150
+</details>
+
+<details>
+  <summary>
+    TP-Link
+  </summary>
+  
 * TP-Link Archer T3U
 * TP-Link Archer T3U Plus
 * TP-Link Archer T4U V3
 * TP-Link Archer T4U PLus
+</details>
+
+<details>
+  <summary>
+    TRENDnet
+  </summary>
+  
 * TRENDnet TEW-808UBM
+</details>
+  
+<details>
+  <summary>
+    ZYXEL
+  </summary>
+  
 * ZYXEL NWD6602
+</details>
+  
 
 And more.
 

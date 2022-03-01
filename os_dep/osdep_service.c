@@ -17,6 +17,11 @@
 #define _OSDEP_SERVICE_C_
 
 #include <drv_types.h>
+#include <linux/kthread.h>
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
+#define kthread_complete_and_exit(comp, code) complete_and_exit(comp, code)
+#endif
 
 #define RT_TAG	'1178'
 
@@ -1309,7 +1314,7 @@ u32 _rtw_down_sema(_sema *sema)
 inline void thread_exit(_completion *comp)
 {
 #ifdef PLATFORM_LINUX
-	complete_and_exit(comp, 0);
+	kthread_complete_and_exit(comp, 0);
 #endif
 
 #ifdef PLATFORM_FREEBSD

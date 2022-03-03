@@ -2954,9 +2954,9 @@ exit:
 	return annc_cnt;
 }
 
-static void mpath_tx_tasklet_hdl(void *priv)
+static void mpath_tx_tasklet_hdl(unsigned long data)
 {
-	_adapter *adapter = (_adapter *)priv;
+	_adapter *adapter = (_adapter *)data;
 	struct rtw_mesh_info *minfo = &adapter->mesh_info;
 	struct xmit_frame *xframe;
 	_list *list, *head;
@@ -3376,10 +3376,9 @@ void rtw_mesh_init_mesh_info(_adapter *adapter)
 	rtw_mesh_pathtbl_init(adapter);
 
 	_rtw_init_queue(&minfo->mpath_tx_queue);
-	tasklet_init(&minfo->mpath_tx_tasklet
-		, (void(*)(unsigned long))mpath_tx_tasklet_hdl
-		, (unsigned long)adapter);
-
+	tasklet_init(&minfo->mpath_tx_tasklet,
+		mpath_tx_tasklet_hdl,
+		(unsigned long)adapter);
 	rtw_mrc_init(adapter);
 
 	_rtw_init_listhead(&minfo->preq_queue.list);

@@ -847,10 +847,10 @@ static s32 rtl8822bu_xmitframe_complete(PADAPTER padapter, struct xmit_priv *pxm
 }
 #endif
 
-static void rtl8822bu_xmit_tasklet(void *priv)
+static void rtl8822bu_xmit_tasklet(unsigned long data)
 {
 	int ret = _FALSE;
-	_adapter *padapter = (_adapter *)priv;
+	_adapter *padapter = (_adapter *)data;
 	struct xmit_priv *pxmitpriv = &padapter->xmitpriv;
 
 	while (1) {
@@ -878,7 +878,7 @@ s32	rtl8822bu_init_xmit_priv(PADAPTER padapter)
 
 #ifdef PLATFORM_LINUX
 	tasklet_init(&pxmitpriv->xmit_tasklet,
-		     (void(*)(unsigned long))rtl8822bu_xmit_tasklet,
+		     rtl8822bu_xmit_tasklet,
 		     (unsigned long)padapter);
 #endif
 #ifdef CONFIG_TX_EARLY_MODE

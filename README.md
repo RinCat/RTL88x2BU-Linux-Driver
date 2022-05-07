@@ -25,6 +25,7 @@ Official release note please check ReleaseNotes.pdf
   
 * Dlink - DWA-181
 * Dlink - DWA-182
+* Dlink - DWA-183 D Version
 </details>
 
 <details>

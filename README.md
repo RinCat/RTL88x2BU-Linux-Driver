@@ -8,6 +8,22 @@ Official release note please check ReleaseNotes.pdf
 
 **Note:** if you believe your device is **RTL8812BU** or **RTL8822BU** but after loaded the module no NIC shows up, the device ID maybe not in the driver whitelist. In this case please submit a new issue with `lsusb` result, and your device name, brand, website, etc.
 
+## Linux 5.18+ and RTW88 Driver
+Starting from Linux 5.18, some distributions have added experimental RTW88 USB support (include RTW88x2BU support).
+It is not yet stable but if it works well on your system, then you no longer need this driver.
+But if it doesn't work or is unstable, you need to manually blacklist it because it has a higher loading priority than this external drivers.
+
+Check the currently loaded module using `lsmod`. If you see `rtw88_core`, `rtw88_usb`, or any name beginning with `rtw88_` then you are using the RTW88 driver.
+If you see `88x2bu` then you are using this RTW88x2BU driver.
+
+To blacklist RTW88 8822bu USB driver, run the following command:
+
+```
+echo "blacklist rtw88_8822bu" > /etc/modprobe.d/rtw8822bu.conf
+```
+
+And reboot your system.
+
 ## Supported Devices
 <details>
   <summary>

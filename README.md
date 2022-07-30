@@ -45,6 +45,7 @@ And reboot your system.
 * Dlink - DWA-182
 * Dlink - DWA-183 D Version
 * Dlink - DWA-185
+* Dlink - DWA-T185
 </details>
 
 <details>

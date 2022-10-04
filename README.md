@@ -1,6 +1,6 @@
 # REALTEK RTL88x2B USB Linux Driver
 **Current Driver Version**: 5.13.1
-**Support Kernel**: 2.6.24 ~ 5.19 (with unofficial patches)
+**Support Kernel**: 2.6.24 ~ 6.0 (with unofficial patches)
 
 Linux in-tree rtw8822bu driver is working in process, check [this](https://lore.kernel.org/lkml/20220518082318.3898514-1-s.hauer@pengutronix.de/) patchset.
 
@@ -29,7 +29,7 @@ And reboot your system.
   <summary>
     ASUS
   </summary>
-  
+
 * ASUS AC1300 USB-AC55 B1
 * ASUS U2
 * ASUS USB-AC53 Nano
@@ -40,7 +40,7 @@ And reboot your system.
   <summary>
     Dlink
   </summary>
-  
+
 * Dlink - DWA-181
 * Dlink - DWA-182
 * Dlink - DWA-183 D Version
@@ -52,7 +52,7 @@ And reboot your system.
   <summary>
     Edimax
   </summary>
-  
+
 * Edimax EW-7822ULC
 * Edimax EW-7822UTC
 * Edimax EW-7822UAD
@@ -62,7 +62,7 @@ And reboot your system.
   <summary>
     NetGear
   </summary>
-  
+
 * NetGear A6150
 </details>
 
@@ -70,7 +70,7 @@ And reboot your system.
   <summary>
     TP-Link
   </summary>
-  
+
 * TP-Link Archer T3U
 * TP-Link Archer T3U Plus
 * TP-Link Archer T4U V3
@@ -81,18 +81,18 @@ And reboot your system.
   <summary>
     TRENDnet
   </summary>
-  
+
 * TRENDnet TEW-808UBM
 </details>
-  
+
 <details>
   <summary>
     ZYXEL
   </summary>
-  
+
 * ZYXEL NWD6602
 </details>
-  
+
 
 And more.
 

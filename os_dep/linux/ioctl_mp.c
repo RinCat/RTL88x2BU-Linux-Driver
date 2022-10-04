@@ -1844,7 +1844,7 @@ int rtw_mp_get_tsside(struct net_device *dev,
 
 	u8 legal_param_num = 1;
 	int param_num;
-	char pout_str_buf[7];
+	char pout_str_buf[8];
 	u8 signed_flag = 0;
 	int integer_num;
 	u32 decimal_num;

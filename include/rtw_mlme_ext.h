@@ -274,7 +274,7 @@ enum TDLS_option {
 #if defined(CONFIG_ATMEL_RC_PATCH)
 	#define RTW_SCAN_NUM_OF_CH 2
 	#define RTW_BACK_OP_CH_MS 200
-#elseif defined(CONFIG_CUSTOMER_EZVIZ_CHIME2)
+#elif defined(CONFIG_CUSTOMER_EZVIZ_CHIME2)
 	#define RTW_SCAN_NUM_OF_CH 1
 	#define RTW_BACK_OP_CH_MS 200
 #else

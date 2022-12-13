@@ -254,6 +254,7 @@ static struct usb_device_id rtw_usb_id_tbl[] = {
 	{USB_DEVICE_AND_INTERFACE_INFO(0x2001, 0x3322, 0xff, 0xff, 0xff), .driver_info = RTL8822B}, /* Dlink - DWA-T185 */
 	{USB_DEVICE_AND_INTERFACE_INFO(0x0846, 0x9055, 0xff, 0xff, 0xff), .driver_info = RTL8822B}, /* NetGear A6150 */
 	{USB_DEVICE_AND_INTERFACE_INFO(0x2357, 0x012D, 0xff, 0xff, 0xff), .driver_info = RTL8822B}, /* TP-Link Archer T3U */
+	{USB_DEVICE_AND_INTERFACE_INFO(0x2357, 0x012E, 0xff, 0xff, 0xff), .driver_info = RTL8822B}, /* TP-Link Archer T3U Nano */
 	{USB_DEVICE_AND_INTERFACE_INFO(0x2357, 0x0138, 0xff, 0xff, 0xff), .driver_info = RTL8822B}, /* TP-Link Archer T3U Plus */
 	{USB_DEVICE_AND_INTERFACE_INFO(0x2357, 0x0115, 0xff, 0xff, 0xff), .driver_info = RTL8822B}, /* TP-Link Archer T4U V3 */
 	{USB_DEVICE_AND_INTERFACE_INFO(0x20F4, 0x808A, 0xff, 0xff, 0xff), .driver_info = RTL8822B}, /* TRENDnet TEW-808UBM */

@@ -22,6 +22,12 @@ MODULE_DESCRIPTION("Realtek Wireless Lan Driver");
 MODULE_AUTHOR("Realtek Semiconductor Corp.");
 MODULE_VERSION(DRIVERVERSION);
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+	#define STRSCPY strscpy
+#else
+	#define STRSCPY strlcpy
+#endif
+
 /* module param defaults */
 int rtw_chip_version = 0x00;
 int rtw_rfintfs = HWPI;
@@ -2040,13 +2046,13 @@ static void rtw_ethtool_get_drvinfo(struct net_device *dev, struct ethtool_drvin
 
 	wdev = dev->ieee80211_ptr;
 	if (wdev) {
-		strlcpy(info->driver, wiphy_dev(wdev->wiphy)->driver->name,
+		STRSCPY(info->driver, wiphy_dev(wdev->wiphy)->driver->name,
 			sizeof(info->driver));
 	} else {
-		strlcpy(info->driver, "N/A", sizeof(info->driver));
+		STRSCPY(info->driver, "N/A", sizeof(info->driver));
 	}
 
-	strlcpy(info->version, DRIVERVERSION, sizeof(info->version));
+	STRSCPY(info->version, DRIVERVERSION, sizeof(info->version));
 
 	padapter = (_adapter *)rtw_netdev_priv(dev);
 	if (padapter) {
@@ -2057,10 +2063,10 @@ static void rtw_ethtool_get_drvinfo(struct net_device *dev, struct ethtool_drvin
 		scnprintf(info->fw_version, sizeof(info->fw_version), "%d.%d",
 			  hal_data->firmware_version, hal_data->firmware_sub_version);
 	} else {
-		strlcpy(info->fw_version, "N/A", sizeof(info->fw_version));
+		STRSCPY(info->fw_version, "N/A", sizeof(info->fw_version));
 	}
 
-	strlcpy(info->bus_info, dev_name(wiphy_dev(wdev->wiphy)),
+	STRSCPY(info->bus_info, dev_name(wiphy_dev(wdev->wiphy)),
 		sizeof(info->bus_info));
 }
 

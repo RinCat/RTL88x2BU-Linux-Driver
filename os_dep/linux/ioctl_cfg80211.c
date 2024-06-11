@@ -5060,7 +5060,11 @@ static int rtw_cfg80211_add_monitor_if(_adapter *padapter, char *name, struct ne
 	mon_wdev->iftype = NL80211_IFTYPE_MONITOR;
 	mon_ndev->ieee80211_ptr = mon_wdev;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	ret = cfg80211_register_netdevice(mon_ndev);
+#else
 	ret = register_netdevice(mon_ndev);
+#endif
 	if (ret)
 		goto out;
 
@@ -6762,7 +6766,11 @@ static int cfg80211_rtw_del_virtual_intf(struct wiphy *wiphy,
 		pwdev_priv = adapter_wdev_data(adapter);
 
 		if (ndev == pwdev_priv->pmon_ndev) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+			cfg80211_unregister_netdevice(ndev);
+#else
 			unregister_netdevice(ndev);
+#endif
 			pwdev_priv->pmon_ndev = NULL;
 			pwdev_priv->ifname_mon[0] = '\0';
 			RTW_INFO(FUNC_NDEV_FMT" remove monitor ndev\n", FUNC_NDEV_ARG(ndev));

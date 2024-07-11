@@ -205,6 +205,9 @@ static struct ieee80211_channel rtw_5ghz_a_channels[MAX_CHANNEL_NUM_5G] = {
 	CHAN5G(165, 0),	CHAN5G(169, 0),	CHAN5G(173, 0),	CHAN5G(177, 0),
 };
 
+
+static int rtw_cfg80211_set_assocresp_ies(struct net_device *net, const u8 *buf, int len);
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
 static u8 rtw_chbw_to_cfg80211_chan_def(struct wiphy *wiphy, struct cfg80211_chan_def *chdef, u8 ch, u8 bw, u8 offset, u8 ht)
 {
@@ -3042,8 +3045,8 @@ static int rtw_cfg80211_set_probe_req_wpsp2pie(_adapter *padapter, char *buf, in
 			_rtw_memcpy(pmlmepriv->p2p_probe_req_ie, p2p_ie, p2p_ielen);
 			pmlmepriv->p2p_probe_req_ie_len = p2p_ielen;
 
-			if (rtw_get_p2p_attr_content(p2p_ie, p2p_ielen, P2P_ATTR_LISTEN_CH, (u8 *)listen_ch_attr, (uint *) &attr_contentlen)
-				&& attr_contentlen == 5) {
+			attr_contentlen = sizeof(listen_ch_attr);
+			if (rtw_get_p2p_attr_content(p2p_ie, p2p_ielen, P2P_ATTR_LISTEN_CH, (u8 *)listen_ch_attr, (uint *) &attr_contentlen)) {
 				if (wdinfo->listen_channel !=  listen_ch_attr[4]) {
 					RTW_INFO(FUNC_ADPT_FMT" listen channel - country:%c%c%c, class:%u, ch:%u\n",
 						FUNC_ADPT_ARG(padapter), listen_ch_attr[0], listen_ch_attr[1], listen_ch_attr[2],
@@ -3829,7 +3832,8 @@ static int rtw_cfg80211_set_wpa_ie(_adapter *padapter, u8 *pie, size_t ielen)
 	int ret = 0;
 	int wpa_ielen = 0;
 	int wpa2_ielen = 0;
-	u8 *pwpa, *pwpa2;
+	int rsnx_ielen = 0;
+	u8 *pwpa, *pwpa2, *prsnx;
 	u8 null_addr[] = {0, 0, 0, 0, 0, 0};
 
 	if (pie == NULL || !ielen) {
@@ -3880,7 +3884,26 @@ static int rtw_cfg80211_set_wpa_ie(_adapter *padapter, u8 *pie, size_t ielen)
 
 			RTW_INFO("got wpa2_ie, wpa2_ielen:%u\n", wpa2_ielen);
 		}
-	}
+
+		prsnx = rtw_get_ie(buf, WLAN_EID_RSNX, &rsnx_ielen, ielen);
+		if (prsnx && (rsnx_ielen > 0)) {
+			if ((rsnx_ielen + 2) <= MAX_RSNX_IE_LEN) {
+				_rtw_memset(padapter->securitypriv.rsnx_ie, 0,
+					MAX_RSNX_IE_LEN);
+				padapter->securitypriv.rsnx_ie_len = \
+					(rsnx_ielen + 2);
+				_rtw_memcpy(padapter->securitypriv.rsnx_ie,
+					prsnx,
+				padapter->securitypriv.rsnx_ie_len);
+			} else
+				RTW_ERR("%s:no more buf to save RSNX Cap!\n",
+					__func__);
+		} else {
+			_rtw_memset(padapter->securitypriv.rsnx_ie, 0,
+					MAX_RSNX_IE_LEN);
+			padapter->securitypriv.rsnx_ie_len = 0;
+		}
+	} /* end of (pwpa2 && wpa2_ielen > 0) */
 
 	if (group_cipher == 0)
 		group_cipher = WPA_CIPHER_NONE;
@@ -5371,6 +5394,13 @@ static int cfg80211_rtw_start_ap(struct wiphy *wiphy, struct net_device *ndev,
 	ret = rtw_add_beacon(adapter, settings->beacon.head, settings->beacon.head_len,
 		settings->beacon.tail, settings->beacon.tail_len);
 
+	if (settings->beacon.assocresp_ies &&
+		settings->beacon.assocresp_ies_len > 0) {
+		rtw_cfg80211_set_assocresp_ies(ndev,
+			settings->beacon.assocresp_ies,
+			settings->beacon.assocresp_ies_len);
+	}
+
 	if (settings->ssid && settings->ssid_len) {
 		WLAN_BSSID_EX *pbss_network = &adapter->mlmepriv.cur_network.network;
 		WLAN_BSSID_EX *pbss_network_ext = &adapter->mlmeextpriv.mlmext_info.network;
@@ -5390,6 +5420,37 @@ static int cfg80211_rtw_start_ap(struct wiphy *wiphy, struct net_device *ndev,
 				pbss_network->Ssid.Ssid, pbss_network->Ssid.SsidLength,
 				pbss_network_ext->Ssid.Ssid, pbss_network_ext->Ssid.SsidLength);
 	}
+
+exit:
+	return ret;
+}
+
+static int rtw_cfg80211_set_assocresp_ies(struct net_device *net, const u8 *buf, int len)
+{
+	int ret = 0;
+	_adapter *padapter = (_adapter *)rtw_netdev_priv(net);
+	struct mlme_priv *pmlmepriv = &(padapter->mlmepriv);
+
+	RTW_INFO("%s, ielen=%d\n", __func__, len);
+
+	if (len <= 0)
+		goto exit;
+
+	if (pmlmepriv->assoc_rsp) {
+		u32 free_len = pmlmepriv->assoc_rsp_len;
+
+		pmlmepriv->assoc_rsp_len = 0;
+		rtw_mfree(pmlmepriv->assoc_rsp, free_len);
+		pmlmepriv->assoc_rsp = NULL;
+	}
+
+	pmlmepriv->assoc_rsp = rtw_malloc(len);
+	if (pmlmepriv->assoc_rsp == NULL) {
+		RTW_INFO("%s()-%d: rtw_malloc() ERROR!\n", __FUNCTION__, __LINE__);
+		return -EINVAL;
+	}
+	_rtw_memcpy(pmlmepriv->assoc_rsp, buf, len);
+	pmlmepriv->assoc_rsp_len = len;
 
 exit:
 	return ret;
@@ -6464,6 +6525,7 @@ static int rtw_cfg80211_set_probe_resp_wpsp2pie(struct net_device *net, char *bu
 			#endif
 
 			/* Check P2P Capability ATTR */
+			attr_contentlen = sizeof(cap_attr);
 			if (rtw_get_p2p_attr_content(p2p_ie, p2p_ielen, P2P_ATTR_CAPABILITY, (u8 *)&cap_attr, (uint *) &attr_contentlen)) {
 				u8 grp_cap = 0;
 				/* RTW_INFO( "[%s] Got P2P Capability Attr!!\n", __FUNCTION__ ); */
@@ -7250,6 +7312,7 @@ void rtw_cfg80211_issue_p2p_provision_request(_adapter *padapter, const u8 *buf,
 	pwdinfo->tx_prov_disc_info.wps_config_method_request = WPS_CM_PUSH_BUTTON;
 
 	rtw_get_wps_ie(frame_body + _PUBLIC_ACTION_IE_OFFSET_, frame_body_len - _PUBLIC_ACTION_IE_OFFSET_, wpsie, &wpsielen);
+	wps_devicepassword_id_len = sizeof(wps_devicepassword_id);
 	rtw_get_wps_attr_content(wpsie, wpsielen, WPS_ATTR_DEVICE_PWID, (u8 *) &wps_devicepassword_id, &wps_devicepassword_id_len);
 	wps_devicepassword_id = be16_to_cpu(wps_devicepassword_id);
 
@@ -7277,7 +7340,9 @@ void rtw_cfg80211_issue_p2p_provision_request(_adapter *padapter, const u8 *buf,
 
 	if (rtw_get_p2p_ie(frame_body + _PUBLIC_ACTION_IE_OFFSET_, frame_body_len - _PUBLIC_ACTION_IE_OFFSET_, p2p_ie, &p2p_ielen)) {
 
+		devinfo_contentlen = sizeof(devinfo_content);
 		rtw_get_p2p_attr_content(p2p_ie, p2p_ielen, P2P_ATTR_DEVICE_INFO, devinfo_content, &devinfo_contentlen);
+		capability_len = sizeof(capability);
 		rtw_get_p2p_attr_content(p2p_ie, p2p_ielen, P2P_ATTR_CAPABILITY, (u8 *)&capability, &capability_len);
 
 	}

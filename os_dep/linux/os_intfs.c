@@ -433,17 +433,11 @@ int rtw_hwpwrp_detect = 1;
 int rtw_hwpwrp_detect = 0; /* HW power  ping detect 0:disable , 1:enable */
 #endif
 
-
-/*
-Causes excessive rescanning by nature of WPS, the "Push Button Configuration"
-	being something initialized on the access point by button due to the 
-	traditionally non-graphical nature of routers. This should only be enabled
-	during those events, otherwise the radio(s) will have to drop beam forming
-	capabilities to do a general scan for an access point emitting the unsecured
-	connection information.
-*/
+#ifdef CONFIG_USB_HCI
+int rtw_hw_wps_pbc = 1;
+#else
 int rtw_hw_wps_pbc = 0;
-
+#endif
 
 #ifdef CONFIG_80211D
 int rtw_80211d = 0;

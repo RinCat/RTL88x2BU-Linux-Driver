@@ -60,6 +60,15 @@ And reboot your system.
 
 <details>
   <summary>
+    Mercusys
+  </summary>
+
+* Mercusys MA30N
+* Mercusys MA30H V2
+</details>
+
+<details>
+  <summary>
     NetGear
   </summary>
 

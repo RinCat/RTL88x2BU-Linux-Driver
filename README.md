@@ -140,12 +140,24 @@ sudo make install
 sudo make uninstall
 ```
 
-## Manual DKMS installation
+## Using DKMS (Dynamic Kernel Module Support)
+
+Allows smooth integration with kernel updates
+
+### Initial DKMS installation
 ```
 git clone "https://github.com/RinCat/RTL88x2BU-Linux-Driver.git" /usr/src/rtl88x2bu-git
 sed -i 's/PACKAGE_VERSION="@PKGVER@"/PACKAGE_VERSION="git"/g' /usr/src/rtl88x2bu-git/dkms.conf
 dkms add -m rtl88x2bu -v git
 dkms autoinstall
+```
+### Upgrading the driver, when already under DKMS
+```
+cd  /usr/src/rtl88x2bu-git
+git fetch
+git rebase origin/master --autostash
+dkms build rtl88x2bu/git --force
+dkms install rtl88x2bu/git --force
 ```
 
 # USB 3.0 Support

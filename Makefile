@@ -2480,6 +2480,19 @@ uninstall:
 	rm -f $(MODDESTDIR)/$(MODULE_NAME).ko
 	/sbin/depmod -a ${KVER}
 
+DRIVER_VERSION = $(shell grep "\#define DRIVERVERSION" include/rtw_version.h | awk '{print $$3}' | tr -d v\")
+
+dkms_install:
+        @mkdir -vp /usr/src/rtl88x2bu-$(DRIVER_VERSION)
+        cp -r * /usr/src/rtl88x2bu-$(DRIVER_VERSION)
+        + dkms build -m rtl88x2bu -v $(DRIVER_VERSION)
+        dkms install -m rtl88x2bu -v $(DRIVER_VERSION)
+        dkms status -m rtl88x2bu
+
+dkms_remove:
+        dkms remove rtl88x2bu/$(DRIVER_VERSION) --all
+        rm -rf /usr/src/rtl88x2bu-$(DRIVER_VERSION)
+
 backup_rtlwifi:
 	@echo "Making backup rtlwifi drivers"
 ifneq (,$(wildcard $(STAGINGMODDIR)/rtl*))

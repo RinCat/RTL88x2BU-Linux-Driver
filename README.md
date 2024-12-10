@@ -115,7 +115,7 @@ And more.
 
 ## Manual installation
 ### Clean
-* Make sure you cleaned old build files before builds new one
+* Make sure you clean old build files before building new ones
 ```
 make clean
 ```
@@ -142,7 +142,7 @@ sudo make uninstall
 
 ## Using DKMS (Dynamic Kernel Module Support)
 
-Allows smooth integration with kernel updates
+Allows smooth integration with kernel updates.
 
 ### Initial DKMS installation
 ```
@@ -161,16 +161,16 @@ dkms install rtl88x2bu/git --force
 ```
 
 # USB 3.0 Support
-You can try use `modprobe 88x2bu rtw_switch_usb_mode=1` to force the adapter run under USB 3.0. But if your adapter/port/motherboard not support it, the driver will be in restart loop. Remove the parameter and reload the driver to restore. Alternatively, `modprobe 88x2bu rtw_switch_usb_mode=2` let\'s it run as USB 2 device.
+You can try using `modprobe 88x2bu rtw_switch_usb_mode=1` to force the adapter to run under USB 3.0. But if your adapter/port/motherboard does not support it, the driver will be stuck in a restart loop. Remove the parameter and reload the driver to restore. Alternatively, `modprobe 88x2bu rtw_switch_usb_mode=2` runs it as a USB 2 device.
 
-Notice: If you had already loaded the moduel, use `modprobe -r 88x2bu` to unload it first.
+Notice: If you had already loaded the module, use `modprobe -r 88x2bu` to unload it first.
 
 If you want to force a given mode permanently (even when switching the adapter across devices), create the file `/etc/modprobe.d/99-RTL88x2BU.conf` with the following content:
 `options 88x2bu rtw_switch_usb_mode=1`
 
 
 # Debug
-Set debug log use `echo 5 > /proc/net/rtl88x2bu/log_level` or `modprobe 88x2bu rtw_drv_log_level=5`
+To set debug log use `echo 5 > /proc/net/rtl88x2bu/log_level` or `modprobe 88x2bu rtw_drv_log_level=5`
 
 # Distribution
 * Archlinux AUR https://aur.archlinux.org/packages/rtl88x2bu-dkms-git/

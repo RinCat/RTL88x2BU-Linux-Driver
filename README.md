@@ -2,27 +2,27 @@
 **Current Driver Version**: 5.13.1-30
 **Support Kernel**: 2.6.24 ~ 6.14 (with unofficial patches)
 
-Linux in-tree rtw8822bu driver is working in process, check [this](https://lore.kernel.org/lkml/20220518082318.3898514-1-s.hauer@pengutronix.de/) patchset.
+Linux in-tree rtw8822bu driver is a work in progress. Check [this](https://lore.kernel.org/lkml/20220518082318.3898514-1-s.hauer@pengutronix.de/) patchset.
 
-Official release note please check ReleaseNotes.pdf
+For official release notes please check ReleaseNotes.pdf.
 
-**Note:** if you believe your device is **RTL8812BU** or **RTL8822BU** but after loaded the module no NIC shows up, the device ID maybe not in the driver whitelist. In this case please submit a new issue with `lsusb` result, and your device name, brand, website, etc.
+**Note:** if you believe your device is **RTL8812BU** or **RTL8822BU** but after loading the module no NIC shows up, the device ID maybe not be in the driver whitelist. In this case, please submit a new issue with `lsusb` result, and your device name, brand, website, etc.
 
 ## Linux 5.18+ and RTW88 Driver
 Starting from Linux 5.18, some distributions have added experimental RTW88 USB support (include RTW88x2BU support).
 It is not yet stable but if it works well on your system, then you no longer need this driver.
-But if it doesn't work or is unstable, you need to manually blacklist it because it has a higher loading priority than this external drivers.
+If it doesn't, then you need to manually blacklist it because it has a higher loading priority than this external drivers.
 
-Check the currently loaded module using `lsmod`. If you see `rtw88_core`, `rtw88_usb`, or any name beginning with `rtw88_` then you are using the RTW88 driver.
+Check the currently loaded modules using `lsmod`. If you see `rtw88_core`, `rtw88_usb`, or any name beginning with `rtw88_` then you are using the RTW88 driver.
 If you see `88x2bu` then you are using this RTW88x2BU driver.
 
-To blacklist RTW88 8822bu USB driver, run the following command:
+To blacklist RTW88 8822bu USB driver run:
 
 ```
 echo "blacklist rtw88_8822bu" > /etc/modprobe.d/rtw8822bu.conf
 ```
 
-And reboot your system.
+...and reboot your system.
 
 ## Supported Devices
 <details>
@@ -115,7 +115,7 @@ And more.
 
 ## Manual installation
 ### Clean
-* Make sure you cleaned old build files before builds new one
+* Make sure you clean old build files before building new ones
 ```
 make clean
 ```
@@ -142,7 +142,7 @@ sudo make uninstall
 
 ## Using DKMS (Dynamic Kernel Module Support)
 
-Allows smooth integration with kernel updates
+Allows smooth integration with kernel updates.
 
 ### Initial DKMS installation
 ```
@@ -161,16 +161,16 @@ dkms install rtl88x2bu/git --force
 ```
 
 # USB 3.0 Support
-You can try use `modprobe 88x2bu rtw_switch_usb_mode=1` to force the adapter run under USB 3.0. But if your adapter/port/motherboard not support it, the driver will be in restart loop. Remove the parameter and reload the driver to restore. Alternatively, `modprobe 88x2bu rtw_switch_usb_mode=2` let\'s it run as USB 2 device.
+You can try using `modprobe 88x2bu rtw_switch_usb_mode=1` to force the adapter to run under USB 3.0. But if your adapter/port/motherboard does not support it, the driver will be stuck in a restart loop. Remove the parameter and reload the driver to restore. Alternatively, `modprobe 88x2bu rtw_switch_usb_mode=2` runs it as a USB 2 device.
 
-Notice: If you had already loaded the moduel, use `modprobe -r 88x2bu` to unload it first.
+Notice: If you had already loaded the module, use `modprobe -r 88x2bu` to unload it first.
 
 If you want to force a given mode permanently (even when switching the adapter across devices), create the file `/etc/modprobe.d/99-RTL88x2BU.conf` with the following content:
 `options 88x2bu rtw_switch_usb_mode=1`
 
 
 # Debug
-Set debug log use `echo 5 > /proc/net/rtl88x2bu/log_level` or `modprobe 88x2bu rtw_drv_log_level=5`
+To set debug log use `echo 5 > /proc/net/rtl88x2bu/log_level` or `modprobe 88x2bu rtw_drv_log_level=5`
 
 # Distribution
 * Archlinux AUR https://aur.archlinux.org/packages/rtl88x2bu-dkms-git/

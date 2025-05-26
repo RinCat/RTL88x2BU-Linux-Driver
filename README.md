@@ -4,7 +4,7 @@
 
 Linux in-tree rtw8822bu driver is a work in progress. Check [this](https://lore.kernel.org/lkml/20220518082318.3898514-1-s.hauer@pengutronix.de/) patchset.
 
-For official release note please check ReleaseNotes.pdf.
+For official release notes please check ReleaseNotes.pdf.
 
 **Note:** if you believe your device is **RTL8812BU** or **RTL8822BU** but after loading the module no NIC shows up, the device ID maybe not be in the driver whitelist. In this case, please submit a new issue with `lsusb` result, and your device name, brand, website, etc.
 

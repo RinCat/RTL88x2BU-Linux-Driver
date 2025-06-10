@@ -1,12 +1,14 @@
 # REALTEK RTL88x2B USB Linux Driver
 **Current Driver Version**: 5.13.1-30
-**Support Kernel**: 2.6.24 ~ 6.14 (with unofficial patches)
+**Support Kernel**: 2.6.24 ~ 6.15 (with unofficial patches)
 
 Linux in-tree rtw8822bu driver is a work in progress. Check [this](https://lore.kernel.org/lkml/20220518082318.3898514-1-s.hauer@pengutronix.de/) patchset.
 
 For official release notes please check ReleaseNotes.pdf.
 
 **Note:** if you believe your device is **RTL8812BU** or **RTL8822BU** but after loading the module no NIC shows up, the device ID maybe not be in the driver whitelist. In this case, please submit a new issue with `lsusb` result, and your device name, brand, website, etc.
+
+This driver does *NOT* support newer Realtek 802.11ax (Wi-Fi 6) chipsets such as RTL8852BU.
 
 ## Linux 5.18+ and RTW88 Driver
 Starting from Linux 5.18, some distributions have added experimental RTW88 USB support (include RTW88x2BU support).

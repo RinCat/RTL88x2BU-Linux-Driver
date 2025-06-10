@@ -725,11 +725,23 @@ void odm_initialize_timer(struct dm_struct *dm, struct phydm_timer_list *timer,
 void odm_cancel_timer(struct dm_struct *dm, struct phydm_timer_list *timer)
 {
 #if (DM_ODM_SUPPORT_TYPE & ODM_AP)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0))
+	timer_delete(timer);
+#else
 	del_timer(timer);
+#endif
 #elif (DM_ODM_SUPPORT_TYPE & ODM_CE) && defined(DM_ODM_CE_MAC80211)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0))
+	timer_delete(timer);
+#else
 	del_timer(timer);
+#endif
 #elif (DM_ODM_SUPPORT_TYPE & ODM_CE) && defined(DM_ODM_CE_MAC80211_V2)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0))
+	timer_delete(&timer->timer);
+#else
 	del_timer(&timer->timer);
+#endif
 #elif (DM_ODM_SUPPORT_TYPE & ODM_CE)
 	_cancel_timer_ex(timer);
 #elif (DM_ODM_SUPPORT_TYPE & ODM_WIN)

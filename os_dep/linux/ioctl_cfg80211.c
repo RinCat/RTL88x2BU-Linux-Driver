@@ -902,8 +902,13 @@ struct cfg80211_bss *rtw_cfg80211_inform_bss(_adapter *padapter, struct wlan_net
 	#endif
 
 #if 1
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
 	bss = cfg80211_inform_bss_frame(wiphy, notify_channel, (struct ieee80211_mgmt *)pbuf,
 					len, notify_signal, GFP_ATOMIC);
+#else
+	bss = cfg80211_inform_bss_frame(wiphy, notify_channel, (struct ieee80211_mgmt *)pbuf,
+					len, notify_signal);
+#endif
 #else
 
 	bss = cfg80211_inform_bss(wiphy, notify_channel, (const u8 *)pnetwork->network.MacAddress,
@@ -2528,8 +2533,10 @@ static int cfg80211_rtw_get_station(struct wiphy *wiphy,
 		sinfo->filled |= STATION_INFO_SIGNAL;
 		sinfo->signal = translate_percentage_to_dbm(padapter->recvpriv.signal_strength);
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 2, 0))
 		sinfo->filled |= STATION_INFO_TX_BITRATE;
 		sinfo->txrate.legacy = rtw_get_cur_max_rate(padapter);
+#endif
 	}
 
 	if (psta) {
@@ -2759,10 +2766,9 @@ void rtw_cfg80211_indicate_scan_done(_adapter *adapter, bool aborted)
 	_irqL	irqL;
 
 #if (KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE)
-	struct cfg80211_scan_info info;
-
-	memset(&info, 0, sizeof(info));
-	info.aborted = aborted;
+	struct cfg80211_scan_info info = {
+		.aborted = aborted,
+	};
 #endif
 
 	_enter_critical_bh(&pwdev_priv->scan_req_lock, &irqL);
@@ -3516,10 +3522,9 @@ bypass_p2p_chk:
 check_need_indicate_scan_done:
 	if (_TRUE == need_indicate_scan_done) {
 #if (KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE)
-		struct cfg80211_scan_info info;
-
-		memset(&info, 0, sizeof(info));
-		info.aborted = 0;
+		struct cfg80211_scan_info info = {
+			.aborted = 0,
+		};
 #endif
 		/* the process time of scan results must be over at least 1ms in the newly Android */
 		rtw_msleep_os(1); 
@@ -10509,7 +10514,11 @@ struct wiphy *rtw_wiphy_alloc(_adapter *padapter, struct device *dev)
 	struct rtw_wiphy_data *wiphy_data;
 
 	/* wiphy */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 8, 0))
 	wiphy = wiphy_new(&rtw_cfg80211_ops, sizeof(struct rtw_wiphy_data));
+#else
+	wiphy = wiphy_new_nm(&rtw_cfg80211_ops, sizeof(struct rtw_wiphy_data), "rtw88x2bu");
+#endif
 	if (!wiphy) {
 		RTW_ERR("Couldn't allocate wiphy device\n");
 		goto exit;

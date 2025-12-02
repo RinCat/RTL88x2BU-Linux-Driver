@@ -1,6 +1,6 @@
 # REALTEK RTL88x2B USB Linux Driver
 **Current Driver Version**: 5.13.1-30
-**Support Kernel**: 2.6.24 ~ 6.15 (with unofficial patches)
+**Support Kernel**: 2.6.24 ~ 6.18 (with unofficial patches)
 
 Linux in-tree rtw8822bu driver is a work in progress. Check [this](https://lore.kernel.org/lkml/20220518082318.3898514-1-s.hauer@pengutronix.de/) patchset.
 

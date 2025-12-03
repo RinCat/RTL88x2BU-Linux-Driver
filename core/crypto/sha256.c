@@ -86,19 +86,3 @@ int hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
 	_len[1] = SHA256_MAC_LEN;
 	return sha256_vector(2, _addr, _len, mac);
 }
-
-
-/**
- * hmac_sha256 - HMAC-SHA256 over data buffer (RFC 2104)
- * @key: Key for HMAC operations
- * @key_len: Length of the key in bytes
- * @data: Pointers to the data area
- * @data_len: Length of the data area
- * @mac: Buffer for the hash (32 bytes)
- * Returns: 0 on success, -1 on failure
- */
-int hmac_sha256(const u8 *key, size_t key_len, const u8 *data,
-		size_t data_len, u8 *mac)
-{
-	return hmac_sha256_vector(key, key_len, 1, &data, &data_len, mac);
-}

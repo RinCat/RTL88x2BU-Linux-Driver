@@ -2,7 +2,7 @@
 **Current Driver Version**: 5.13.1-30
 **Support Kernel**: 2.6.24 ~ 7.2 (with unofficial patches)
 
-Linux in-tree rtw8822bu driver is a work in progress. Check [this](https://lore.kernel.org/lkml/20220518082318.3898514-1-s.hauer@pengutronix.de/) patchset.
+**Most users should use the in-kernel `rtw88_8822bu` driver on Linux 6.12 or newer instead of this driver.** Support for RTL8812BU and RTL8822BU adapters was introduced in Linux 6.2, but later kernels include substantial improvements. Use an up-to-date distribution kernel and firmware.
 
 For official release notes please check ReleaseNotes.pdf.
 
@@ -10,21 +10,22 @@ For official release notes please check ReleaseNotes.pdf.
 
 This driver does *NOT* support newer Realtek 802.11ax (Wi-Fi 6) chipsets such as RTL8852BU.
 
-## Linux 5.18+ and RTW88 Driver
-Starting from Linux 5.18, some distributions have added experimental RTW88 USB support (include RTW88x2BU support).
-It is not yet stable but if it works well on your system, then you no longer need this driver.
-If it doesn't, then you need to manually blacklist it because it has a higher loading priority than this external drivers.
+## Linux 6.12+ and the in-kernel RTW88 driver
+The in-kernel driver is recommended for normal use. This external driver is a fallback for older kernels, specific compatibility problems, or specialized features and vendor-specific tools.
 
-Check the currently loaded modules using `lsmod`. If you see `rtw88_core`, `rtw88_usb`, or any name beginning with `rtw88_` then you are using the RTW88 driver.
-If you see `88x2bu` then you are using this RTW88x2BU driver.
+Check the currently loaded modules using `lsmod`. `rtw88_8822bu` is the in-kernel module for these adapters; `88x2bu` is the external module from this repository. Other `rtw88_` modules may belong to another wireless device.
 
-To blacklist RTW88 8822bu USB driver run:
+### Using this external driver instead
 
+Only blacklist the in-kernel driver if you need to use this external driver. To prevent `rtw88_8822bu` from loading automatically, run:
+
+```sh
+echo "blacklist rtw88_8822bu" | sudo tee /etc/modprobe.d/rtw8822bu.conf
 ```
-echo "blacklist rtw88_8822bu" > /etc/modprobe.d/rtw8822bu.conf
-```
 
-...and reboot your system.
+Install this external driver using the instructions below, then reboot your system.
+
+To return to the in-kernel driver, uninstall this external driver using the method matching your installation (manual or DKMS), remove the blacklist entry created above, and reboot. Also remove any other blacklist entries you previously added for `rtw88_8822bu`.
 
 ## Supported Devices
 <details>

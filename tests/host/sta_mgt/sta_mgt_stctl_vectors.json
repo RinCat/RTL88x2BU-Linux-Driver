@@ -31,6 +31,22 @@
       "expect": 0
     },
     {
+      "name": "chk_reg_rule_null_rule_unregistered",
+      "fn": "rtw_st_ctl_chk_reg_rule",
+      "local_port": "1389",
+      "remote_port": "0000",
+      "expect": 0
+    },
+    {
+      "name": "chk_reg_rule_null_rule_after_unregister",
+      "fn": "rtw_st_ctl_chk_reg_rule",
+      "with_reg": 1,
+      "then_unregister": 1,
+      "local_port": "1389",
+      "remote_port": "0000",
+      "expect": 0
+    },
+    {
       "name": "stainfo_offset_zero",
       "fn": "rtw_stainfo_offset",
       "sta_index": 0,

@@ -21,14 +21,17 @@ const SESSION_TRACKER_REG_ID_NUM: usize = 1;
 
 type RuleFn = extern "C" fn(*mut Adapter, *mut u8, *mut u8, *mut u8, *mut u8) -> bool;
 
+// C leaves st_register.rule NULL before registration and again after
+// rtw_st_ctl_unregister(), so it must be modelled as a nullable pointer. A bare
+// `extern "C" fn` is non-nullable, which lets rustc mark it nonnull and fold the
+// NULL test away; Option<RuleFn> is layout-identical under the null pointer
+// optimization and keeps the check.
+type RuleFnOpt = Option<RuleFn>;
+
 #[repr(C)]
 pub struct StRegister {
     pub s_proto: u8,
-    pub rule: RuleFn,
-}
-
-fn rule_is_set(rule: RuleFn) -> bool {
-    unsafe { core::mem::transmute::<RuleFn, usize>(rule) != 0 }
+    pub rule: RuleFnOpt,
 }
 
 #[cfg(host_sta_mgt_test)]
@@ -111,8 +114,8 @@ mod kernel {
         pub fn rtw_rust_sta_info_size() -> u32;
         pub fn rtw_rust_stainfo_offset_valid(offset: c_int) -> u8;
         pub fn rtw_rust_stctl_reg_s_proto(st_ctl: *mut u8, idx: u8) -> u8;
-        pub fn rtw_rust_stctl_reg_rule(st_ctl: *mut u8, idx: u8) -> RuleFn;
-        pub fn rtw_rust_stctl_reg_set(st_ctl: *mut u8, idx: u8, s_proto: u8, rule: RuleFn);
+        pub fn rtw_rust_stctl_reg_rule(st_ctl: *mut u8, idx: u8) -> RuleFnOpt;
+        pub fn rtw_rust_stctl_reg_set(st_ctl: *mut u8, idx: u8, s_proto: u8, rule: RuleFnOpt);
         pub fn rtw_rust_stctl_reg_clear(st_ctl: *mut u8, idx: u8);
         pub fn rtw_rust_stctl_any_reg(st_ctl: *mut u8) -> u8;
         pub fn rtw_rust_stctl_warn_on(cond: c_int);
@@ -277,10 +280,10 @@ pub extern "C" fn rtw_st_ctl_chk_reg_rule(
     #[cfg(host_sta_mgt_test)]
     unsafe {
         for r in &(*st_ctl).reg {
-            if rule_is_set(r.rule)
-                && (r.rule)(adapter, local_naddr, local_port, remote_naddr, remote_port)
-            {
-                return true;
+            if let Some(rule) = r.rule {
+                if rule(adapter, local_naddr, local_port, remote_naddr, remote_port) {
+                    return true;
+                }
             }
         }
         return false;
@@ -288,11 +291,10 @@ pub extern "C" fn rtw_st_ctl_chk_reg_rule(
     #[cfg(not(host_sta_mgt_test))]
     unsafe {
         for i in 0..SESSION_TRACKER_REG_ID_NUM {
-            let rule = kernel::rtw_rust_stctl_reg_rule(st_ctl.cast(), i as u8);
-            if rule_is_set(rule)
-                && (rule)(adapter, local_naddr, local_port, remote_naddr, remote_port)
-            {
-                return true;
+            if let Some(rule) = kernel::rtw_rust_stctl_reg_rule(st_ctl.cast(), i as u8) {
+                if rule(adapter, local_naddr, local_port, remote_naddr, remote_port) {
+                    return true;
+                }
             }
         }
         false
@@ -352,5 +354,5 @@ pub extern "C" fn test_st_match_rule(
 #[no_mangle]
 pub static mut test_st_reg: StRegister = StRegister {
     s_proto: 0x06,
-    rule: test_st_match_rule,
+    rule: Some(test_st_match_rule),
 };

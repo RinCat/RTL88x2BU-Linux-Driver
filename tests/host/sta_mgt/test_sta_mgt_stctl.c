@@ -26,6 +26,7 @@ struct vector {
 	u8 remote_port[2];
 	u8 sta_index;
 	int with_reg;
+	int then_unregister;
 	int add_tracker;
 	int expect;
 	int expect_trackers;
@@ -77,6 +78,7 @@ static int parse_vector_object(const char *obj, size_t len, void *vec_void)
 	host_json_parse_int_in(obj, len, "expect", &v->expect);
 	host_json_parse_int_in(obj, len, "s_proto", (int *)&v->s_proto);
 	host_json_parse_int_in(obj, len, "with_reg", &v->with_reg);
+	host_json_parse_int_in(obj, len, "then_unregister", &v->then_unregister);
 	host_json_parse_int_in(obj, len, "add_tracker", &v->add_tracker);
 	if (host_json_parse_int_in(obj, len, "expect_trackers", &v->expect_trackers) == 0 &&
 	    v->fn == FN_UNREGISTER)
@@ -102,6 +104,9 @@ static int run_vector(struct vector *v)
 	host_sta_mgt_stctl_reset(&st_ctl);
 	if (v->with_reg)
 		rtw_st_ctl_register(&st_ctl, 0, &test_st_reg);
+	/* Leaves reg[0].rule NULL, as rtw_wfd_st_switch(sta, 0) does. */
+	if (v->then_unregister)
+		rtw_st_ctl_unregister(&st_ctl, 0);
 	if (v->add_tracker)
 		host_sta_mgt_stctl_tracker_add(&st_ctl);
 

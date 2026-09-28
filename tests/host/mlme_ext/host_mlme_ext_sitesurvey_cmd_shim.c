@@ -13,6 +13,36 @@ void host_sitesurvey_cmd_reset_trace(void)
 	host_sitesurvey_time_ms = 0;
 }
 
+void host_sitesurvey_res_reset(_adapter *padapter, struct sitesurvey_parm *pparm)
+{
+	struct ss_res *ss = &padapter->mlmeextpriv.sitesurvey_res;
+	RT_CHANNEL_INFO *chset = adapter_to_chset(padapter);
+	int i;
+
+	ss->bss_cnt = ss->activate_ch_cnt = 0;
+	ss->channel_idx = ss->force_ssid_scan = ss->igi_scan = 0;
+	ss->igi_before_scan = ss->scan_cnt = ss->ssid_num = 0;
+	for (i = 0; i < RTW_SSID_SCAN_AMOUNT; i++) {
+		if (!pparm->ssid[i].SsidLength) {
+			ss->ssid[i].SsidLength = 0;
+			continue;
+		}
+		memcpy(ss->ssid[i].Ssid, pparm->ssid[i].Ssid, 32);
+		ss->ssid[i].SsidLength = pparm->ssid[i].SsidLength;
+		ss->ssid_num++;
+	}
+	ss->ch_num = (u8)rtw_scan_ch_decision(padapter, ss->ch, RTW_CHANNEL_SCAN_AMOUNT,
+					      pparm->ch, pparm->ch_num, pparm->acs, pparm->reason);
+	for (i = 0; i < MAX_CHANNEL_NUM; i++)
+		chset[i].hidden_bss_cnt = 0;
+	ss->bw = pparm->bw;
+	ss->igi = pparm->igi;
+	ss->token = pparm->token;
+	ss->duration = pparm->duration;
+	ss->scan_mode = (u8)pparm->scan_mode;
+	ss->acs = pparm->acs;
+}
+
 RT_CHANNEL_INFO *adapter_to_chset(_adapter *a)
 {
 	return a->rfctl.channel_set;

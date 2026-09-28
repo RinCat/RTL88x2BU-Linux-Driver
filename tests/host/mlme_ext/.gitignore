@@ -19,4 +19,8 @@ test_band_ie
 test_band_ie_rust
 librust_mlme_ext_band_ie.a
 test_join_cmd
+test_join_cmd_rust
+librust_mlme_ext_join_cmd.a
 test_sitesurvey_cmd
+test_sitesurvey_cmd_rust
+librust_mlme_ext_sitesurvey_cmd.a

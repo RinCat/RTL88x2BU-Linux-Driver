@@ -3,41 +3,6 @@
 #include "host_mlme_ext_sitesurvey_cmd_types.h"
 #include <string.h>
 
-static void sitesurvey_res_reset(_adapter *adapter, struct sitesurvey_parm *parm)
-{
-	struct ss_res *ss = &adapter->mlmeextpriv.sitesurvey_res;
-	RT_CHANNEL_INFO *chset = adapter_to_chset(adapter);
-	int i;
-
-	ss->bss_cnt = 0;
-	ss->activate_ch_cnt = 0;
-	ss->channel_idx = 0;
-	ss->force_ssid_scan = 0;
-	ss->igi_scan = 0;
-	ss->igi_before_scan = 0;
-	ss->scan_cnt = 0;
-	ss->ssid_num = 0;
-	for (i = 0; i < RTW_SSID_SCAN_AMOUNT; i++) {
-		if (parm->ssid[i].SsidLength) {
-			memcpy(ss->ssid[i].Ssid, parm->ssid[i].Ssid, 32);
-			ss->ssid[i].SsidLength = parm->ssid[i].SsidLength;
-			ss->ssid_num++;
-		} else {
-			ss->ssid[i].SsidLength = 0;
-		}
-	}
-	ss->ch_num = (u8)rtw_scan_ch_decision(adapter, ss->ch, RTW_CHANNEL_SCAN_AMOUNT,
-					      parm->ch, parm->ch_num, parm->acs, parm->reason);
-	for (i = 0; i < MAX_CHANNEL_NUM; i++)
-		chset[i].hidden_bss_cnt = 0;
-	ss->bw = parm->bw;
-	ss->igi = parm->igi;
-	ss->token = parm->token;
-	ss->duration = parm->duration;
-	ss->scan_mode = (u8)parm->scan_mode;
-	ss->acs = parm->acs;
-}
-
 u8 sitesurvey_cmd_hdl(_adapter *padapter, u8 *pbuf)
 {
 	struct sitesurvey_parm *pparm = (struct sitesurvey_parm *)pbuf;
@@ -54,7 +19,7 @@ u8 sitesurvey_cmd_hdl(_adapter *padapter, u8 *pbuf)
 operation_by_state:
 	switch (mlmeext_scan_state(pmlmeext)) {
 	case SCAN_DISABLE:
-		sitesurvey_res_reset(padapter, pparm);
+		host_sitesurvey_res_reset(padapter, pparm);
 		mlmeext_set_scan_state(pmlmeext, SCAN_START);
 		goto operation_by_state;
 	case SCAN_START:

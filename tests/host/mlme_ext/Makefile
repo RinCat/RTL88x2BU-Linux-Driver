@@ -18,6 +18,7 @@ BAND_IE_SHIM := host_mlme_ext_band_ie_shim.c
 JOIN_CMD_SHIM := host_mlme_ext_join_cmd_shim.c
 SITESURVEY_CMD_SHIM := host_mlme_ext_sitesurvey_cmd_shim.c
 RUST_MLME_EXT_JOIN_CMD := $(ROOT)/rust/rtw_mlme_ext_join_cmd.rs
+RUST_MLME_EXT_SITESURVEY_CMD := $(ROOT)/rust/rtw_mlme_ext_sitesurvey_cmd.rs
 BAND_IE_RATE_ORACLE := band_ie_rate_oracle.c
 RUST_MLME_EXT_BAND_IE := $(ROOT)/rust/rtw_mlme_ext_band_ie.rs
 WLAN_UTIL_ORACLE := ../wlan_util/wlan_util_c_oracle.c
@@ -66,7 +67,7 @@ SITESURVEY_CMD_CFLAGS := -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unused
 	test-mgnt-attrib-kernel-layout test-peer-alive test-scan-decision \
 	test-scan-decision-rust test-scan-kernel-layout test-pick-ch \
 	test-pick-ch-rust test-band-ie test-band-ie-rust test-join-cmd \
-	test-join-cmd-rust test-sitesurvey-cmd clean
+	test-join-cmd-rust test-sitesurvey-cmd test-sitesurvey-cmd-rust clean
 
 all: test
 
@@ -74,7 +75,7 @@ test: test-c test-rust test-mgnt-attrib test-mgnt-attrib-rust \
 	test-mgnt-attrib-kernel-layout test-peer-alive test-scan-decision \
 	test-scan-decision-rust test-scan-kernel-layout test-pick-ch \
 	test-pick-ch-rust test-band-ie test-band-ie-rust test-join-cmd \
-	test-join-cmd-rust test-sitesurvey-cmd
+	test-join-cmd-rust test-sitesurvey-cmd test-sitesurvey-cmd-rust
 
 test-c: test_chset
 	./test_chset chset_vectors.json
@@ -238,6 +239,20 @@ test_sitesurvey_cmd: test_sitesurvey_cmd.c $(SITESURVEY_CMD_ORACLE) $(SITESURVEY
 	$(CC) $(SITESURVEY_CMD_CFLAGS) -o $@ test_sitesurvey_cmd.c $(SITESURVEY_CMD_ORACLE) \
 		$(SITESURVEY_CMD_SHIM) $(HOST_JSON)
 
+librust_mlme_ext_sitesurvey_cmd.a: $(RUST_MLME_EXT_SITESURVEY_CMD)
+	$(RUSTC) -C opt-level=2 -C overflow-checks=on \
+		--cfg host_mlme_ext_sitesurvey_cmd_test \
+		--crate-type staticlib $(RUST_MLME_EXT_SITESURVEY_CMD) -o $@
+
+test-sitesurvey-cmd-rust: test_sitesurvey_cmd_rust
+	./test_sitesurvey_cmd_rust mlme_ext_sitesurvey_cmd_vectors.json
+
+test_sitesurvey_cmd_rust: test_sitesurvey_cmd.c librust_mlme_ext_sitesurvey_cmd.a \
+		$(SITESURVEY_CMD_SHIM) $(HOST_JSON)
+	$(CC) $(SITESURVEY_CMD_CFLAGS) -DRUST_MLME_EXT_SITESURVEY_CMD_ORACLE -o $@ \
+		test_sitesurvey_cmd.c $(SITESURVEY_CMD_SHIM) $(HOST_JSON) \
+		librust_mlme_ext_sitesurvey_cmd.a
+
 clean:
 	rm -f test_chset test_chset_rust librust_mlme_ext_rest.a \
 		test_mgnt_attrib test_mgnt_attrib_rust librust_mlme_ext_mgnt_attrib.a \
@@ -248,4 +263,4 @@ clean:
 		test_pick_ch test_pick_ch_rust librust_mlme_ext_pick_ch.a \
 		test_band_ie test_band_ie_rust librust_mlme_ext_band_ie.a \
 		test_join_cmd test_join_cmd_rust librust_mlme_ext_join_cmd.a \
-		test_sitesurvey_cmd
+		test_sitesurvey_cmd test_sitesurvey_cmd_rust librust_mlme_ext_sitesurvey_cmd.a

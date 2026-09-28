@@ -35,6 +35,17 @@ Encodes:
 - `gh` authenticated with read access to issues and pull requests
 - `git` with `origin` remote (for optional merge-base checks on stacked PR bases)
 
+### Performance / limits
+
+- Open PRs are listed in one lightweight `gh pr list` call (limit **500**; no
+  `statusCheckRollup` in the bulk query — GitHub 502s on large rollups). Eligible
+  PRs get a follow-up `gh pr view` for checks/reviews/body. Raise `OPEN_PR_LIMIT`
+  if the queue outgrows the cap.
+- Stacked PR eligibility uses batched `git fetch` for unique base branches (not one
+  fetch per PR).
+- `needs_prep` / `merge_ready` lists are sorted by PR number (oldest first) so Path A
+  prioritizes the longest-waiting eligible PRs.
+
 ### Output
 
 `path` emits JSON with three top-level keys:

@@ -23,13 +23,23 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ISSUE_MAP = REPO_ROOT / "docs/rust-migration/issues/ISSUE-MAP.md"
 ISSUE_DIR = REPO_ROOT / "docs/rust-migration/issues"
 DEFAULT_BRANCH = "master"
 SINGLE_LANE_SATURATION = 15
+# gh returns newest-first; `--limit 100` dropped older open PRs once the queue
+# passed 100, hiding eligible stack tips (e.g. parent merged → needs retarget).
+OPEN_PR_LIMIT = 500
+_GIT_FETCHED_REFS: set[str] = set()
+
+# statusCheckRollup on 100+ PRs in one GraphQL response can 502; fetch per eligible PR.
+PR_LIST_FIELDS = (
+    "number,title,isDraft,baseRefName,headRefName,url,mergeable,"
+    "mergeStateStatus,reviewDecision"
+)
 
 DRAFT_ID_RE = re.compile(r"\[([A-Z][A-Z0-9]*-\d+)\]")
 BLOCKED_BY_RE = re.compile(
@@ -64,15 +74,42 @@ def repo_owner() -> str:
     return data["nameWithOwner"]
 
 
+def prefetch_git_refs(branches: Iterable[str]) -> None:
+    """Batch-fetch PR base branches once per run (avoids N sequential git fetches)."""
+    global _GIT_FETCHED_REFS
+    need_master = DEFAULT_BRANCH not in _GIT_FETCHED_REFS
+    to_fetch = [
+        b
+        for b in branches
+        if b and b != DEFAULT_BRANCH and b not in _GIT_FETCHED_REFS
+    ]
+    if not need_master and not to_fetch:
+        return
+    args = ["git", "fetch", "origin", DEFAULT_BRANCH, "--prune"]
+    if to_fetch:
+        # Keep argv bounded; unique bases are usually << OPEN_PR_LIMIT.
+        args.extend(to_fetch[:80])
+    subprocess.run(args, capture_output=True, cwd=REPO_ROOT)
+    _GIT_FETCHED_REFS.add(DEFAULT_BRANCH)
+    _GIT_FETCHED_REFS.update(to_fetch[:80])
+    remainder = to_fetch[80:]
+    for i in range(0, len(remainder), 80):
+        chunk = remainder[i : i + 80]
+        subprocess.run(
+            ["git", "fetch", "origin", *chunk, "--prune"],
+            capture_output=True,
+            cwd=REPO_ROOT,
+        )
+        _GIT_FETCHED_REFS.update(chunk)
+
+
 def git_ancestor(branch: str) -> bool:
-    subprocess.run(
-        ["git", "fetch", "origin", DEFAULT_BRANCH, branch, "--prune"],
-        capture_output=True,
-        cwd=REPO_ROOT,
-    )
+    if branch not in _GIT_FETCHED_REFS:
+        prefetch_git_refs([branch])
     proc = subprocess.run(
         ["git", "merge-base", "--is-ancestor", f"origin/{branch}", f"origin/{DEFAULT_BRANCH}"],
         cwd=REPO_ROOT,
+        capture_output=True,
     )
     return proc.returncode == 0
 
@@ -302,6 +339,29 @@ def base_branch_merged(base_ref: str, owner: str, cache: dict[str, bool]) -> boo
     return merged
 
 
+def enrich_pr_from_view(pr: PullRequest) -> None:
+    """Load checks, reviews, and body (issue links) for merge prep classification."""
+    try:
+        detail = gh_json(
+            [
+                "pr",
+                "view",
+                str(pr.number),
+                "--json",
+                "isDraft,baseRefName,mergeable,mergeStateStatus,reviewDecision,"
+                "statusCheckRollup,reviews,body",
+            ]
+        )
+    except RuntimeError as exc:
+        print(
+            f"warning: failed to enrich PR #{pr.number}: {exc}",
+            file=sys.stderr,
+        )
+        return
+    body = detail.get("body") or ""
+    pr.enrich(detail, body)
+
+
 def fetch_open_prs(owner: str) -> list[PullRequest]:
     rows = gh_json(
         [
@@ -310,35 +370,36 @@ def fetch_open_prs(owner: str) -> list[PullRequest]:
             "--state",
             "open",
             "--limit",
-            "100",
+            str(OPEN_PR_LIMIT),
             "--json",
-            "number,title,isDraft,baseRefName,headRefName,url",
+            PR_LIST_FIELDS,
         ]
     )
-    prs = [PullRequest.from_summary(r) for r in rows]
-    for pr in prs:
-        try:
-            detail = gh_json(
-                [
-                    "pr",
-                    "view",
-                    str(pr.number),
-                    "--json",
-                    "isDraft,baseRefName,mergeable,mergeStateStatus,reviewDecision,statusCheckRollup,reviews,body",
-                ]
-            )
-            body = detail.get("body") or ""
-            pr.enrich(detail, body)
-        except RuntimeError as exc:
-            print(
-                f"warning: failed to enrich PR #{pr.number}: {exc}",
-                file=sys.stderr,
-            )
+    prs: list[PullRequest] = []
+    for row in rows:
+        pr = PullRequest.from_summary(row)
+        detail = {
+            "isDraft": row.get("isDraft"),
+            "baseRefName": row.get("baseRefName"),
+            "mergeable": row.get("mergeable"),
+            "mergeStateStatus": row.get("mergeStateStatus"),
+            "reviewDecision": row.get("reviewDecision"),
+        }
+        pr.enrich(detail, "")
+        prs.append(pr)
+    if len(rows) >= OPEN_PR_LIMIT:
+        print(
+            f"warning: open PR count may exceed OPEN_PR_LIMIT={OPEN_PR_LIMIT}; "
+            "raise the cap in find_work.py",
+            file=sys.stderr,
+        )
     return prs
 
 
 def classify_prs(prs: list[PullRequest], owner: str) -> dict[str, Any]:
     merged_cache: dict[str, bool] = {}
+    unique_bases = {pr.base_ref for pr in prs if pr.base_ref != DEFAULT_BRANCH}
+    prefetch_git_refs(unique_bases)
     eligible: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
     for pr in prs:
@@ -351,13 +412,21 @@ def classify_prs(prs: list[PullRequest], owner: str) -> dict[str, Any]:
             "isDraft": pr.is_draft,
         }
         if pr.base_ref == DEFAULT_BRANCH or base_branch_merged(pr.base_ref, owner, merged_cache):
+            enrich_pr_from_view(pr)
+            entry["isDraft"] = pr.is_draft
             entry["prep"] = pr.classify_prep()
             eligible.append(entry)
         else:
             entry["blockingParent"] = pr.base_ref
             skipped.append(entry)
-    needs_prep = [p for p in eligible if p["prep"] == "needs_prep"]
-    merge_ready = [p for p in eligible if p["prep"] == "merge_ready"]
+    needs_prep = sorted(
+        [p for p in eligible if p["prep"] == "needs_prep"],
+        key=lambda p: p["number"],
+    )
+    merge_ready = sorted(
+        [p for p in eligible if p["prep"] == "merge_ready"],
+        key=lambda p: p["number"],
+    )
     return {
         "total": len(prs),
         "eligible": eligible,

@@ -11,12 +11,16 @@ CFLAGS := -Wall -Wextra -Werror -Wno-unused-parameter -O2 \
           -I$(HOST_INC) -I$(CORE) -include $(HOST_INC)/host_autoconf.h \
           -DHOST_CMD_PRIV_TEST
 CFLAGS_CMD_QUEUE := $(CFLAGS) -DHOST_CMD_QUEUE_TEST
+CFLAGS_CMD_THREAD := $(CFLAGS) -DHOST_CMD_THREAD_TEST -I$(HOST_INC)
 
-.PHONY: all test test-c test-rust test-cmd-queue test-cmd-queue-kernel-layout clean
+CMD_THREAD_ORACLE := cmd_thread_host_oracle.c
+
+.PHONY: all test test-c test-rust test-cmd-queue test-cmd-thread test-rust-cmd-queue \
+	test-cmd-queue-kernel-layout clean
 
 all: test
 
-test: test-c test-rust test-cmd-queue test-rust-cmd-queue \
+test: test-c test-rust test-cmd-queue test-cmd-thread test-rust-cmd-queue \
 	test-cmd-queue-kernel-layout
 
 test-c: test_cmd_priv
@@ -24,6 +28,13 @@ test-c: test_cmd_priv
 
 test_cmd_priv: test_cmd_priv.c host_cmd_priv_shim.c $(CORE)/rtw_cmd_priv.c $(HOST_JSON)
 	$(CC) $(CFLAGS) -o $@ test_cmd_priv.c host_cmd_priv_shim.c $(CORE)/rtw_cmd_priv.c $(HOST_JSON)
+
+test-cmd-thread: test_cmd_thread
+	./test_cmd_thread cmd_thread_vectors.json
+
+test_cmd_thread: test_cmd_thread.c host_cmd_thread_shim.c $(CMD_THREAD_ORACLE) $(HOST_JSON)
+	$(CC) $(CFLAGS_CMD_THREAD) -o $@ test_cmd_thread.c host_cmd_thread_shim.c \
+		$(CMD_THREAD_ORACLE) $(HOST_JSON)
 
 test-cmd-queue: test_cmd_queue
 	./test_cmd_queue cmd_queue_vectors.json
@@ -68,5 +79,5 @@ test_cmd_priv_rust: test_cmd_priv.c host_cmd_priv_shim.c librust_cmd_rest.a $(HO
 
 clean:
 	rm -f test_cmd_priv test_cmd_priv_rust test_cmd_queue test_cmd_queue_rust \
-		test_cmd_queue_kernel_layout \
+		test_cmd_thread test_cmd_queue_kernel_layout \
 		librust_cmd_rest.a librust_cmd_queue.a librust_cmd_queue_kernel.a

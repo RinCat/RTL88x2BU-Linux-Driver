@@ -1,0 +1,15 @@
+{
+  "vectors": [
+    {
+      "name": "clr_isr_increments_done_cnt",
+      "fn": "clr_isr",
+      "expect_done_cnt": 1
+    },
+    {
+      "name": "stop_thread_wakes_queue_and_clears_handle",
+      "fn": "stop",
+      "expect_stop_calls": 1,
+      "expect_sema_up": 1
+    }
+  ]
+}

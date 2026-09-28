@@ -5,4 +5,5 @@ test_cmd_queue
 test_cmd_queue_rust
 librust_cmd_queue.a
 test_cmd_queue_kernel_layout
+test_cmd_thread
 librust_cmd_queue_kernel.a

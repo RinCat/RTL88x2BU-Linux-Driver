@@ -14,8 +14,12 @@ struct vector {
 	int initial_state, next_state, channel_idx;
 	int ch_num, ch0, ch1, ch2, scan_ch_ms;
 	int ps_annc;
+	int cur_channel, backop_ms, backop_time, host_time_ms, backop_flags, scan_abort;
 	int expect_state, expect_next_state, expect_channel_idx;
 	int expect_hw_survey, expect_igi, expect_msr, expect_site_survey, expect_pick_ch;
+	int expect_set_channel, expect_survey_done, expect_hw_survey_off;
+	int expect_phydm_restore, expect_macid_wakeup, expect_backop_xmit;
+	u8 has_expect_state;
 };
 
 static void setup_adapter(struct vector *v)
@@ -31,6 +35,11 @@ static void setup_adapter(struct vector *v)
 	ss->scan_cnt_max = 8;
 	ss->rx_ampdu_accept = RX_AMPDU_ACCEPT_INVALID;
 	ss->rx_ampdu_size = RX_AMPDU_SIZE_INVALID;
+	ss->backop_ms = v->backop_ms ? (u16)v->backop_ms : 100;
+	ss->backop_time = (u32)v->backop_time;
+	ss->backop_flags = (u8)v->backop_flags;
+	g_adapter.mlmeextpriv.cur_channel = (u8)(v->cur_channel ? v->cur_channel : 6);
+	g_adapter.mlmeextpriv.scan_abort = v->scan_abort ? 1 : 0;
 
 	memset(&parm, 0, sizeof(parm));
 	parm.ch_num = (u8)(v->ch_num > 0 ? v->ch_num : 1);
@@ -43,6 +52,7 @@ static void setup_adapter(struct vector *v)
 
 	host_sitesurvey_cmd_reset_trace();
 	host_ps_annc_result = v->ps_annc ? 1 : 0;
+	host_sitesurvey_time_ms = (u32)(v->host_time_ms ? v->host_time_ms : 0);
 	ss->ch_num = (u8)(v->ch_num > 0 ? v->ch_num : 1);
 	if (ss->ch_num > 0)
 		ss->ch[0].hw_value = (u16)(v->ch0 ? v->ch0 : 1);
@@ -65,7 +75,8 @@ static int parse_vec(const char *o, size_t l, void *vv)
 	host_json_parse_int_in(o, l, "ch2", &v->ch2);
 	host_json_parse_int_in(o, l, "scan_ch_ms", &v->scan_ch_ms);
 	host_json_parse_int_in(o, l, "ps_annc", &v->ps_annc);
-	host_json_parse_int_in(o, l, "expect_state", &v->expect_state);
+	if (!host_json_parse_int_in(o, l, "expect_state", &v->expect_state))
+		v->has_expect_state = 1;
 	host_json_parse_int_in(o, l, "expect_next_state", &v->expect_next_state);
 	host_json_parse_int_in(o, l, "expect_channel_idx", &v->expect_channel_idx);
 	host_json_parse_int_in(o, l, "expect_hw_survey", &v->expect_hw_survey);
@@ -73,6 +84,18 @@ static int parse_vec(const char *o, size_t l, void *vv)
 	host_json_parse_int_in(o, l, "expect_msr", &v->expect_msr);
 	host_json_parse_int_in(o, l, "expect_site_survey", &v->expect_site_survey);
 	host_json_parse_int_in(o, l, "expect_pick_ch", &v->expect_pick_ch);
+	host_json_parse_int_in(o, l, "cur_channel", &v->cur_channel);
+	host_json_parse_int_in(o, l, "backop_ms", &v->backop_ms);
+	host_json_parse_int_in(o, l, "backop_time", &v->backop_time);
+	host_json_parse_int_in(o, l, "host_time_ms", &v->host_time_ms);
+	host_json_parse_int_in(o, l, "backop_flags", &v->backop_flags);
+	host_json_parse_int_in(o, l, "scan_abort", &v->scan_abort);
+	host_json_parse_int_in(o, l, "expect_set_channel", &v->expect_set_channel);
+	host_json_parse_int_in(o, l, "expect_survey_done", &v->expect_survey_done);
+	host_json_parse_int_in(o, l, "expect_hw_survey_off", &v->expect_hw_survey_off);
+	host_json_parse_int_in(o, l, "expect_phydm_restore", &v->expect_phydm_restore);
+	host_json_parse_int_in(o, l, "expect_macid_wakeup", &v->expect_macid_wakeup);
+	host_json_parse_int_in(o, l, "expect_backop_xmit", &v->expect_backop_xmit);
 	return 0;
 }
 
@@ -82,7 +105,7 @@ static int run_vec(void *vv)
 	struct ss_res *ss = &g_adapter.mlmeextpriv.sitesurvey_res;
 
 	setup_adapter(v);
-	if (v->expect_state && ss->state != (u8)v->expect_state) {
+	if (v->has_expect_state && ss->state != (u8)v->expect_state) {
 		fprintf(stderr, "%s: state got %u expect %d\n", v->name, ss->state,
 			v->expect_state);
 		return 1;
@@ -115,6 +138,32 @@ static int run_vec(void *vv)
 		fprintf(stderr, "%s: site_survey mismatch\n", v->name);
 		return 1;
 	}
+	if (v->expect_set_channel &&
+	    host_sitesurvey_cmd_trace.set_channel_ch != (u8)v->expect_set_channel) {
+		fprintf(stderr, "%s: set_channel got %u expect %d\n", v->name,
+			host_sitesurvey_cmd_trace.set_channel_ch, v->expect_set_channel);
+		return 1;
+	}
+	if (!!host_sitesurvey_cmd_trace.survey_done != !!v->expect_survey_done) {
+		fprintf(stderr, "%s: survey_done mismatch\n", v->name);
+		return 1;
+	}
+	if (!!host_sitesurvey_cmd_trace.hw_survey_off != !!v->expect_hw_survey_off) {
+		fprintf(stderr, "%s: hw_survey_off mismatch\n", v->name);
+		return 1;
+	}
+	if (!!host_sitesurvey_cmd_trace.phydm_restore != !!v->expect_phydm_restore) {
+		fprintf(stderr, "%s: phydm_restore mismatch\n", v->name);
+		return 1;
+	}
+	if (!!host_sitesurvey_cmd_trace.macid_wakeup != !!v->expect_macid_wakeup) {
+		fprintf(stderr, "%s: macid_wakeup mismatch\n", v->name);
+		return 1;
+	}
+	if (!!host_sitesurvey_cmd_trace.backop_xmit != !!v->expect_backop_xmit) {
+		fprintf(stderr, "%s: backop_xmit mismatch\n", v->name);
+		return 1;
+	}
 	printf("PASS %s\n", v->name);
 	return 0;
 }
@@ -122,7 +171,7 @@ static int run_vec(void *vv)
 int main(int argc, char **argv)
 {
 	const char *path = argc > 1 ? argv[1] : "mlme_ext_sitesurvey_cmd_vectors.json";
-	struct vector vecs[16];
+	struct vector vecs[24];
 	size_t n = 0;
 	size_t i;
 

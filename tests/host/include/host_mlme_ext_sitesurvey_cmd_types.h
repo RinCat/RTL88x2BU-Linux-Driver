@@ -19,7 +19,17 @@
 #define SCAN_PS_ANNC_WAIT 2
 #define SCAN_ENTER 3
 #define SCAN_PROCESS 4
+#define SCAN_BACKING_OP 5
+#define SCAN_BACK_OP 6
+#define SCAN_LEAVING_OP 7
+#define SCAN_LEAVE_OP 8
 #define SCAN_COMPLETE 12
+
+#define SS_BACKOP_PS_ANNC (1 << 4)
+#define SS_BACKOP_TX_RESUME (1 << 5)
+
+#define mlmeext_chk_scan_backop_flags(e, f) \
+	(((e)->sitesurvey_res.backop_flags & (f)) == (f))
 
 #define SCAN_PASSIVE 0
 #define SCAN_ACTIVE 1
@@ -82,6 +92,9 @@ struct ss_res {
 	u8 acs;
 	u8 rx_ampdu_accept;
 	u8 rx_ampdu_size;
+	u16 backop_ms;
+	u32 backop_time;
+	u8 backop_flags;
 	NDIS_802_11_SSID ssid[RTW_SSID_SCAN_AMOUNT];
 	struct rtw_ieee80211_channel ch[RTW_CHANNEL_SCAN_AMOUNT];
 };
@@ -93,6 +106,7 @@ struct mlme_ext_priv {
 	u8 cur_channel;
 	u8 cur_bwmode;
 	u8 cur_ch_offset;
+	u8 scan_abort;
 };
 
 struct mlme_priv { u32 scan_start_time; };
@@ -128,13 +142,20 @@ struct host_sitesurvey_cmd_trace {
 	u8 set_igi_enter;
 	u8 set_msr_enter;
 	u8 hw_survey_on;
+	u8 hw_survey_off;
 	u8 pick_ch_calls;
+	u8 set_channel_ch;
+	u8 survey_done;
+	u8 phydm_restore;
+	u8 macid_wakeup;
+	u8 backop_xmit;
 };
 
 extern struct host_sitesurvey_cmd_trace host_sitesurvey_cmd_trace;
 
 void host_sitesurvey_cmd_reset_trace(void);
 extern int host_ps_annc_result;
+extern u32 host_sitesurvey_time_ms;
 RT_CHANNEL_INFO *adapter_to_chset(_adapter *a);
 int rtw_scan_ch_decision(_adapter *a, struct rtw_ieee80211_channel *out,
 			 u8 out_max, struct rtw_ieee80211_channel *in, u8 in_num,
@@ -150,6 +171,14 @@ void rtw_hal_set_hwreg(_adapter *a, int id, u8 *val);
 void rtw_hal_macid_sleep_all_used(_adapter *a);
 void rtw_rx_ampdu_apply(_adapter *a);
 u8 sitesurvey_pick_ch_behavior(_adapter *a, u8 *ch, RT_SCAN_TYPE *type);
+void set_channel_bwmode(_adapter *a, u8 ch, u8 offset, u8 bw);
+int rtw_mi_get_ch_setting_union(_adapter *a, u8 *ch, u8 *bw, u8 *offset);
+void survey_done_set_ch_bw(_adapter *a);
+void rtw_phydm_ability_restore(_adapter *a);
+void rtw_hal_macid_wakeup_all_used(_adapter *a);
+void rtw_mi_os_xmit_schedule(_adapter *a);
+u32 rtw_get_current_time(void);
+u32 rtw_get_passing_time_ms(u32 start);
 u8 sitesurvey_cmd_hdl(_adapter *a, u8 *pbuf);
 
 #endif

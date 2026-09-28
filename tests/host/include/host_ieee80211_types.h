@@ -410,7 +410,9 @@ enum rtw_wlan_category {
 
 enum rtw_public_action_field {
 	ACT_PUBLIC_BSSCOEXIST = 0,
-	ACT_PUBLIC_MAX = 32,
+	ACT_PUBLIC_FTM_REQ = 32,
+	ACT_PUBLIC_FTM = 33,
+	ACT_PUBLIC_MAX = 34,
 };
 
 struct rtw_ieee80211_hdr_3addr {

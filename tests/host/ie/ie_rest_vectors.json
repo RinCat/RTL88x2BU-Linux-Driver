@@ -84,6 +84,30 @@
       "expect_rates": "82848b960c1218243048606c"
     },
     {
+      "name": "set_supported_rate_11a",
+      "fn": "rtw_set_supported_rate",
+      "mode": 4,
+      "expect_rates": "0c1218243048606c"
+    },
+    {
+      "name": "set_supported_rate_11a_5n",
+      "fn": "rtw_set_supported_rate",
+      "mode": 20,
+      "expect_rates": "0c1218243048606c"
+    },
+    {
+      "name": "set_supported_rate_11_5ac",
+      "fn": "rtw_set_supported_rate",
+      "mode": 68,
+      "expect_rates": "0c1218243048606c"
+    },
+    {
+      "name": "set_supported_rate_11ac_bit_alone_unhandled",
+      "fn": "rtw_set_supported_rate",
+      "mode": 64,
+      "expect_rates": "0000000000000000"
+    },
+    {
       "name": "filter_rateie_keep_cck",
       "fn": "rtw_filter_suppport_rateie",
       "ds_config": 6,

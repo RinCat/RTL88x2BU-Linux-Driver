@@ -108,7 +108,7 @@
       "frame_hex": "d000000000000000000000000000000000000000000000007f02",
       "expect": 1,
       "expect_category": 127,
-      "expect_action": 32
+      "expect_action": 34
     },
     {
       "name": "action_frame_not_mgmt",

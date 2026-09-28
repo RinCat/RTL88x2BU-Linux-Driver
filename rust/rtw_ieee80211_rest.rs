@@ -63,7 +63,8 @@ const WIRELESS_11A_5N: u32 = WIRELESS_11A | WIRELESS_11_5N;
 const WIRELESS_11G_24N: u32 = WIRELESS_11G | (1 << 3);
 const WIRELESS_11_24N: u32 = 1 << 3;
 const WIRELESS_11BG_24N: u32 = WIRELESS_11B | WIRELESS_11G | (1 << 3);
-const WIRELESS_11_5AC: u32 = 1 << 6;
+const WIRELESS_11AC: u32 = 1 << 6;
+const WIRELESS_11_5AC: u32 = WIRELESS_11A | WIRELESS_11AC;
 
 const CCK: U8 = 0;
 const OFDM: U8 = 1;
@@ -1637,7 +1638,9 @@ const RTW_IEEE80211_STYPE_ACTION: u16 = 0x00d0;
 const RTW_IEEE80211_STYPE_CTS: u16 = 0x00c0;
 const RTW_IEEE80211_STYPE_ACK: u16 = 0x00d0;
 const RTW_WLAN_CATEGORY_P2P: U8 = 0x7f;
-const ACT_PUBLIC_MAX: U8 = 32;
+// Terminator of enum _PUBLIC_ACTION; one past ACT_PUBLIC_FTM (33), so it must
+// not alias a real action value. 32 is ACT_PUBLIC_FTM_REQ.
+const ACT_PUBLIC_MAX: U8 = 34;
 
 #[repr(C)]
 struct RtwIeee80211Hdr3Addr {

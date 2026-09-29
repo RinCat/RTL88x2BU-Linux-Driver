@@ -40,3 +40,5 @@ test_ap_hw_ht_param_rust
 test_ap_sta_info_apmode
 test_ap_sta_info_apmode_rust
 librust_ap_sta_info_apmode.a
+test_ap_bcn_update_rust
+librust_ap_bcn_update.a

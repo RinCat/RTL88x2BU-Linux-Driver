@@ -7,6 +7,7 @@ AP_REST_SRC := $(CORE)/rtw_ap_rest.c
 HOST_JSON := ../crypto/host_vector_json.c
 RUST_AP_REST := $(ROOT)/rust/rtw_ap_rest.rs
 RUST_AP_BMC_UPDATE := $(ROOT)/rust/rtw_ap_bmc_update.rs
+RUST_AP_BCN_UPDATE := $(ROOT)/rust/rtw_ap_bcn_update.rs
 
 CC     := gcc
 CFLAGS := -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unused-const-variable -O2 \
@@ -72,11 +73,11 @@ AP_STA_INFO_APMODE_SRC := $(CORE)/rtw_ap_sta_info_apmode.c
 STA_INFO_APMODE_CFLAGS := $(BCN_UPDATE_CFLAGS) -DHOST_AP_STA_INFO_APMODE_TEST -I$(CORE)
 STA_INFO_APMODE_DEPS := ap_sta_info_apmode_shim.c
 
-.PHONY: all test test-c test-rust test-sta-ie test-bmc-rate test-bmc-update test-bcn-ie test-rust-bcn-ie test-bcn-update test-sta-alive test-rust-sta-alive test-expire-auth test-rust-expire-auth test-expire-asoc test-rust-expire-asoc test-aka-chk test-rust-aka-chk test-rf18-restore test-rust-rf18-restore test-sta-ra test-rust-sta-ra test-sta-info test-rust-sta-info test-sta-info-apmode test-rust-sta-info-apmode test-hw-ht-param test-rust-hw-ht-param clean
+.PHONY: all test test-c test-rust test-sta-ie test-bmc-rate test-bmc-update test-bcn-ie test-rust-bcn-ie test-bcn-update test-rust-bcn-update test-sta-alive test-rust-sta-alive test-expire-auth test-rust-expire-auth test-expire-asoc test-rust-expire-asoc test-aka-chk test-rust-aka-chk test-rf18-restore test-rust-rf18-restore test-sta-ra test-rust-sta-ra test-sta-info test-rust-sta-info test-sta-info-apmode test-rust-sta-info-apmode test-hw-ht-param test-rust-hw-ht-param clean
 
 all: test
 
-test: test-c test-rust test-sta-ie test-bcn-ie test-rust-bcn-ie test-bcn-update test-sta-alive test-rust-sta-alive test-expire-auth test-rust-expire-auth test-expire-asoc test-rust-expire-asoc test-aka-chk test-rust-aka-chk test-rf18-restore test-rust-rf18-restore test-sta-ra test-rust-sta-ra test-sta-info test-rust-sta-info test-sta-info-apmode test-rust-sta-info-apmode test-hw-ht-param test-rust-hw-ht-param test-bmc-rate test-bmc-update
+test: test-c test-rust test-sta-ie test-bcn-ie test-rust-bcn-ie test-bcn-update test-rust-bcn-update test-sta-alive test-rust-sta-alive test-expire-auth test-rust-expire-auth test-expire-asoc test-rust-expire-asoc test-aka-chk test-rust-aka-chk test-rf18-restore test-rust-rf18-restore test-sta-ra test-rust-sta-ra test-sta-info test-rust-sta-info test-sta-info-apmode test-rust-sta-info-apmode test-hw-ht-param test-rust-hw-ht-param test-bmc-rate test-bmc-update
 
 test-c: test_ap_rest
 	./test_ap_rest ap_rest_vectors.json
@@ -117,6 +118,17 @@ test_ap_bcn_ie_rust: test_ap_bcn_ie.c librust_ap_bcn_ie.a $(HOST_JSON) $(BCN_IE_
 
 test-bcn-update: test_ap_bcn_update
 	./test_ap_bcn_update ap_bcn_update_vectors.json
+
+test-rust-bcn-update: test_ap_bcn_update_rust
+	./test_ap_bcn_update_rust ap_bcn_update_vectors.json
+
+librust_ap_bcn_update.a: $(RUST_AP_BCN_UPDATE)
+	rustc --edition 2021 -C opt-level=2 -C overflow-checks=on --cfg host_ap_bcn_update_test \
+		--crate-type staticlib $(RUST_AP_BCN_UPDATE) -o $@
+
+test_ap_bcn_update_rust: test_ap_bcn_update.c librust_ap_bcn_update.a $(HOST_JSON) $(BCN_UPDATE_DEPS)
+	$(CC) $(BCN_UPDATE_CFLAGS) -DRUST_AP_BCN_UPDATE_ORACLE -o $@ test_ap_bcn_update.c \
+		$(HOST_JSON) $(BCN_UPDATE_DEPS) librust_ap_bcn_update.a
 
 test-sta-alive: test_ap_sta_alive
 	./test_ap_sta_alive ap_sta_alive_vectors.json
@@ -345,7 +357,8 @@ test_ap_bcn_ie: test_ap_bcn_ie.c $(AP_BCN_IE_SRC) $(HOST_JSON) $(BCN_IE_DEPS)
 clean:
 	rm -f test_ap_rest test_ap_rest_rust test_ap_sta_ie test_ap_sta_ie_rates \
 		test_ap_sta_ie_wmm_ht test_ap_sta_ie_vht_multiap test_ap_sta_ie_sec \
-		test_ap_bcn_ie test_ap_bcn_ie_rust test_ap_bcn_update test_ap_sta_alive test_ap_sta_alive_rust \
+		test_ap_bcn_ie test_ap_bcn_ie_rust test_ap_bcn_update test_ap_bcn_update_rust \
+		librust_ap_bcn_update.a test_ap_sta_alive test_ap_sta_alive_rust \
 		librust_ap_bcn_ie.a \
 		test_ap_expire_auth test_ap_expire_auth_rust test_ap_expire_asoc test_ap_expire_asoc_rust \
 		test_ap_aka_chk test_ap_aka_chk_rust test_ap_rf18_restore test_ap_rf18_restore_rust \

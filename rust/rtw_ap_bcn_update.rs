@@ -21,6 +21,7 @@ type Sint = i32;
 const _BEACON_IE_OFFSET_: usize = 12;
 const _ERPINFO_IE_: Sint = 42;
 const _HT_ADD_INFO_IE_: Sint = 61;
+const MAX_IE_SZ: U32 = 257;
 const _TRUE: U8 = 1;
 const _FALSE: U8 = 0;
 const CHANNEL_WIDTH_40: U8 = 2;
@@ -96,9 +97,19 @@ struct HtInfoElement {
 
 extern "C" {
     fn rtw_get_ie(pbuf: *const U8, index: Sint, len: *mut Sint, limit: Sint) -> *mut U8;
+    fn rtw_malloc(sz: usize) -> *mut c_void;
+    fn rtw_mfree(p: *mut c_void, sz: usize);
+    fn rtw_get_wps_ie(
+        in_ie: *const U8,
+        in_len: U32,
+        wps_ie: *mut U8,
+        wps_ielen: *mut U32,
+    ) -> *mut U8;
+
     static mut host_bcn_update_last_erp_byte: U8;
     static mut host_bcn_update_last_ht_op_mode: U16;
     static mut host_bcn_update_last_ht_info_byte: U8;
+    static mut host_bcn_update_last_ielen: U32;
 }
 
 fn cpu_to_le16(x: U16) -> U16 {
@@ -233,5 +244,74 @@ pub extern "C" fn update_bcn_htinfo_ie(padapter: *mut c_void) {
         host_bcn_update_last_ht_info_byte = (*pht_info).infos[0];
         host_bcn_update_last_ht_op_mode =
             (*pht_info).infos[1] as U16 | ((*pht_info).infos[2] as U16) << 8;
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn update_bcn_wps_ie(padapter: *mut c_void) {
+    if padapter.is_null() {
+        return;
+    }
+    unsafe {
+        let padapter = padapter as *mut Adapter;
+        let pmlmepriv = &(*padapter).mlmepriv;
+        let pmlmeext = &mut (*padapter).mlmeextpriv;
+        let pmlmeinfo = &mut pmlmeext.mlmext_info;
+        let pnetwork = &mut pmlmeinfo.network;
+        let ie = pnetwork.ies.as_mut_ptr();
+        let ielen = pnetwork.ie_length;
+        let mut wps_ielen: U32 = 0;
+
+        let pwps_ie = rtw_get_wps_ie(
+            ie.add(_BEACON_IE_OFFSET_),
+            ielen - _BEACON_IE_OFFSET_ as U32,
+            core::ptr::null_mut(),
+            &mut wps_ielen,
+        );
+        if pwps_ie.is_null() || wps_ielen == 0 {
+            return;
+        }
+
+        let pwps_ie_src = pmlmepriv.wps_beacon_ie;
+        if pwps_ie_src.is_null() {
+            return;
+        }
+
+        let wps_offset = pwps_ie.offset_from(ie) as U32;
+        let premainder_ie = pwps_ie.add(wps_ielen as usize);
+        let remainder_ielen = ielen - wps_offset - wps_ielen;
+
+        let mut pbackup_remainder_ie: *mut U8 = core::ptr::null_mut();
+        if remainder_ielen > 0 {
+            pbackup_remainder_ie = rtw_malloc(remainder_ielen as usize) as *mut U8;
+            if !pbackup_remainder_ie.is_null() {
+                core::ptr::copy_nonoverlapping(
+                    premainder_ie,
+                    pbackup_remainder_ie,
+                    remainder_ielen as usize,
+                );
+            }
+        }
+
+        wps_ielen = *pwps_ie_src.add(1) as U32;
+        if wps_offset + wps_ielen + 2 + remainder_ielen <= MAX_IE_SZ {
+            core::ptr::copy_nonoverlapping(pwps_ie_src, pwps_ie, (wps_ielen + 2) as usize);
+            if !pbackup_remainder_ie.is_null() {
+                core::ptr::copy_nonoverlapping(
+                    pbackup_remainder_ie,
+                    pwps_ie.add((wps_ielen + 2) as usize),
+                    remainder_ielen as usize,
+                );
+            }
+            pnetwork.ie_length = wps_offset + (wps_ielen + 2) + remainder_ielen;
+        }
+
+        if !pbackup_remainder_ie.is_null() {
+            rtw_mfree(
+                pbackup_remainder_ie as *mut c_void,
+                remainder_ielen as usize,
+            );
+        }
+        host_bcn_update_last_ielen = pnetwork.ie_length;
     }
 }

@@ -33,6 +33,71 @@
       "ch2": 11,
       "expect_channel_idx": 1,
       "expect_pick_ch": 1
+    },
+    {
+      "name": "backing_op_sets_back_channel",
+      "initial_state": 5,
+      "cur_channel": 6,
+      "backop_flags": 32,
+      "expect_state": 6,
+      "expect_set_channel": 6,
+      "expect_hw_survey_off": 1,
+      "expect_backop_xmit": 1
+    },
+    {
+      "name": "back_op_scan_abort",
+      "initial_state": 6,
+      "backop_time": 0,
+      "host_time_ms": 10,
+      "backop_ms": 1000,
+      "scan_abort": 1,
+      "ch_num": 1,
+      "ch0": 1,
+      "expect_state": 4,
+      "expect_hw_survey": 1,
+      "expect_msr": 1,
+      "expect_site_survey": 1
+    },
+    {
+      "name": "backing_op_union_fallback_cur_channel",
+      "initial_state": 5,
+      "cur_channel": 11,
+      "mi_union_fail": 1,
+      "backop_flags": 0,
+      "expect_state": 6,
+      "expect_set_channel": 11,
+      "expect_hw_survey_off": 1
+    },
+    {
+      "name": "back_op_timeout_ps_annc_wait",
+      "initial_state": 6,
+      "backop_time": 0,
+      "host_time_ms": 150,
+      "backop_ms": 100,
+      "backop_flags": 16,
+      "ps_annc": 1,
+      "expect_state": 2,
+      "expect_next_state": 8
+    },
+    {
+      "name": "leaving_op_resumes_scan_process",
+      "initial_state": 7,
+      "ps_annc": 0,
+      "ch_num": 1,
+      "ch0": 1,
+      "expect_state": 4,
+      "expect_hw_survey": 1,
+      "expect_msr": 1,
+      "expect_site_survey": 1
+    },
+    {
+      "name": "scan_complete_teardown",
+      "initial_state": 12,
+      "expect_state": 0,
+      "expect_survey_done": 1,
+      "expect_hw_survey_off": 1,
+      "expect_phydm_restore": 1,
+      "expect_macid_wakeup": 1
     }
   ]
 }

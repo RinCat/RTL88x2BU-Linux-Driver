@@ -5,12 +5,14 @@
 struct host_sitesurvey_cmd_trace host_sitesurvey_cmd_trace;
 int host_ps_annc_result;
 u32 host_sitesurvey_time_ms;
+int host_sitesurvey_mi_union_fail;
 
 void host_sitesurvey_cmd_reset_trace(void)
 {
 	memset(&host_sitesurvey_cmd_trace, 0, sizeof(host_sitesurvey_cmd_trace));
 	host_ps_annc_result = 0;
 	host_sitesurvey_time_ms = 0;
+	host_sitesurvey_mi_union_fail = 0;
 }
 
 void host_sitesurvey_res_reset(_adapter *padapter, struct sitesurvey_parm *pparm)
@@ -134,6 +136,8 @@ void set_channel_bwmode(_adapter *a, u8 ch, u8 offset, u8 bw)
 
 int rtw_mi_get_ch_setting_union(_adapter *a, u8 *ch, u8 *bw, u8 *offset)
 {
+	if (host_sitesurvey_mi_union_fail)
+		return 0;
 	*ch = a->mlmeextpriv.cur_channel;
 	*bw = a->mlmeextpriv.cur_bwmode;
 	*offset = a->mlmeextpriv.cur_ch_offset;

@@ -6,6 +6,7 @@
 #include "host_vector_json.h"
 
 extern void host_sitesurvey_cmd_reset_trace(void);
+extern int host_sitesurvey_mi_union_fail;
 
 static _adapter g_adapter;
 
@@ -15,6 +16,7 @@ struct vector {
 	int ch_num, ch0, ch1, ch2, scan_ch_ms;
 	int ps_annc;
 	int cur_channel, backop_ms, backop_time, host_time_ms, backop_flags, scan_abort;
+	int mi_union_fail;
 	int expect_state, expect_next_state, expect_channel_idx;
 	int expect_hw_survey, expect_igi, expect_msr, expect_site_survey, expect_pick_ch;
 	int expect_set_channel, expect_survey_done, expect_hw_survey_off;
@@ -53,6 +55,7 @@ static void setup_adapter(struct vector *v)
 	host_sitesurvey_cmd_reset_trace();
 	host_ps_annc_result = v->ps_annc ? 1 : 0;
 	host_sitesurvey_time_ms = (u32)(v->host_time_ms ? v->host_time_ms : 0);
+	host_sitesurvey_mi_union_fail = v->mi_union_fail ? 1 : 0;
 	ss->ch_num = (u8)(v->ch_num > 0 ? v->ch_num : 1);
 	if (ss->ch_num > 0)
 		ss->ch[0].hw_value = (u16)(v->ch0 ? v->ch0 : 1);
@@ -90,6 +93,7 @@ static int parse_vec(const char *o, size_t l, void *vv)
 	host_json_parse_int_in(o, l, "host_time_ms", &v->host_time_ms);
 	host_json_parse_int_in(o, l, "backop_flags", &v->backop_flags);
 	host_json_parse_int_in(o, l, "scan_abort", &v->scan_abort);
+	host_json_parse_int_in(o, l, "mi_union_fail", &v->mi_union_fail);
 	host_json_parse_int_in(o, l, "expect_set_channel", &v->expect_set_channel);
 	host_json_parse_int_in(o, l, "expect_survey_done", &v->expect_survey_done);
 	host_json_parse_int_in(o, l, "expect_hw_survey_off", &v->expect_hw_survey_off);

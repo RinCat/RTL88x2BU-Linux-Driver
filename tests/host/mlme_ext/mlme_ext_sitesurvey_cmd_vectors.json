@@ -45,6 +45,30 @@
       "expect_backop_xmit": 1
     },
     {
+      "name": "back_op_scan_abort",
+      "initial_state": 6,
+      "backop_time": 0,
+      "host_time_ms": 10,
+      "backop_ms": 1000,
+      "scan_abort": 1,
+      "ch_num": 1,
+      "ch0": 1,
+      "expect_state": 4,
+      "expect_hw_survey": 1,
+      "expect_msr": 1,
+      "expect_site_survey": 1
+    },
+    {
+      "name": "backing_op_union_fallback_cur_channel",
+      "initial_state": 5,
+      "cur_channel": 11,
+      "mi_union_fail": 1,
+      "backop_flags": 0,
+      "expect_state": 6,
+      "expect_set_channel": 11,
+      "expect_hw_survey_off": 1
+    },
+    {
       "name": "back_op_timeout_ps_annc_wait",
       "initial_state": 6,
       "backop_time": 0,

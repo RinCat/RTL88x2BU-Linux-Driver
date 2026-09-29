@@ -16,14 +16,16 @@
     not(host_cmd_priv_test),
     not(host_cmd_queue_test),
     not(host_cmd_thread_test),
-    not(host_cmd_joinbss_test)
+    not(host_cmd_joinbss_test),
+    not(host_cmd_drvextra_test)
 ))]
 use core::ffi::{c_int, c_void};
 #[cfg(any(
     host_cmd_priv_test,
     host_cmd_queue_test,
     host_cmd_thread_test,
-    host_cmd_joinbss_test
+    host_cmd_joinbss_test,
+    host_cmd_drvextra_test
 ))]
 use std::os::raw::{c_int, c_void};
 
@@ -1223,6 +1225,59 @@ mod joinbss_cmd {
             tr.enqueue_ok = 1;
             tr.cmd_code = CMD_JOINBSS as c_int;
             _SUCCESS as u8
+        }
+    }
+}
+
+#[cfg(any(host_cmd_drvextra_test, rust_drvextra_cmd))]
+mod drvextra_cmd {
+    use super::c_int;
+
+    const H2C_SUCCESS: u8 = 0;
+    const H2C_PARAMETERS_ERROR: u8 = 4;
+
+    #[repr(C)]
+    struct DrvextraCmdParm {
+        ec_id: c_int,
+        type_: c_int,
+        size: c_int,
+        pbuf: *mut u8,
+    }
+
+    #[repr(C)]
+    pub struct Adapter {
+        pad: u8,
+    }
+
+    extern "C" {
+        fn rtw_dynamic_chk_wk_hdl(a: *mut Adapter);
+        fn reset_securitypriv_hdl(a: *mut Adapter);
+        fn free_assoc_resources_hdl(a: *mut Adapter, type_: u8);
+        fn rtw_chk_hi_queue_hdl(a: *mut Adapter);
+        fn rtw_mfree(p: *mut u8, sz: u32);
+    }
+
+    #[no_mangle]
+    pub extern "C" fn rtw_drvextra_cmd_hdl(padapter: *mut Adapter, pbuf: *mut u8) -> u8 {
+        if pbuf.is_null() {
+            return H2C_PARAMETERS_ERROR;
+        }
+        unsafe {
+            let pdrvextra_cmd = &*(pbuf as *mut DrvextraCmdParm);
+            match pdrvextra_cmd.ec_id {
+                2 => rtw_dynamic_chk_wk_hdl(padapter),
+                10 => {
+                    #[cfg(config_ap_mode)]
+                    rtw_chk_hi_queue_hdl(padapter);
+                }
+                13 => reset_securitypriv_hdl(padapter),
+                14 => free_assoc_resources_hdl(padapter, pdrvextra_cmd.type_ as u8),
+                _ => {}
+            }
+            if !pdrvextra_cmd.pbuf.is_null() && pdrvextra_cmd.size > 0 {
+                rtw_mfree(pdrvextra_cmd.pbuf, pdrvextra_cmd.size as u32);
+            }
+            H2C_SUCCESS
         }
     }
 }

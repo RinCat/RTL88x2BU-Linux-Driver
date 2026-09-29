@@ -18,13 +18,14 @@ CFLAGS_CMD_JOINBSS := $(CFLAGS) -DHOST_CMD_JOINBSS_TEST -I$(HOST_INC)
 CMD_THREAD_ORACLE := cmd_thread_host_oracle.c
 CMD_DRVEXTRA_ORACLE := drvextra_cmd_host_oracle.c
 .PHONY: all test test-c test-rust test-cmd-queue test-cmd-thread test-cmd-drvextra \
-	test-cmd-joinbss test-rust-cmd-thread test-rust-cmd-joinbss \
+	test-cmd-joinbss test-rust-cmd-thread test-rust-cmd-joinbss test-rust-cmd-drvextra \
 	test-rust-cmd-queue test-cmd-queue-kernel-layout clean
 
 all: test
 
 test: test-c test-rust test-cmd-queue test-cmd-thread test-cmd-drvextra test-cmd-joinbss \
-	test-rust-cmd-thread test-rust-cmd-joinbss test-rust-cmd-queue test-cmd-queue-kernel-layout
+	test-rust-cmd-thread test-rust-cmd-joinbss test-rust-cmd-drvextra test-rust-cmd-queue \
+	test-cmd-queue-kernel-layout
 
 test-c: test_cmd_priv
 	./test_cmd_priv cmd_priv_vectors.json
@@ -76,6 +77,18 @@ librust_joinbss_cmd.a: $(RUST_CMD_REST)
 		--cfg host_cmd_joinbss_test --cfg rust_joinbss_cmd \
 		--crate-type staticlib $(RUST_CMD_REST) -o $@
 
+test-rust-cmd-drvextra: test_drvextra_cmd_rust
+	./test_drvextra_cmd_rust drvextra_cmd_vectors.json
+
+test_drvextra_cmd_rust: test_drvextra_cmd.c host_cmd_drvextra_shim.c librust_drvextra_cmd.a $(HOST_JSON)
+	$(CC) $(CFLAGS_CMD_DRVEXTRA) -o $@ test_drvextra_cmd.c host_cmd_drvextra_shim.c \
+		$(HOST_JSON) librust_drvextra_cmd.a
+
+librust_drvextra_cmd.a: $(RUST_CMD_REST)
+	$(RUSTC) -C opt-level=2 -C overflow-checks=on \
+		--cfg host_cmd_drvextra_test --cfg rust_drvextra_cmd --cfg config_ap_mode \
+		--crate-type staticlib $(RUST_CMD_REST) -o $@
+
 test-cmd-queue: test_cmd_queue
 	./test_cmd_queue cmd_queue_vectors.json
 
@@ -120,6 +133,6 @@ test_cmd_priv_rust: test_cmd_priv.c host_cmd_priv_shim.c librust_cmd_rest.a $(HO
 clean:
 	rm -f test_cmd_priv test_cmd_priv_rust test_cmd_queue test_cmd_queue_rust \
 		test_cmd_thread test_drvextra_cmd test_cmd_thread_rust test_joinbss_cmd \
-		test_joinbss_cmd_rust test_cmd_queue_kernel_layout \
+		test_joinbss_cmd_rust test_drvextra_cmd_rust test_cmd_queue_kernel_layout \
 		librust_cmd_rest.a librust_cmd_queue.a librust_cmd_queue_kernel.a \
-		librust_cmd_thread.a librust_joinbss_cmd.a
+		librust_cmd_thread.a librust_joinbss_cmd.a librust_drvextra_cmd.a

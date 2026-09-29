@@ -1,0 +1,39 @@
+{
+  "vectors": [
+    {
+      "name": "deny_single_scan",
+      "deny_a": 1,
+      "deny_b": -1,
+      "cancel_a": -1,
+      "expect_deny": 2
+    },
+    {
+      "name": "deny_two_reasons",
+      "deny_a": 1,
+      "deny_b": 3,
+      "cancel_a": -1,
+      "expect_deny": 10
+    },
+    {
+      "name": "deny_cancel_one",
+      "deny_a": 1,
+      "deny_b": 2,
+      "cancel_a": 1,
+      "expect_deny": 4
+    },
+    {
+      "name": "cancel_missing_reason",
+      "deny_a": -1,
+      "deny_b": -1,
+      "cancel_a": 5,
+      "expect_deny": 0
+    },
+    {
+      "name": "deny_beamforming_bit",
+      "deny_a": 8,
+      "deny_b": -1,
+      "cancel_a": -1,
+      "expect_deny": 256
+    }
+  ]
+}

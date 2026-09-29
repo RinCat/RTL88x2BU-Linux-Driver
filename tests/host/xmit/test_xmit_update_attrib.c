@@ -105,7 +105,6 @@ int main(void)
 				     CHANNEL_WIDTH_40, _TRUE);
 	}
 
-#ifndef RUST_XMIT_UPDATE_ATTRIB_ORACLE
 	{
 		_adapter adapter;
 		struct pkt_attrib_sec_ext attrib;
@@ -213,7 +212,6 @@ int main(void)
 			printf("PASS sec_eapol_2_4_clear\n");
 		}
 	}
-#endif /* !RUST_XMIT_UPDATE_ATTRIB_ORACLE */
 
 	return fail ? 1 : 0;
 }

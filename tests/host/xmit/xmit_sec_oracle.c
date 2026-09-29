@@ -5,13 +5,10 @@
  * Subset of core/rtw_xmit.c: open/802.1X AES paths and blocked/EAPOL clear
  * window only (no MP bypass, TKIP/WEP/GCMP/WAPI, key copy, bswenc, TDLS/WPS).
  * Sec vectors compile only without RUST_XMIT_UPDATE_ATTRIB_ORACLE; Rust
- * differential tests cover vcs/phy until sec is wired in a follow-up.
+ * differential tests cover vcs/phy/sec via Rust oracle (PR8+).
  */
 #include <string.h>
 #include "host_xmit_update_attrib_sec_types.h"
-
-u32 host_xmit_sec_passing_ms;
-struct security_priv_sec_test host_xmit_sec_cfg;
 
 #define dot11AuthAlgrthm_Open 0
 #define dot11AuthAlgrthm_8021X 2

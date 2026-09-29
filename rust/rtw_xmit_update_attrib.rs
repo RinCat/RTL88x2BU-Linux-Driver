@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
-//! Host L2 oracle for `update_attrib_vcs_info` / `update_attrib_phy_info` (W3-86).
+//! Host L2 oracle for `update_attrib_vcs_info`, `update_attrib_phy_info`, and
+//! `update_attrib_sec_info_l2` (W3-86).
 
 #![allow(
     dead_code,
@@ -16,6 +17,7 @@ use std::os::raw::c_void;
 type U8 = u8;
 type U16 = u16;
 type U32 = u32;
+type U64 = u64;
 
 const NONE_VCS: U8 = 0;
 const RTS_CTS: U8 = 1;
@@ -353,5 +355,188 @@ pub extern "C" fn update_attrib_phy_info(
         let att = &mut *(pattrib as *mut PktAttrib);
         let sta = &*(psta as *const StaInfo);
         update_attrib_phy_info_inner(a, att, sta);
+    }
+}
+
+const DOT11_AUTH_OPEN: U8 = 0;
+const DOT11_AUTH_8021X: U8 = 2;
+const _NO_PRIVACY: U8 = 0;
+const EAPOL_2_4: i32 = 10;
+const EAPOL_4_4: i32 = 12;
+const EAPOL_ETHERTYPE: U16 = 0x888e;
+const SEC_L2_OK: i32 = 0;
+const SEC_L2_FAIL: i32 = -1;
+
+#[repr(C)]
+struct KeyT {
+    skey: [U8; 16],
+}
+
+#[repr(C)]
+struct Dot11TxPn {
+    val: U64,
+}
+
+#[repr(C)]
+struct SecurityPrivSecTest {
+    dot11AuthAlgrthm: U8,
+    dot11PrivacyKeyIndex: U8,
+    dot118021XGrpKeyid: U8,
+    dot118021XGrpPrivacy: U8,
+    busetkipkey: U8,
+    sw_encrypt: U8,
+    hw_decrypted: U8,
+    dot118021x_bmc_cam_id: U8,
+}
+
+#[repr(C)]
+struct StaInfoSecExt {
+    base: StaInfo,
+    mac_id: U8,
+    ieee8021x_blocked: U8,
+    dot118021XPrivacy: U8,
+    dot11txpn: Dot11TxPn,
+    dot118021x_UncstKey: KeyT,
+    dot11tkiptxmickey: KeyT,
+    resp_nonenc_eapol_key_starttime: U64,
+}
+
+#[repr(C)]
+struct PktAttribSecExt {
+    base: PktAttrib,
+    ra: [U8; 6],
+    encrypt: U8,
+    key_idx: U8,
+    iv: [U8; 32],
+    iv_len: U8,
+    icv_len: U8,
+    bswenc: U8,
+    bmc_camid: U8,
+    ether_type: U16,
+    mac_id: U8,
+    dot118021x_UncstKey: KeyT,
+    dot11tkiptxmickey: KeyT,
+}
+
+extern "C" {
+    static mut host_xmit_sec_cfg: SecurityPrivSecTest;
+    static mut host_xmit_sec_passing_ms: U32;
+}
+
+fn is_mcast(da: &[U8; 6]) -> bool {
+    (da[0] & 0x01) != 0
+}
+
+fn host_get_encry_algo(
+    base: &SecurityPriv,
+    sec: &SecurityPrivSecTest,
+    psta: &StaInfoSecExt,
+    bmcast: bool,
+) -> U8 {
+    match sec.dot11AuthAlgrthm {
+        DOT11_AUTH_OPEN => base.dot11PrivacyAlgrthm,
+        DOT11_AUTH_8021X => {
+            if bmcast {
+                sec.dot118021XGrpPrivacy
+            } else {
+                psta.dot118021XPrivacy
+            }
+        }
+        _ => _NO_PRIVACY,
+    }
+}
+
+fn aes_iv(pattrib_iv: &mut [U8; 32], dot11txpn: &mut Dot11TxPn, keyidx: U8) {
+    if dot11txpn.val == 0xffffffffffff {
+        dot11txpn.val = 0;
+    } else {
+        dot11txpn.val += 1;
+    }
+    let val = dot11txpn.val;
+    pattrib_iv[0] = val as U8;
+    pattrib_iv[1] = (val >> 8) as U8;
+    pattrib_iv[2] = 0;
+    pattrib_iv[3] = (1 << 5) | ((keyidx & 0x3) << 6);
+    pattrib_iv[4] = (val >> 16) as U8;
+    pattrib_iv[5] = (val >> 24) as U8;
+    pattrib_iv[6] = (val >> 32) as U8;
+    pattrib_iv[7] = (val >> 40) as U8;
+}
+
+fn update_attrib_sec_info_l2_inner(
+    padapter: &Adapter,
+    pattrib: &mut PktAttribSecExt,
+    psta: &mut StaInfoSecExt,
+    eapol_type: i32,
+    psec: &SecurityPrivSecTest,
+    passing_ms: U32,
+) -> i32 {
+    let mut res = SEC_L2_OK;
+    let bmcast = is_mcast(&pattrib.ra);
+
+    pattrib.dot118021x_UncstKey.skey = [0; 16];
+    pattrib.dot11tkiptxmickey.skey = [0; 16];
+    pattrib.mac_id = psta.mac_id;
+
+    if psta.ieee8021x_blocked == _TRUE
+        || ((eapol_type == EAPOL_2_4 || eapol_type == EAPOL_4_4) && passing_ms <= 100)
+    {
+        pattrib.encrypt = 0;
+        if pattrib.ether_type != EAPOL_ETHERTYPE {
+            res = SEC_L2_FAIL;
+        }
+    } else {
+        pattrib.encrypt = host_get_encry_algo(&padapter.securitypriv, psec, psta, bmcast);
+        pattrib.key_idx = match psec.dot11AuthAlgrthm {
+            DOT11_AUTH_OPEN => psec.dot11PrivacyKeyIndex,
+            DOT11_AUTH_8021X => {
+                if bmcast {
+                    psec.dot118021XGrpKeyid
+                } else {
+                    0
+                }
+            }
+            _ => 0,
+        };
+    }
+
+    if res == SEC_L2_OK {
+        match pattrib.encrypt {
+            x if x == _AES_ => {
+                pattrib.iv_len = 8;
+                pattrib.icv_len = 8;
+                if bmcast {
+                    aes_iv(&mut pattrib.iv, &mut psta.dot11txpn, pattrib.key_idx);
+                } else {
+                    aes_iv(&mut pattrib.iv, &mut psta.dot11txpn, 0);
+                }
+            }
+            _ => {
+                pattrib.iv_len = 0;
+                pattrib.icv_len = 0;
+            }
+        }
+    }
+
+    res
+}
+
+#[no_mangle]
+pub extern "C" fn update_attrib_sec_info_l2(
+    padapter: *mut c_void,
+    pattrib: *mut c_void,
+    psta: *mut c_void,
+    eapol_type: i32,
+) -> i32 {
+    if padapter.is_null() || pattrib.is_null() || psta.is_null() {
+        return SEC_L2_FAIL;
+    }
+    unsafe {
+        let a = &*(padapter as *const Adapter);
+        let att = &mut *(pattrib as *mut PktAttribSecExt);
+        let sta = &mut *(psta as *mut StaInfoSecExt);
+        let psec = &*core::ptr::addr_of!(host_xmit_sec_cfg);
+        let passing_ms = core::ptr::read(core::ptr::addr_of!(host_xmit_sec_passing_ms));
+        update_attrib_sec_info_l2_inner(a, att, sta, eapol_type, psec, passing_ms)
     }
 }

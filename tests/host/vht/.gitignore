@@ -1,4 +1,5 @@
 test_vht_build_operation
 test_vht_build_operation_rust
 test_vht_build_cap
+test_vht_build_cap_rust
 librust_vht_build.a

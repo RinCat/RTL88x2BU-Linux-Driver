@@ -21,7 +21,11 @@
       "expect_sgi_40": 0,
       "expect_qos": 0,
       "expect_state": 1,
-      "expect_delba": 2
+      "expect_delba": 2,
+      "preset_ldpc_cap": 0,
+      "preset_stbc_cap": 0,
+      "expect_ldpc_cap": 0,
+      "expect_stbc_cap": 0
     },
     {
       "name": "8021x_ht_assoc",
@@ -44,7 +48,11 @@
       "expect_sgi_40": 0,
       "expect_qos": 1,
       "expect_state": 16777217,
-      "expect_delba": 2
+      "expect_delba": 2,
+      "preset_ldpc_cap": 0,
+      "preset_stbc_cap": 0,
+      "expect_ldpc_cap": 0,
+      "expect_stbc_cap": 0
     },
     {
       "name": "ht_40_with_sgi",
@@ -67,7 +75,11 @@
       "expect_sgi_40": 1,
       "expect_qos": 1,
       "expect_state": 1,
-      "expect_delba": 2
+      "expect_delba": 2,
+      "preset_ldpc_cap": 0,
+      "preset_stbc_cap": 0,
+      "expect_ldpc_cap": 0,
+      "expect_stbc_cap": 0
     },
     {
       "name": "clamp_to_ap_20mhz",
@@ -90,7 +102,65 @@
       "expect_sgi_40": 0,
       "expect_qos": 1,
       "expect_state": 1,
-      "expect_delba": 2
+      "expect_delba": 2,
+      "preset_ldpc_cap": 0,
+      "preset_stbc_cap": 0,
+      "expect_ldpc_cap": 0,
+      "expect_stbc_cap": 0
+    },
+    {
+      "name": "ht_op_present_40mhz",
+      "dot11_auth": 0,
+      "ht_option": 1,
+      "sta_cap": 2,
+      "ap_cap": 2,
+      "ap_ampdu_en": 1,
+      "sta_ampdu_para": 0,
+      "cur_bwmode": 1,
+      "cur_ch_offset": 1,
+      "ht_40_intol": 0,
+      "op_present": 1,
+      "ht_op_sta_width": 1,
+      "expect_8021x_blocked": 0,
+      "expect_bw": 1,
+      "expect_ampdu_en": 1,
+      "expect_min_spacing": 0,
+      "expect_sgi_20": 0,
+      "expect_sgi_40": 0,
+      "expect_qos": 1,
+      "expect_state": 1,
+      "expect_delba": 2,
+      "preset_ldpc_cap": 0,
+      "preset_stbc_cap": 0,
+      "expect_ldpc_cap": 0,
+      "expect_stbc_cap": 0
+    },
+    {
+      "name": "no_ht_clears_ldpc_stbc",
+      "dot11_auth": 0,
+      "ht_option": 0,
+      "sta_cap": 0,
+      "ap_cap": 0,
+      "ap_ampdu_en": 1,
+      "sta_ampdu_para": 0,
+      "cur_bwmode": 1,
+      "cur_ch_offset": 1,
+      "ht_40_intol": 0,
+      "op_present": 0,
+      "ht_op_sta_width": 0,
+      "expect_8021x_blocked": 0,
+      "expect_bw": 0,
+      "expect_ampdu_en": 0,
+      "expect_min_spacing": 0,
+      "expect_sgi_20": 0,
+      "expect_sgi_40": 0,
+      "expect_qos": 0,
+      "expect_state": 1,
+      "expect_delba": 2,
+      "preset_ldpc_cap": 10,
+      "preset_stbc_cap": 10,
+      "expect_ldpc_cap": 0,
+      "expect_stbc_cap": 0
     }
   ]
 }

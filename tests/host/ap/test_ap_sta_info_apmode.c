@@ -12,6 +12,7 @@ struct vector {
 	u8 cur_bwmode, cur_ch_offset, ht_40_intol, op_present, ht_op_sta_width;
 	u8 expect_8021x_blocked, expect_bw, expect_ampdu_en, expect_min_spacing;
 	u8 expect_sgi_20, expect_sgi_40, expect_qos, expect_delba;
+	u8 preset_ldpc_cap, preset_stbc_cap, expect_ldpc_cap, expect_stbc_cap;
 };
 
 static int parse_int(const char *obj, size_t len, const char *key, int *out)
@@ -50,6 +51,10 @@ static int parse_vector_object(const char *obj, size_t len, void *vec_void)
 	P8(expect_qos);
 	P32(expect_state);
 	P8(expect_delba);
+	P8(preset_ldpc_cap);
+	P8(preset_stbc_cap);
+	P8(expect_ldpc_cap);
+	P8(expect_stbc_cap);
 	return 0;
 }
 
@@ -73,6 +78,8 @@ static int run_vector(const struct vector *v)
 	sta.htpriv.op_present = v->op_present;
 	sta.htpriv.ht_op[1] = v->ht_op_sta_width ? (1U << 2) : 0;
 	sta.ht_40mhz_intolerant = v->ht_40_intol;
+	sta.htpriv.ldpc_cap = v->preset_ldpc_cap;
+	sta.htpriv.stbc_cap = v->preset_stbc_cap;
 	sta.sta_stats.rx_data_pkts = 99;
 	update_sta_info_apmode(&adapter, &sta);
 	if (sta.ieee8021x_blocked != v->expect_8021x_blocked ||
@@ -84,6 +91,8 @@ static int run_vector(const struct vector *v)
 	    sta.qos_option != v->expect_qos ||
 	    sta.state != v->expect_state ||
 	    host_apmode_delba_calls() != v->expect_delba ||
+	    sta.htpriv.ldpc_cap != v->expect_ldpc_cap ||
+	    sta.htpriv.stbc_cap != v->expect_stbc_cap ||
 	    sta.sta_stats.rx_data_pkts != 0 ||
 	    sta.cmn.ra_info.is_support_sgi != 1) {
 		fprintf(stderr, "FAIL %s\n", v->name);

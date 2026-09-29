@@ -110,6 +110,11 @@ u32 host_rust_apmode_dot11_auth(_adapter *padapter)
 	return padapter->securitypriv.dot11AuthAlgrthm;
 }
 
+u8 host_rust_apmode_is_mesh(_adapter *padapter)
+{
+	return MLME_IS_MESH(padapter) ? _TRUE : _FALSE;
+}
+
 void host_rust_apmode_set_8021x_blocked(struct sta_info *psta, u32 blocked)
 {
 	psta->ieee8021x_blocked = blocked;
@@ -158,6 +163,8 @@ void host_rust_apmode_clear_ht_no_option(struct sta_info *psta)
 	psta->htpriv.sgi_40m = _FALSE;
 	psta->cmn.bw_mode = CHANNEL_WIDTH_20;
 	psta->htpriv.ch_offset = HAL_PRIME_CHNL_OFFSET_DONT_CARE;
+	psta->htpriv.ldpc_cap = 0;
+	psta->htpriv.stbc_cap = 0;
 }
 
 u8 *host_rust_apmode_sta_mac(struct sta_info *psta)

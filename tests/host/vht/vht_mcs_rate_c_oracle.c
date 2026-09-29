@@ -47,6 +47,27 @@ const u16 VHT_MCS_DATA_RATE[3][2][40] = {
 	}}
 };
 
+void rtw_vht_nss_to_mcsmap(u8 nss, u8 *target_mcs_map, u8 *cur_mcs_map)
+{
+	u8 i, j;
+	u8 cur_rate, target_rate;
+
+	for (i = 0; i < 2; i++) {
+		target_mcs_map[i] = 0;
+		for (j = 0; j < 8; j += 2) {
+			cur_rate = (cur_mcs_map[i] >> j) & 3;
+			if (cur_rate == 3)
+				target_rate = 3;
+			else if (nss <= ((j / 2) + i * 4))
+				target_rate = 3;
+			else
+				target_rate = cur_rate;
+
+			target_mcs_map[i] |= (target_rate << j);
+		}
+	}
+}
+
 u8 rtw_get_vht_highest_rate(u8 *pvht_mcs_map)
 {
 	u8 i, j;

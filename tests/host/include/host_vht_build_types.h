@@ -10,6 +10,15 @@ typedef unsigned int uint;
 #define BIT0 BIT(0)
 #define BIT1 BIT(1)
 #define TEST_FLAG(v, f) (((v) & (f)) != 0)
+#define SET_FLAG(v, f) ((v) |= (f))
+#define _TRUE 1
+#define _FALSE 0
+typedef u8 BOOLEAN;
+#define GET_VHT_CAPABILITY_ELE_RX_LDPC(p) LE_BITS_TO_1BYTE(p, 4, 1)
+#define GET_VHT_CAPABILITY_ELE_SHORT_GI80M(p) LE_BITS_TO_1BYTE(p, 5, 1)
+#define GET_VHT_CAPABILITY_ELE_RX_STBC(p) LE_BITS_TO_1BYTE((p) + 1, 0, 3)
+#define GET_VHT_CAPABILITY_ELE_MAX_RXAMPDU_FACTOR(p) LE_BITS_TO_2BYTE((p) + 2, 7, 3)
+#define GET_HAL_RX_NSS(a) ((a)->host_fixture.rx_nss)
 #define RTW_DBG(...) do { } while (0)
 #define RTW_INFO(...) do { } while (0)
 #define RTW_ERR(...) do { } while (0)
@@ -26,8 +35,11 @@ typedef unsigned int uint;
 #define BW_CAP_80_80M (1U << 6)
 #define HAL_PRIME_CHNL_OFFSET_LOWER 1
 #define LDPC_VHT_ENABLE_RX BIT0
+#define LDPC_VHT_ENABLE_TX BIT1
+#define LDPC_VHT_CAP_TX BIT(3)
 #define STBC_VHT_ENABLE_RX BIT0
 #define STBC_VHT_ENABLE_TX BIT1
+#define STBC_VHT_CAP_TX BIT(3)
 #define LE_BITS_TO_1BYTE(p, o, l) (((*((u8 *)(p)) >> (o)) & ((1U << (l)) - 1)))
 #define LE_BITS_TO_2BYTE(p, o, l) \
 	(((u16)(*((u8 *)(p)) | (*((u8 *)(p) + 1) << 8)) >> (o)) & ((1U << (l)) - 1))
@@ -61,11 +73,34 @@ typedef unsigned int uint;
 typedef enum { HAL_DEF_MAX_RECVBUF_SZ = 3, HAL_DEF_RX_PACKET_OFFSET = 4, HAL_DEF_RX_STBC = 15 } HAL_DEF_VARIABLE;
 
 struct registry_priv { u8 bw_mode; u8 ampdu_factor; };
-struct vht_priv { u8 vht_cap[32]; u8 vht_mcs_map[2]; u8 ldpc_cap; u8 stbc_cap; u8 sgi_80m; u8 vht_highest_rate; };
-struct mlme_ext_info { u8 assoc_AP_vendor; };
+struct vht_priv {
+	u8 vht_cap[32];
+	u8 vht_mcs_map[2];
+	u8 ldpc_cap;
+	u8 stbc_cap;
+	u8 sgi_80m;
+	u8 vht_highest_rate;
+	u8 ampdu_len;
+	u16 beamform_cap;
+	BOOLEAN vht_option;
+};
+struct mlme_ext_info { u8 assoc_AP_vendor; u8 VHT_enable; };
 struct mlme_ext_priv { struct mlme_ext_info mlmext_info; };
 struct mlme_priv { struct vht_priv vhtpriv; };
-struct host_vht_build_fixture { u32 rx_packet_offset; u32 max_recvbuf_sz; u8 rx_stbc_nss; u8 hal_max_bw; u8 hal_bw_support[5]; };
+struct host_vht_build_fixture {
+	u32 rx_packet_offset;
+	u32 max_recvbuf_sz;
+	u8 rx_stbc_nss;
+	u8 rx_nss;
+	u8 hal_max_bw;
+	u8 hal_bw_support[5];
+};
+
+typedef struct {
+	u8 ElementID;
+	u8 Length;
+	u8 data[12];
+} NDIS_802_11_VARIABLE_IEs, *PNDIS_802_11_VARIABLE_IEs;
 typedef struct { struct registry_priv registrypriv; struct mlme_priv mlmepriv; struct mlme_ext_priv mlmeextpriv;
 	struct host_vht_build_fixture host_fixture; } _adapter;
 
@@ -79,5 +114,8 @@ u8 rtw_get_center_ch(u8 ch, u8 bw, u8 offset);
 void rtw_hal_get_def_var(_adapter *padapter, HAL_DEF_VARIABLE variable, void *value);
 u32 rtw_build_vht_cap_ie(_adapter *padapter, u8 *pbuf);
 u32 rtw_build_vht_operation_ie(_adapter *padapter, u8 *pbuf, u8 channel);
+void VHT_caps_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE);
+void rtw_vht_nss_to_mcsmap(u8 nss, u8 *target_mcs_map, u8 *cur_mcs_map);
+u8 rtw_get_vht_highest_rate(u8 *pvht_mcs_map);
 
 #endif /* HOST_VHT_BUILD_TYPES_H */

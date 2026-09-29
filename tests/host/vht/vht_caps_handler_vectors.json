@@ -1,0 +1,52 @@
+{
+  "vectors": [
+    {
+      "name": "vht_option_disabled",
+      "vht_option": 0,
+      "ldpc_cap": 2,
+      "stbc_cap": 2,
+      "sgi_80m": 1,
+      "rx_nss": 2,
+      "cap_hex": "300200000000000000000000",
+      "expect_vht_enable": 0,
+      "expect_ldpc": 2,
+      "expect_stbc": 2,
+      "expect_sgi": 1,
+      "expect_ampdu": 0,
+      "expect_mcs_map": "0000",
+      "expect_highest_rate": 0
+    },
+    {
+      "name": "ldpc_stbc_sgi_ampdu_mcs",
+      "vht_option": 1,
+      "ldpc_cap": 2,
+      "stbc_cap": 2,
+      "sgi_80m": 1,
+      "rx_nss": 2,
+      "cap_hex": "300280000000000000000000",
+      "expect_vht_enable": 1,
+      "expect_ldpc": 10,
+      "expect_stbc": 10,
+      "expect_sgi": 1,
+      "expect_ampdu": 1,
+      "expect_mcs_map": "f0ff",
+      "expect_highest_rate": 177
+    },
+    {
+      "name": "sgi_masked_by_peer",
+      "vht_option": 1,
+      "ldpc_cap": 0,
+      "stbc_cap": 0,
+      "sgi_80m": 1,
+      "rx_nss": 1,
+      "cap_hex": "000280000000000000000000",
+      "expect_vht_enable": 1,
+      "expect_ldpc": 0,
+      "expect_stbc": 0,
+      "expect_sgi": 0,
+      "expect_ampdu": 1,
+      "expect_mcs_map": "fcff",
+      "expect_highest_rate": 167
+    }
+  ]
+}

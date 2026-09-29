@@ -244,8 +244,10 @@ librust_mlme_ext_sitesurvey_cmd.a: $(RUST_MLME_EXT_SITESURVEY_CMD)
 		--cfg host_mlme_ext_sitesurvey_cmd_test \
 		--crate-type staticlib $(RUST_MLME_EXT_SITESURVEY_CMD) -o $@
 
+SITESURVEY_CMD_RUST_VECTORS ?= mlme_ext_sitesurvey_cmd_vectors_rust.json
+
 test-sitesurvey-cmd-rust: test_sitesurvey_cmd_rust
-	./test_sitesurvey_cmd_rust mlme_ext_sitesurvey_cmd_vectors.json
+	./test_sitesurvey_cmd_rust $(SITESURVEY_CMD_RUST_VECTORS)
 
 test_sitesurvey_cmd_rust: test_sitesurvey_cmd.c librust_mlme_ext_sitesurvey_cmd.a \
 		$(SITESURVEY_CMD_SHIM) $(HOST_JSON)

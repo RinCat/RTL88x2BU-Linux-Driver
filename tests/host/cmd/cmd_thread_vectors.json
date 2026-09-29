@@ -10,6 +10,15 @@
       "fn": "stop",
       "expect_stop_calls": 1,
       "expect_sema_up": 1
+    },
+    {
+      "name": "thread_processes_one_cmd",
+      "fn": "thread_one",
+      "sema_credits": 3,
+      "loop_budget": 20,
+      "expect_issued": 1,
+      "expect_cmd_hdl": 1,
+      "expect_cmd_seq": 2
     }
   ]
 }

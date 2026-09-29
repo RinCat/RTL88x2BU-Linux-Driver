@@ -1,0 +1,38 @@
+{
+  "vectors": [
+    {
+      "name": "disable_bootstraps_process",
+      "initial_state": 0,
+      "ch_num": 2,
+      "ch0": 1,
+      "ch1": 6,
+      "scan_ch_ms": 100,
+      "expect_state": 4,
+      "expect_hw_survey": 1,
+      "expect_igi": 1,
+      "expect_msr": 1,
+      "expect_site_survey": 1
+    },
+    {
+      "name": "ps_annc_wait",
+      "initial_state": 1,
+      "ps_annc": 1,
+      "ch_num": 1,
+      "ch0": 11,
+      "expect_state": 2,
+      "expect_next_state": 3
+    },
+    {
+      "name": "process_bumps_channel_idx",
+      "initial_state": 4,
+      "next_state": 4,
+      "channel_idx": 0,
+      "ch_num": 3,
+      "ch0": 1,
+      "ch1": 6,
+      "ch2": 11,
+      "expect_channel_idx": 1,
+      "expect_pick_ch": 1
+    }
+  ]
+}

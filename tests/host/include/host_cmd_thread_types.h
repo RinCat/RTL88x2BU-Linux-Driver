@@ -14,6 +14,7 @@
 #define H2C_SUCCESS 0
 #define H2C_PARAMETERS_ERROR 4
 #define H2C_DROPPED 3
+#define RTW_SCTX_DONE_CMD_ERROR 2
 #define CMD_SET_DRV_EXTRA 12
 #define CMD_SET_CHANPLAN 13
 #define HOST_CMD_WLANCMDS_SIZE 4
@@ -36,6 +37,7 @@ struct cmd_obj {
 	u8 res;
 	u8 *parmbuf;
 	u32 cmdsz;
+	u8 no_io;
 	struct submit_ctx *sctx;
 	_list list;
 };
@@ -87,10 +89,26 @@ void host_cmd_thread_set_hw_init(int v);
 int host_cmd_thread_loop_continue(void);
 
 void _rtw_up_sema(_sema *s);
+sint _rtw_down_sema(_sema *s);
 int rtw_thread_stop(void *th);
+#define thread_enter(n) ((void)(n))
+#define flush_signals_thread() ((void)0)
+static inline void rtw_thread_wait_stop(void) {}
 
 void rtw_cmd_clr_isr(struct cmd_priv *p);
 void rtw_stop_cmd_thread(struct _adapter *a);
+thread_return rtw_cmd_thread(thread_context ctx);
+
+sint _rtw_enqueue_cmd(_queue *q, struct cmd_obj *obj, bool to_head);
+struct cmd_obj *rtw_dequeue_cmd(struct cmd_priv *p);
+int rtw_cmd_filter(struct cmd_priv *p, struct cmd_obj *obj);
+void rtw_free_cmd_obj(struct cmd_obj *pcmd);
+void *rtw_zmalloc(u32 sz);
+void rtw_mfree(u8 *p, u32 sz);
+void rtw_sctx_done(struct submit_ctx **sctx);
+void rtw_sctx_done_err(struct submit_ctx **sctx, int status);
+
+extern struct rtw_cmd wlancmds[HOST_CMD_WLANCMDS_SIZE];
 
 extern struct _adapter g_adapter;
 

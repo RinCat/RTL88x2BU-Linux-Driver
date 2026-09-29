@@ -2663,6 +2663,7 @@ ccflags-y += -DCONFIG_RUST_AP_EXPIRE_TIMEOUT
 ccflags-y += -DCONFIG_RUST_AP_REST
 ccflags-y += -DCONFIG_RUST_AP_BCN_IE
 ccflags-y += -DCONFIG_RUST_AP_BMC_UPDATE
+ccflags-y += -DCONFIG_RUST_AP_BCN_UPDATE
 ccflags-y += -DCONFIG_RUST_RF_OP_CLASS_PREF
 ccflags-y += -DCONFIG_RUST_RF_OP_CLASS_DUMP
 ccflags-y += -DCONFIG_RUST_RF_DUMP_TXPWR_LMT
@@ -2733,6 +2734,22 @@ rustflags-y += --cfg rust_ap_expire_timeout
 rustflags-y += --cfg rust_ap_rest
 rustflags-y += --cfg rust_ap_bcn_ie
 rustflags-y += --cfg rust_ap_bmc_update
+rustflags-y += --cfg rust_ap_bcn_update
+# W3-81 PR4: match C #if CONFIG_INTERRUPT_BASED_TXBCN || CONFIG_PCI_HCI (WPS fwstate).
+ifneq ($(filter -DCONFIG_INTERRUPT_BASED_TXBCN,$(ccflags-y) $(USER_EXTRA_CFLAGS) $(EXTRA_CFLAGS)),)
+rustflags-y += --cfg config_interrupt_based_txbcn
+else ifneq ($(shell grep -Eq '^\s*#\s*define\s+CONFIG_INTERRUPT_BASED_TXBCN(\s|$$|/\*)' $(src)/include/autoconf.h 2>/dev/null && echo y),)
+rustflags-y += --cfg config_interrupt_based_txbcn
+endif
+ifeq ($(CONFIG_PCI_HCI), y)
+rustflags-y += --cfg config_pci_hci
+endif
+ifneq ($(filter -DCONFIG_PCI_HCI,$(ccflags-y) $(USER_EXTRA_CFLAGS) $(EXTRA_CFLAGS)),)
+rustflags-y += --cfg config_pci_hci
+endif
+ifneq ($(shell grep -Eq '^\s*#\s*define\s+CONFIG_PCI_HCI(\s|$$|/\*)' $(src)/include/autoconf.h 2>/dev/null && echo y),)
+rustflags-y += --cfg config_pci_hci
+endif
 ifneq ($(filter -DCONFIG_BMC_TX_LOW_RATE,$(ccflags-y) $(USER_EXTRA_CFLAGS) $(EXTRA_CFLAGS)),)
 rustflags-y += --cfg bmc_tx_low_rate
 endif
@@ -2816,6 +2833,7 @@ $(MODULE_NAME)-y += rust/rtw_ap_sta_ie_sec.o
 $(MODULE_NAME)-y += rust/rtw_ap_rest.o
 $(MODULE_NAME)-y += rust/rtw_ap_bcn_ie.o
 $(MODULE_NAME)-y += rust/rtw_ap_bmc_update_kern.o
+$(MODULE_NAME)-y += rust/rtw_ap_bcn_update_kern.o
 $(MODULE_NAME)-y += rust/rtw_ap_sta_alive.o
 $(MODULE_NAME)-y += rust/rtw_ap_sta_ra.o
 $(MODULE_NAME)-y += rust/rtw_ap_sta_info.o

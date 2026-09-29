@@ -1,0 +1,26 @@
+{
+  "vectors": [
+    {
+      "name": "malloc_fail_cmd_obj",
+      "malloc_fail": 1,
+      "expect_ret": 0,
+      "expect_enqueue": 0
+    },
+    {
+      "name": "infra_sets_station_fw_state",
+      "infra_set": 1,
+      "infra_mode": 1,
+      "expect_ret": 1,
+      "expect_enqueue": 1,
+      "expect_fw": 8
+    },
+    {
+      "name": "ibss_sets_adhoc_fw_state",
+      "infra_set": 1,
+      "infra_mode": 0,
+      "expect_ret": 1,
+      "expect_enqueue": 1,
+      "expect_fw": 32
+    }
+  ]
+}

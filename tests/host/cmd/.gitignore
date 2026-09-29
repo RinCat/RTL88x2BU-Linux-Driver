@@ -9,4 +9,5 @@ test_cmd_thread
 test_drvextra_cmd
 test_cmd_thread_rust
 librust_cmd_thread.a
+test_joinbss_cmd
 librust_cmd_queue_kernel.a

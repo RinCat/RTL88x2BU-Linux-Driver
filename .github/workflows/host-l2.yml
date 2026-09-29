@@ -119,6 +119,7 @@ jobs:
               - 'core/rtw_security.c'
               - 'core/rtw_security_rest.c'
               - 'core/rtw_wlan_util.c'
+              - 'core/rtw_pwrctrl.c'
               - 'rust/**'
               - 'tests/host/**'
               - 'Makefile'
@@ -210,4 +211,8 @@ jobs:
       - name: Host ap_rest / ap_sta_ie parity (L2)
         if: steps.filter.outputs.l2 == 'true'
         run: make -C tests/host/ap test
+
+      - name: Host pwrctrl parity (L2)
+        if: steps.filter.outputs.l2 == 'true'
+        run: make -C tests/host/pwrctrl test
 

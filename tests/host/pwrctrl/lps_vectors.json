@@ -1,0 +1,29 @@
+{
+  "vectors": [
+    {
+      "name": "idle_already_in_ps",
+      "bpower_saving": 1,
+      "expect_idle": 0
+    },
+    {
+      "name": "idle_ips_deny_future",
+      "current_time": 10,
+      "ips_deny_time": 100,
+      "expect_idle": 0
+    },
+    {
+      "name": "idle_assoc_busy",
+      "fw_state": 1,
+      "expect_idle": 0
+    },
+    {
+      "name": "idle_xmit_pending",
+      "free_xmitbuf_cnt": 2,
+      "expect_idle": 0
+    },
+    {
+      "name": "idle_all_clear",
+      "expect_idle": 1
+    }
+  ]
+}

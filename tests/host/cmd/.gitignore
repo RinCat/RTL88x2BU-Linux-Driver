@@ -7,4 +7,6 @@ librust_cmd_queue.a
 test_cmd_queue_kernel_layout
 test_cmd_thread
 test_drvextra_cmd
+test_cmd_thread_rust
+librust_cmd_thread.a
 librust_cmd_queue_kernel.a

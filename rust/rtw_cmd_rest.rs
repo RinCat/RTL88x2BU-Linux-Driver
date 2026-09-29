@@ -12,9 +12,13 @@
     unused_unsafe
 )]
 
-#[cfg(all(not(host_cmd_priv_test), not(host_cmd_queue_test)))]
+#[cfg(all(
+    not(host_cmd_priv_test),
+    not(host_cmd_queue_test),
+    not(host_cmd_thread_test)
+))]
 use core::ffi::{c_int, c_void};
-#[cfg(any(host_cmd_priv_test, host_cmd_queue_test))]
+#[cfg(any(host_cmd_priv_test, host_cmd_queue_test, host_cmd_thread_test))]
 use std::os::raw::{c_int, c_void};
 
 type Sint = c_int;
@@ -845,5 +849,223 @@ mod cmd_queue {
                 kernel::_rtw_up_sema(kernel::rtw_rust_evt_priv_evt_notify(p) as *mut c_int);
             }
         }
+    }
+}
+
+#[cfg(any(host_cmd_thread_test, rust_cmd_thread))]
+mod cmd_thread {
+    use super::{c_int, c_void, List, Queue, Sint, MAX_CMDSZ, _FAIL};
+    #[cfg(all(rust_cmd_thread, not(host_cmd_thread_test)))]
+    use core::ptr;
+    #[cfg(host_cmd_thread_test)]
+    use std::ptr;
+
+    const H2C_SUCCESS: u8 = 0;
+    const H2C_PARAMETERS_ERROR: u8 = 4;
+    const H2C_DROPPED: u8 = 3;
+    const RTW_SCTX_DONE_CMD_ERROR: c_int = 2;
+    /// Host `HOST_CMD_WLANCMDS_SIZE`; kernel table length must match `wlancmds` link.
+    const RTW_CMDTABLE_SIZE: usize = 4;
+    const _TRUE: c_int = 1;
+
+    type IrqL = usize;
+
+    #[repr(C)]
+    struct SubmitCtx {
+        status: c_int,
+        done: c_int,
+    }
+
+    #[repr(C)]
+    struct CmdObj {
+        padapter: *mut Adapter,
+        cmdcode: u16,
+        res: u8,
+        parmbuf: *mut u8,
+        cmdsz: u32,
+        no_io: u8,
+        sctx: *mut SubmitCtx,
+        list: List,
+    }
+
+    #[repr(C)]
+    struct CmdPriv {
+        cmd_queue_sema: c_int,
+        start_cmdthread_sema: c_int,
+        cmd_queue: Queue,
+        cmd_seq: u8,
+        cmd_buf: *mut u8,
+        cmd_issued_cnt: u32,
+        cmd_done_cnt: u32,
+        cmdthd_running: c_int,
+        padapter: *mut Adapter,
+        sctx_mutex: c_int,
+    }
+
+    #[repr(C)]
+    pub struct Adapter {
+        bDriverStopped: u8,
+        bSurpriseRemoved: u8,
+        cmdThread: *mut c_void,
+        cmdpriv: CmdPriv,
+    }
+
+    type CmdHdl = extern "C" fn(*mut Adapter, *mut u8) -> u8;
+
+    #[repr(C)]
+    struct RtwCmd {
+        cmd_hdl: Option<CmdHdl>,
+        callback: *const c_void,
+    }
+
+    extern "C" {
+        fn host_cmd_thread_loop_continue() -> c_int;
+        fn _rtw_up_sema(s: *mut c_int);
+        fn _rtw_down_sema(s: *mut c_int) -> Sint;
+        fn rtw_thread_stop(th: *mut c_void) -> c_int;
+        fn host_cmd_thread_enter_critical(l: *mut c_int, irql: *mut IrqL);
+        fn host_cmd_thread_exit_critical(l: *mut c_int, irql: *mut IrqL);
+        fn host_cmd_thread_is_list_empty(head: *mut List) -> c_int;
+        fn host_cmd_thread_sctx_mutex_enter(m: *mut c_int);
+        fn host_cmd_thread_sctx_mutex_exit(m: *mut c_int);
+        fn host_cmd_thread_wait_stop();
+        fn rtw_dequeue_cmd(p: *mut CmdPriv) -> *mut CmdObj;
+        fn rtw_cmd_filter(p: *mut CmdPriv, obj: *mut CmdObj) -> c_int;
+        fn rtw_free_cmd_obj(obj: *mut CmdObj);
+        fn rtw_sctx_done(sctx: *mut *mut SubmitCtx);
+        fn rtw_sctx_done_err(sctx: *mut *mut SubmitCtx, status: c_int);
+        static mut wlancmds: [RtwCmd; RTW_CMDTABLE_SIZE];
+    }
+
+    #[no_mangle]
+    pub extern "C" fn rtw_cmd_clr_isr(pcmdpriv: *mut CmdPriv) {
+        if !pcmdpriv.is_null() {
+            unsafe {
+                (*pcmdpriv).cmd_done_cnt += 1;
+            }
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn rtw_stop_cmd_thread(adapter: *mut Adapter) {
+        if adapter.is_null() {
+            return;
+        }
+        unsafe {
+            if !(*adapter).cmdThread.is_null() {
+                _rtw_up_sema(&mut (*adapter).cmdpriv.cmd_queue_sema);
+                rtw_thread_stop((*adapter).cmdThread);
+                (*adapter).cmdThread = core::ptr::null_mut();
+            }
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn rtw_cmd_thread(context: *mut c_void) -> c_int {
+        let padapter = context as *mut Adapter;
+        if padapter.is_null() {
+            return 0;
+        }
+        unsafe {
+            let pcmdpriv = &mut (*padapter).cmdpriv;
+            let pcmdbuf = pcmdpriv.cmd_buf;
+            let mut exit_outer = false;
+
+            (*pcmdpriv).cmdthd_running = _TRUE;
+            _rtw_up_sema(&mut pcmdpriv.start_cmdthread_sema);
+
+            'outer: while !exit_outer {
+                if host_cmd_thread_loop_continue() == 0 {
+                    break;
+                }
+                if _rtw_down_sema(&mut pcmdpriv.cmd_queue_sema) == _FAIL {
+                    break;
+                }
+                if (*padapter).bDriverStopped != 0 || (*padapter).bSurpriseRemoved != 0 {
+                    break;
+                }
+                let mut irqL: IrqL = 0;
+                host_cmd_thread_enter_critical(
+                    &mut pcmdpriv.cmd_queue.lock,
+                    &mut irqL as *mut IrqL,
+                );
+                let queue_empty =
+                    host_cmd_thread_is_list_empty(&mut pcmdpriv.cmd_queue.queue as *mut List) != 0;
+                host_cmd_thread_exit_critical(&mut pcmdpriv.cmd_queue.lock, &mut irqL as *mut IrqL);
+                if queue_empty {
+                    continue;
+                }
+
+                'next: loop {
+                    if host_cmd_thread_loop_continue() == 0 {
+                        exit_outer = true;
+                        break 'next;
+                    }
+                    if (*padapter).bDriverStopped != 0 || (*padapter).bSurpriseRemoved != 0 {
+                        break 'outer;
+                    }
+
+                    let pcmd = rtw_dequeue_cmd(pcmdpriv);
+                    if pcmd.is_null() {
+                        continue 'outer;
+                    }
+
+                    (*pcmdpriv).cmd_issued_cnt += 1;
+                    let idx = (*pcmd).cmdcode as usize;
+                    let cmdsz = (*pcmd).cmdsz;
+                    if cmdsz > MAX_CMDSZ || idx >= RTW_CMDTABLE_SIZE {
+                        (*pcmd).res = H2C_PARAMETERS_ERROR;
+                        post_process(pcmd);
+                        continue 'next;
+                    }
+                    let cmd_hdl = wlancmds[idx].cmd_hdl;
+                    if cmd_hdl.is_none() {
+                        (*pcmd).res = H2C_PARAMETERS_ERROR;
+                        post_process(pcmd);
+                        continue 'next;
+                    }
+                    if rtw_cmd_filter(pcmdpriv, pcmd) == _FAIL {
+                        (*pcmd).res = H2C_DROPPED;
+                        post_process(pcmd);
+                        continue 'next;
+                    }
+                    ptr::copy_nonoverlapping((*pcmd).parmbuf, pcmdbuf, (*pcmd).cmdsz as usize);
+                    let ret = cmd_hdl.unwrap()((*pcmd).padapter, pcmdbuf);
+                    (*pcmd).res = ret;
+                    pcmdpriv.cmd_seq = pcmdpriv.cmd_seq.wrapping_add(1);
+                    post_process(pcmd);
+                }
+            }
+
+            (*pcmdpriv).cmdthd_running = 0;
+            loop {
+                let pcmd = rtw_dequeue_cmd(pcmdpriv);
+                if pcmd.is_null() {
+                    break;
+                }
+                rtw_free_cmd_obj(pcmd);
+            }
+            host_cmd_thread_wait_stop();
+        }
+        0
+    }
+
+    unsafe fn post_process(pcmd: *mut CmdObj) {
+        let padapter = (*pcmd).padapter;
+        let sctx_ptr = &mut (*pcmd).sctx as *mut *mut SubmitCtx;
+        if !padapter.is_null() {
+            host_cmd_thread_sctx_mutex_enter(&mut (*padapter).cmdpriv.sctx_mutex);
+        }
+        if !(*pcmd).sctx.is_null() {
+            if (*pcmd).res == H2C_SUCCESS {
+                rtw_sctx_done(sctx_ptr);
+            } else {
+                rtw_sctx_done_err(sctx_ptr, RTW_SCTX_DONE_CMD_ERROR);
+            }
+        }
+        if !padapter.is_null() {
+            host_cmd_thread_sctx_mutex_exit(&mut (*padapter).cmdpriv.sctx_mutex);
+        }
+        rtw_free_cmd_obj(pcmd);
     }
 }

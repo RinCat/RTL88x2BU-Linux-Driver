@@ -1,0 +1,32 @@
+{
+  "vectors": [
+    {
+      "name": "lps_ctrl_leave",
+      "lps_ctrl_type": 5,
+      "expect_lps_leave": 1
+    },
+    {
+      "name": "lps_ctrl_enter",
+      "lps_ctrl_type": 9,
+      "expect_lps_enter": 1
+    },
+    {
+      "name": "lps_ctrl_connect",
+      "lps_ctrl_type": 2,
+      "expect_hw_rpt": 1,
+      "expect_lps_idle_count": 0,
+      "expect_hw_joinbss_val": 1
+    },
+    {
+      "name": "lps_ctrl_special_packet",
+      "lps_ctrl_type": 4,
+      "expect_deny": 1,
+      "expect_lps_leave": 1
+    },
+    {
+      "name": "lps_ctrl_adhoc_skip",
+      "lps_ctrl_type": 5,
+      "adhoc": 1
+    }
+  ]
+}

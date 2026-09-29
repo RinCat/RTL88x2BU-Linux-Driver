@@ -27,6 +27,95 @@
       "name": "lps_ctrl_adhoc_skip",
       "lps_ctrl_type": 5,
       "adhoc": 1
+    },
+    {
+      "name": "watchdog_busy_rx_flags",
+      "kind": "watchdog",
+      "fw_asoc": 1,
+      "fw_sta": 1,
+      "leisure_ps": 1,
+      "num_rx_ok": 120,
+      "num_tx_ok": 10,
+      "num_rx_unicast": 10,
+      "expect_b_busy": 1,
+      "expect_b_rx_busy": 1,
+      "expect_lps_leave": 1
+    },
+    {
+      "name": "watchdog_higher_busy_tx",
+      "kind": "watchdog",
+      "fw_asoc": 1,
+      "fw_sta": 1,
+      "leisure_ps": 1,
+      "num_rx_ok": 100,
+      "num_tx_ok": 5000,
+      "num_rx_unicast": 10,
+      "expect_b_busy": 1,
+      "expect_b_tx_busy": 1,
+      "expect_b_higher_busy": 1,
+      "expect_lps_leave": 1
+    },
+    {
+      "name": "watchdog_pkt_idle_enter",
+      "kind": "watchdog",
+      "fw_asoc": 1,
+      "fw_sta": 1,
+      "leisure_ps": 1,
+      "num_rx_unicast": 1,
+      "num_tx_ok": 1,
+      "expect_enter_ps": 1,
+      "expect_lps_enter": 1
+    },
+    {
+      "name": "lps_tp_idle_enter",
+      "kind": "lps_tp",
+      "fw_asoc": 1,
+      "fw_sta": 1,
+      "tx_tp_kbits": 512,
+      "rx_tp_kbits": 512,
+      "lps_chk_cnt": 1,
+      "expect_enter_ps": 1,
+      "expect_lps_enter": 1
+    },
+    {
+      "name": "lps_tp_timer_busy_port0",
+      "kind": "lps_tp",
+      "from_timer": 1,
+      "fw_asoc": 1,
+      "fw_sta": 1,
+      "tx_tp_kbits": 8192,
+      "rx_tp_kbits": 8192,
+      "expect_lps_ctrl_wk_cmd": 1
+    },
+    {
+      "name": "lps_tp_timer_busy_non_port0",
+      "kind": "lps_tp",
+      "from_timer": 1,
+      "fw_asoc": 1,
+      "fw_sta": 1,
+      "hw_port": 1,
+      "tx_tp_kbits": 8192,
+      "rx_tp_kbits": 8192
+    },
+    {
+      "name": "lps_pkt_timer_busy_port0",
+      "kind": "lps_pkt",
+      "from_timer": 1,
+      "fw_asoc": 1,
+      "fw_sta": 1,
+      "num_rx_unicast": 10,
+      "num_tx_ok": 10,
+      "expect_lps_ctrl_wk_cmd": 1
+    },
+    {
+      "name": "lps_pkt_idle_enter",
+      "kind": "lps_pkt",
+      "fw_asoc": 1,
+      "fw_sta": 1,
+      "num_rx_unicast": 1,
+      "num_tx_ok": 1,
+      "expect_enter_ps": 1,
+      "expect_lps_enter": 1
     }
   ]
 }

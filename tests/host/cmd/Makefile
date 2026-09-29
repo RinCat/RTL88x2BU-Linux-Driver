@@ -14,10 +14,12 @@ CFLAGS_CMD_QUEUE := $(CFLAGS) -DHOST_CMD_QUEUE_TEST
 CFLAGS_CMD_THREAD := $(CFLAGS) -DHOST_CMD_THREAD_TEST -I$(HOST_INC)
 CFLAGS_CMD_DRVEXTRA := $(CFLAGS) -DHOST_CMD_DRVEXTRA_TEST -I$(HOST_INC)
 CFLAGS_CMD_JOINBSS := $(CFLAGS) -DHOST_CMD_JOINBSS_TEST -I$(HOST_INC)
-CFLAGS_CMD_TRAFFIC_LPS := $(CFLAGS) -DHOST_CMD_TRAFFIC_LPS_TEST -I$(HOST_INC)
+CFLAGS_CMD_TRAFFIC_LPS := $(CFLAGS) -DHOST_CMD_TRAFFIC_LPS_TEST \
+	-DCONFIG_CONCURRENT_MODE -I$(HOST_INC)
 
 CMD_THREAD_ORACLE := cmd_thread_host_oracle.c
 CMD_DRVEXTRA_ORACLE := drvextra_cmd_host_oracle.c
+CMD_TRAFFIC_LPS_ORACLE := traffic_lps_watchdog_host_oracle.c
 .PHONY: all test test-c test-rust test-cmd-queue test-cmd-thread test-cmd-drvextra \
 	test-cmd-joinbss test-cmd-traffic-lps test-rust-cmd-thread test-rust-cmd-joinbss \
 	test-rust-cmd-drvextra test-rust-cmd-queue test-cmd-queue-kernel-layout clean
@@ -64,9 +66,10 @@ test-cmd-joinbss: test_joinbss_cmd
 test-cmd-traffic-lps: test_traffic_lps_cmd
 	./test_traffic_lps_cmd traffic_lps_vectors.json
 
-test_traffic_lps_cmd: test_traffic_lps_cmd.c host_cmd_traffic_lps_shim.c $(HOST_JSON)
+test_traffic_lps_cmd: test_traffic_lps_cmd.c host_cmd_traffic_lps_shim.c \
+		$(CMD_TRAFFIC_LPS_ORACLE) $(HOST_JSON)
 	$(CC) $(CFLAGS_CMD_TRAFFIC_LPS) -o $@ test_traffic_lps_cmd.c \
-		host_cmd_traffic_lps_shim.c $(HOST_JSON)
+		host_cmd_traffic_lps_shim.c $(CMD_TRAFFIC_LPS_ORACLE) $(HOST_JSON)
 
 test_joinbss_cmd: test_joinbss_cmd.c host_cmd_joinbss_shim.c $(HOST_JSON)
 	$(CC) $(CFLAGS_CMD_JOINBSS) -o $@ test_joinbss_cmd.c host_cmd_joinbss_shim.c $(HOST_JSON)

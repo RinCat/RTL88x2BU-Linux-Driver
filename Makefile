@@ -2653,6 +2653,7 @@ ccflags-y += -DCONFIG_RUST_AP_STA_IE_SEC
 ccflags-y += -DCONFIG_RUST_AP_STA_ALIVE
 ccflags-y += -DCONFIG_RUST_AP_STA_RA
 ccflags-y += -DCONFIG_RUST_AP_STA_INFO
+ccflags-y += -DCONFIG_RUST_AP_STA_INFO_APMODE
 ccflags-y += -DCONFIG_RUST_AP_EXPIRE_ASOC
 ccflags-y += -DCONFIG_RUST_AP_EXPIRE_AUTH
 ccflags-y += -DCONFIG_RUST_AP_AKA_CHK
@@ -2817,6 +2818,7 @@ $(MODULE_NAME)-y += rust/rtw_ap_bmc_update_kern.o
 $(MODULE_NAME)-y += rust/rtw_ap_sta_alive.o
 $(MODULE_NAME)-y += rust/rtw_ap_sta_ra.o
 $(MODULE_NAME)-y += rust/rtw_ap_sta_info.o
+$(MODULE_NAME)-y += rust/rtw_ap_sta_info_apmode.o
 $(MODULE_NAME)-y += rust/rtw_ap_expire_asoc.o
 $(MODULE_NAME)-y += rust/rtw_ap_expire_auth.o
 $(MODULE_NAME)-y += rust/rtw_ap_aka_chk.o
@@ -3406,6 +3408,23 @@ rust-objects-rtw-ap-sta-info-rust-ref:
 rust-check-symbols-rtw-ap-sta-info: rust-objects-rtw-ap-sta-info-c rust-objects-rtw-ap-sta-info-rust-ref
 	$(MAKE) rust-check-symbols OLD=tests/host/ap/ap_sta_info_c_ref.o NEW=tests/host/ap/ap_sta_info_rust_ref.o \
 		ALLOWLIST=docs/rust-migration/scripts/rtw_ap_sta_info.allow
+
+# W3-83 PR15: update_sta_info_apmode L1 (host C vs host Rust oracle).
+rust-objects-rtw-ap-sta-info-apmode-c:
+	gcc -c -Wall -Wextra -Werror -Wno-unused-parameter -O2 \
+		-I$(shell pwd)/tests/host/include -I$(shell pwd)/core -I$(shell pwd)/include \
+		-include $(shell pwd)/tests/host/include/host_autoconf.h \
+		-DHOST_AP_STA_INFO_APMODE_TEST \
+		-o tests/host/ap/ap_sta_info_apmode_c_ref.o core/rtw_ap_sta_info_apmode.c
+
+rust-objects-rtw-ap-sta-info-apmode-rust-ref:
+	rustc --edition 2021 -C opt-level=2 -C overflow-checks=on --cfg host_ap_sta_info_apmode_test \
+		--emit=obj=tests/host/ap/ap_sta_info_apmode_rust_ref.o \
+		--crate-type lib rust/rtw_ap_sta_info_apmode.rs
+
+rust-check-symbols-rtw-ap-sta-info-apmode: rust-objects-rtw-ap-sta-info-apmode-c rust-objects-rtw-ap-sta-info-apmode-rust-ref
+	$(MAKE) rust-check-symbols OLD=tests/host/ap/ap_sta_info_apmode_c_ref.o NEW=tests/host/ap/ap_sta_info_apmode_rust_ref.o \
+		ALLOWLIST=docs/rust-migration/scripts/rtw_ap_sta_info_apmode.allow
 
 # W3-82 PR8: expire asoc tick L1 (host C vs host Rust oracle).
 rust-objects-rtw-ap-expire-asoc-c:

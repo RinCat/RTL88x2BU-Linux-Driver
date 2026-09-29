@@ -18,6 +18,8 @@
 
 #ifdef CONFIG_AP_MODE
 
+#if !defined(CONFIG_RUST_AP_STA_INFO_APMODE) || defined(HOST_AP_STA_INFO_APMODE_TEST)
+
 /* notes:
  * AID: 1~MAX for sta and 0 for bc/mc in ap/adhoc mode  */
 void update_sta_info_apmode(_adapter *padapter, struct sta_info *psta)
@@ -160,5 +162,7 @@ void update_sta_info_apmode(_adapter *padapter, struct sta_info *psta)
 
 	_exit_critical_bh(&psta->lock, &irqL);
 }
+
+#endif /* !CONFIG_RUST_AP_STA_INFO_APMODE || HOST_AP_STA_INFO_APMODE_TEST */
 
 #endif /* CONFIG_AP_MODE */

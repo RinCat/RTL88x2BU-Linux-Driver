@@ -2478,6 +2478,7 @@ rtk_core :=	core/rtw_cmd.o \
 		core/rtw_ap_bcn_ie.o \
 		core/rtw_ap_bcn_ie_rust_acc.o \
 		core/rtw_ap_bcn_update.o \
+		core/rtw_ap_bcn_update_rust_acc.o \
 		core/rtw_ap_bmc_update.o \
 		core/rtw_ap_bmc_update_rust_acc.o \
 		core/rtw_ap_sta_alive.o \
@@ -3392,6 +3393,22 @@ rust-objects-rtw-ap-sta-ra-rust-ref:
 rust-check-symbols-rtw-ap-sta-ra: rust-objects-rtw-ap-sta-ra-c rust-objects-rtw-ap-sta-ra-rust-ref
 	$(MAKE) rust-check-symbols OLD=tests/host/ap/ap_sta_ra_c_ref.o NEW=tests/host/ap/ap_sta_ra_rust_ref.o \
 		ALLOWLIST=docs/rust-migration/scripts/rtw_ap_sta_ra.allow
+
+# W3-81 PR3: beacon HT/WPS/ERP kernel object L1 (host C ref vs kbuild Rust object).
+rust-objects-rtw-ap-bcn-update-c:
+	gcc -c -Wall -Wextra -Werror -Wno-unused-parameter -O2 \
+		-I$(shell pwd)/tests/host/include -I$(shell pwd)/core -I$(shell pwd)/include \
+		-include $(shell pwd)/tests/host/include/host_autoconf.h \
+		-DHOST_AP_BCN_UPDATE_TEST \
+		-o tests/host/ap/ap_bcn_update_c_ref.o core/rtw_ap_bcn_update.c
+
+rust-objects-rtw-ap-bcn-update-kern:
+	@test -n "$(KDIR)" || { echo "Usage: make KDIR=… LLVM=1 rust-objects-rtw-ap-bcn-update-kern"; exit 1; }
+	$(MAKE) $(KBUILD_OPTS) -C $(KSRC) M=$(shell pwd) rust/rtw_ap_bcn_update_kern.o
+
+rust-check-symbols-rtw-ap-bcn-update: rust-objects-rtw-ap-bcn-update-c rust-objects-rtw-ap-bcn-update-kern
+	$(MAKE) rust-check-symbols OLD=tests/host/ap/ap_bcn_update_c_ref.o NEW=rust/rtw_ap_bcn_update_kern.o \
+		ALLOWLIST=docs/rust-migration/scripts/rtw_ap_bcn_update.allow
 
 rust-objects-rtw-ap-sta-info-c:
 	gcc -c -Wall -Wextra -Werror -Wno-unused-parameter -O2 \

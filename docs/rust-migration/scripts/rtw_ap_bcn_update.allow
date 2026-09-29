@@ -1,0 +1,2 @@
+# W3-81: host C ref exports test ERP_IE_handler; kernel uses rtw_wlan_util.c.
+drop ERP_IE_handler

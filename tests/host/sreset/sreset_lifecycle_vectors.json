@@ -1,0 +1,31 @@
+{
+  "vectors": [
+    { "name": "init", "op": "init", "expect_u8": 0 },
+    {
+      "name": "reset_value",
+      "op": "reset",
+      "seed_error": 7,
+      "expect_u8": 0
+    },
+    {
+      "name": "get_wifi_inprogress",
+      "op": "get_wifi",
+      "silent_inprogress": 1,
+      "txdma_reg": 1,
+      "expect_u8": 0
+    },
+    {
+      "name": "get_wifi_if_not_exist",
+      "op": "get_wifi",
+      "txdma_reg": 3941264106,
+      "expect_u8": 64
+    },
+    {
+      "name": "get_wifi_txdma",
+      "op": "get_wifi",
+      "txdma_reg": 1,
+      "expect_u8": 8
+    },
+    { "name": "set_error", "op": "set_error", "error_status": 12, "expect_u8": 12 }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "vectors": [
+    {
+      "name": "null_parmbuf_parameters_error",
+      "ec_id": -1,
+      "expect_ret": 4
+    },
+    {
+      "name": "dynamic_chk_dispatches",
+      "ec_id": 2,
+      "expect_ret": 0,
+      "expect_dynamic": 1
+    },
+    {
+      "name": "reset_securitypriv",
+      "ec_id": 13,
+      "expect_ret": 0,
+      "expect_reset_sec": 1
+    },
+    {
+      "name": "free_assoc_frees_payload",
+      "ec_id": 14,
+      "type": 3,
+      "payload_size": 8,
+      "expect_ret": 0,
+      "expect_free_assoc": 1,
+      "expect_mfree": 1
+    },
+    {
+      "name": "check_hiq_ap_mode",
+      "ec_id": 10,
+      "expect_ret": 0,
+      "expect_hiq": 1
+    }
+  ]
+}

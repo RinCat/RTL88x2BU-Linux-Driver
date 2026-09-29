@@ -2494,6 +2494,7 @@ rtk_core :=	core/rtw_cmd.o \
 		core/rtw_ap_sta_info.o \
 		core/rtw_ap_sta_info_rust_acc.o \
 		core/rtw_ap_sta_info_apmode.o \
+		core/rtw_ap_sta_info_apmode_rust_acc.o \
 		core/rtw_ap_expire_asoc.o \
 		core/rtw_ap_expire_asoc_rust_acc.o \
 		core/rtw_ap_expire_asoc_list.o \

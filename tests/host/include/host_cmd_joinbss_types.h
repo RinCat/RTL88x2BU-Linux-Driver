@@ -62,6 +62,9 @@ struct host_joinbss_trace {
 void host_joinbss_reset(void);
 struct host_joinbss_trace *host_joinbss_get_trace(void);
 void host_joinbss_set_malloc_fail(int n);
+void *host_joinbss_zmalloc(u32 sz);
+sint check_fwstate(struct mlme_priv *m, sint s);
+void set_fwstate(struct mlme_priv *m, sint s);
 u8 rtw_joinbss_cmd(struct _adapter *a, struct wlan_network *n);
 
 #endif

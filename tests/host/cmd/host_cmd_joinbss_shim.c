@@ -6,11 +6,23 @@
 static struct host_joinbss_trace g_trace;
 static int g_malloc_fail;
 
-void host_joinbss_reset(void) { g_malloc_fail = 0; g_trace = (struct host_joinbss_trace){0}; }
-struct host_joinbss_trace *host_joinbss_get_trace(void) { return &g_trace; }
-void host_joinbss_set_malloc_fail(int n) { g_malloc_fail = n; }
+void host_joinbss_reset(void)
+{
+	g_malloc_fail = 0;
+	g_trace = (struct host_joinbss_trace){0};
+}
 
-static void *zmalloc(u32 sz)
+struct host_joinbss_trace *host_joinbss_get_trace(void)
+{
+	return &g_trace;
+}
+
+void host_joinbss_set_malloc_fail(int n)
+{
+	g_malloc_fail = n;
+}
+
+void *host_joinbss_zmalloc(u32 sz)
 {
 	if (g_malloc_fail-- > 0)
 		return NULL;
@@ -22,16 +34,20 @@ sint check_fwstate(struct mlme_priv *m, sint s)
 	return (!s && !m->fw_state) || (m->fw_state & (u32)s) ? _TRUE : 0;
 }
 
-void set_fwstate(struct mlme_priv *m, sint s) { m->fw_state |= (u32)s; }
+void set_fwstate(struct mlme_priv *m, sint s)
+{
+	m->fw_state |= (u32)s;
+}
 
+#ifndef HOST_CMD_JOINBSS_RUST_TEST
 u8 rtw_joinbss_cmd(struct _adapter *padapter, struct wlan_network *pnetwork)
 {
 	WLAN_BSSID_EX *psecnetwork;
 	struct cmd_obj *pcmd;
-	u8 res = _SUCCESS;
 	NDIS_802_11_NETWORK_INFRASTRUCTURE ndis_mode = pnetwork->network.InfrastructureMode;
+	struct host_joinbss_trace *tr;
 
-	pcmd = zmalloc(sizeof(*pcmd));
+	pcmd = host_joinbss_zmalloc(sizeof(*pcmd));
 	if (!pcmd)
 		return _FAIL;
 	if (check_fwstate(&padapter->mlmepriv, WIFI_STATION_STATE | WIFI_ADHOC_STATE) != _TRUE) {
@@ -40,7 +56,7 @@ u8 rtw_joinbss_cmd(struct _adapter *padapter, struct wlan_network *pnetwork)
 		else if (ndis_mode == Ndis802_11Infrastructure)
 			set_fwstate(&padapter->mlmepriv, WIFI_STATION_STATE);
 	}
-	psecnetwork = zmalloc(sizeof(WLAN_BSSID_EX));
+	psecnetwork = host_joinbss_zmalloc(sizeof(WLAN_BSSID_EX));
 	if (!psecnetwork) {
 		free(pcmd);
 		return _FAIL;
@@ -53,8 +69,9 @@ u8 rtw_joinbss_cmd(struct _adapter *padapter, struct wlan_network *pnetwork)
 	pcmd->cmdsz = sizeof(WLAN_BSSID_EX);
 	pcmd->cmdcode = CMD_JOINBSS;
 	pcmd->parmbuf = (u8 *)psecnetwork;
-	g_trace.enqueue_ok = 1;
-	g_trace.cmd_code = pcmd->cmdcode;
-	(void)res;
+	tr = host_joinbss_get_trace();
+	tr->enqueue_ok = 1;
+	tr->cmd_code = pcmd->cmdcode;
 	return _SUCCESS;
 }
+#endif /* HOST_CMD_JOINBSS_RUST_TEST */

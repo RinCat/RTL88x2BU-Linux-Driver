@@ -15,10 +15,16 @@
 #[cfg(all(
     not(host_cmd_priv_test),
     not(host_cmd_queue_test),
-    not(host_cmd_thread_test)
+    not(host_cmd_thread_test),
+    not(host_cmd_joinbss_test)
 ))]
 use core::ffi::{c_int, c_void};
-#[cfg(any(host_cmd_priv_test, host_cmd_queue_test, host_cmd_thread_test))]
+#[cfg(any(
+    host_cmd_priv_test,
+    host_cmd_queue_test,
+    host_cmd_thread_test,
+    host_cmd_joinbss_test
+))]
 use std::os::raw::{c_int, c_void};
 
 type Sint = c_int;
@@ -1067,5 +1073,156 @@ mod cmd_thread {
             host_cmd_thread_sctx_mutex_exit(&mut (*padapter).cmdpriv.sctx_mutex);
         }
         rtw_free_cmd_obj(pcmd);
+    }
+}
+
+#[cfg(any(host_cmd_joinbss_test, rust_joinbss_cmd))]
+mod joinbss_cmd {
+    use super::{c_int, c_void, Sint, _FAIL, _SUCCESS};
+
+    const _TRUE: c_int = 1;
+    const CMD_JOINBSS: u16 = 0;
+    const Ndis802_11IBSS: c_int = 0;
+    const Ndis802_11Infrastructure: c_int = 1;
+    const WIFI_STATION_STATE: u32 = 0x08;
+    const WIFI_ADHOC_STATE: u32 = 0x20;
+    const ETH_ALEN: usize = 6;
+
+    #[repr(C)]
+    struct Ndis80211Ssid {
+        ssid_length: u32,
+        ssid: [u8; 32],
+    }
+
+    #[repr(C)]
+    struct Ndis80211Configuration {
+        ds_config: u32,
+    }
+
+    #[repr(C)]
+    struct WlanBssidEx {
+        mac_address: [u8; ETH_ALEN],
+        ssid: Ndis80211Ssid,
+        configuration: Ndis80211Configuration,
+        infrastructure_mode: c_int,
+        ie_length: u32,
+        ies: [u8; 768],
+    }
+
+    #[repr(C)]
+    struct WlanNetwork {
+        network: WlanBssidEx,
+    }
+
+    #[repr(C)]
+    struct MlmePriv {
+        fw_state: u32,
+        assoc_by_bssid: u8,
+        assoc_bssid: [u8; ETH_ALEN],
+    }
+
+    #[repr(C)]
+    struct SecurityPriv {
+        authenticator_ie: [u8; 256],
+    }
+
+    #[repr(C)]
+    struct RegistryPriv {
+        wmm_enable: u8,
+    }
+
+    #[repr(C)]
+    struct CmdObj {
+        cmdcode: u16,
+        cmdsz: u32,
+        parmbuf: *mut u8,
+    }
+
+    #[repr(C)]
+    struct CmdPriv {
+        _pad: c_int,
+    }
+
+    #[repr(C)]
+    pub struct Adapter {
+        mlmepriv: MlmePriv,
+        securitypriv: SecurityPriv,
+        registrypriv: RegistryPriv,
+        cmdpriv: CmdPriv,
+    }
+
+    #[repr(C)]
+    struct HostJoinbssTrace {
+        enqueue_ok: c_int,
+        cmd_code: c_int,
+    }
+
+    extern "C" {
+        fn host_joinbss_zmalloc(sz: u32) -> *mut c_void;
+        fn host_joinbss_get_trace() -> *mut HostJoinbssTrace;
+        fn check_fwstate(m: *mut MlmePriv, s: Sint) -> c_int;
+        fn set_fwstate(m: *mut MlmePriv, s: Sint);
+        fn free(ptr: *mut c_void);
+    }
+
+    #[no_mangle]
+    pub extern "C" fn rtw_joinbss_cmd(padapter: *mut Adapter, pnetwork: *mut WlanNetwork) -> u8 {
+        if padapter.is_null() || pnetwork.is_null() {
+            return _FAIL as u8;
+        }
+        unsafe {
+            let padapter = &mut *padapter;
+            let pnetwork = &*pnetwork;
+            let ndis_mode = pnetwork.network.infrastructure_mode;
+
+            let pcmd = host_joinbss_zmalloc(core::mem::size_of::<CmdObj>() as u32) as *mut CmdObj;
+            if pcmd.is_null() {
+                return _FAIL as u8;
+            }
+            if check_fwstate(
+                &mut padapter.mlmepriv as *mut MlmePriv,
+                WIFI_STATION_STATE as Sint | WIFI_ADHOC_STATE as Sint,
+            ) != _TRUE
+            {
+                if ndis_mode == Ndis802_11IBSS {
+                    set_fwstate(
+                        &mut padapter.mlmepriv as *mut MlmePriv,
+                        WIFI_ADHOC_STATE as Sint,
+                    );
+                } else if ndis_mode == Ndis802_11Infrastructure {
+                    set_fwstate(
+                        &mut padapter.mlmepriv as *mut MlmePriv,
+                        WIFI_STATION_STATE as Sint,
+                    );
+                }
+            }
+
+            let psecnetwork = host_joinbss_zmalloc(core::mem::size_of::<WlanBssidEx>() as u32)
+                as *mut WlanBssidEx;
+            if psecnetwork.is_null() {
+                free(pcmd as *mut c_void);
+                return _FAIL as u8;
+            }
+
+            core::ptr::copy_nonoverlapping(&pnetwork.network, psecnetwork, 1);
+            padapter.securitypriv.authenticator_ie[0] = (*psecnetwork).ie_length as u8;
+            (*psecnetwork).ie_length = 12;
+            if padapter.mlmepriv.assoc_by_bssid == 0 {
+                core::ptr::copy_nonoverlapping(
+                    pnetwork.network.mac_address.as_ptr(),
+                    padapter.mlmepriv.assoc_bssid.as_mut_ptr(),
+                    ETH_ALEN,
+                );
+            }
+
+            (*pcmd).cmdsz = core::mem::size_of::<WlanBssidEx>() as u32;
+            (*pcmd).cmdcode = CMD_JOINBSS;
+            (*pcmd).parmbuf = psecnetwork as *mut u8;
+
+            let tr = &mut *host_joinbss_get_trace();
+            tr.enqueue_ok = 1;
+            tr.cmd_code = CMD_JOINBSS as c_int;
+            _SUCCESS as u8
+        }
     }
 }

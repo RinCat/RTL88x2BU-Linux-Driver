@@ -116,6 +116,51 @@
       "num_tx_ok": 1,
       "expect_enter_ps": 1,
       "expect_lps_enter": 1
+    },
+    {
+      "name": "pkt_cnts_busy_leave",
+      "kind": "lps_pkt",
+      "fw_asoc": 1,
+      "fw_sta": 1,
+      "leisure_ps": 1,
+      "num_tx_ok": 5,
+      "num_rx_unicast": 5,
+      "expect_enter_ps": 0,
+      "expect_lps_leave": 1
+    },
+    {
+      "name": "tp_high_resets_chk",
+      "kind": "lps_tp",
+      "fw_asoc": 1,
+      "fw_sta": 1,
+      "leisure_ps": 1,
+      "tx_tp_kbits": 5120,
+      "lps_chk_cnt": 0,
+      "lps_chk_cnt_th": 3,
+      "expect_enter_ps": 0,
+      "expect_lps_leave": 1
+    },
+    {
+      "name": "tp_low_enter_after_cnt",
+      "kind": "lps_tp",
+      "fw_asoc": 1,
+      "fw_sta": 1,
+      "leisure_ps": 1,
+      "lps_chk_cnt": 1,
+      "lps_chk_cnt_th": 2,
+      "expect_enter_ps": 1,
+      "expect_lps_enter": 1
+    },
+    {
+      "name": "watchdog_tp_path_busy",
+      "kind": "watchdog",
+      "fw_asoc": 1,
+      "fw_sta": 1,
+      "leisure_ps": 1,
+      "lps_chk_by_tp": 1,
+      "tx_tp_kbits": 8192,
+      "expect_enter_ps": 0,
+      "expect_lps_leave": 1
     }
   ]
 }

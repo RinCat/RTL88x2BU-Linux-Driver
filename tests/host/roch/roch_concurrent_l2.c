@@ -65,6 +65,7 @@ static u8 chk_need_stay_in_cur_chan(PADAPTER padapter)
 	return _FALSE;
 }
 
+#ifndef HOST_ROCH_CONCURRENT_RUST
 static void set_channel_bwmode(PADAPTER a, u8 ch, u8 off, u8 bw)
 {
 	g_tr.set_channel = 1;
@@ -95,7 +96,6 @@ static u8 rtw_cfg80211_get_is_roch(PADAPTER a) { return a->cfg80211_is_roch; }
 static void rtw_leave_opch(PADAPTER a) { (void)a; g_tr.leave_opch = 1; }
 static void rtw_back_opch(PADAPTER a) { (void)a; g_tr.back_opch = 1; }
 
-#ifndef HOST_ROCH_CONCURRENT_RUST
 void rtw_concurrent_handler(PADAPTER padapter);
 u8 rtw_roch_wk_cmd(PADAPTER padapter, int cmd, void *parm, u8 flags);
 

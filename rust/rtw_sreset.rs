@@ -59,6 +59,140 @@ type Padapter = *mut Adapter;
 #[cfg(not(host_sreset_test))]
 type Padapter = *mut c_void;
 
+#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
+const WIFI_ASOC_STATE: u32 = 0x0000_0001;
+#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
+const WIFI_UNDER_SURVEY: u32 = 0x0000_0800;
+#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
+const WIFI_UNDER_LINKING: u32 = 0x0000_0080;
+
+#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
+#[repr(C)]
+pub struct MlmePriv {
+    pub fw_state: u32,
+}
+
+#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
+#[repr(C)]
+pub struct XmitTasklet {
+    pub dummy: i32,
+}
+
+#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
+#[repr(C)]
+pub struct XmitPriv {
+    pub xmit_tasklet: XmitTasklet,
+}
+
+#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
+#[repr(C)]
+pub struct TimerList {
+    pub ms: u32,
+}
+
+#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
+#[repr(C)]
+pub struct DvobjPriv {
+    pub dynamic_chk_timer: TimerList,
+}
+
+#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
+#[repr(C)]
+pub struct NetDevice {
+    pub dummy: i32,
+}
+
+#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
+#[repr(C)]
+pub struct HostAdapter {
+    pub dvobj: DvobjPriv,
+    pub mlmepriv: MlmePriv,
+    pub xmitpriv: XmitPriv,
+    pub pnetdev: *mut NetDevice,
+    #[cfg(CONFIG_CONCURRENT_MODE)]
+    pub adapter_type: u8,
+}
+
+#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
+type HostPadapter = *mut HostAdapter;
+
+#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
+const HOST_PRIMARY_ADAPTER: u8 = 0;
+#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
+const HOST_VIRTUAL_ADAPTER: u8 = 1;
+
+#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
+fn host_is_primary_adapter(adapter: &HostAdapter) -> bool {
+    #[cfg(CONFIG_CONCURRENT_MODE)]
+    {
+        adapter.adapter_type == HOST_PRIMARY_ADAPTER
+    }
+    #[cfg(not(CONFIG_CONCURRENT_MODE))]
+    {
+        let _ = adapter;
+        true
+    }
+}
+
+#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
+mod host_adapter {
+    use super::*;
+
+    extern "C" {
+        fn host_sreset_check_fwstate(m: *mut MlmePriv, s: i32) -> i32;
+        fn host_sreset_rtw_netif_stop_queue(dev: *mut NetDevice);
+        fn host_sreset_rtw_netif_wake_queue(dev: *mut NetDevice);
+        fn host_sreset_rtw_cancel_all_timer(padapter: HostPadapter);
+        fn host_sreset_tasklet_kill(t: *mut XmitTasklet);
+        fn host_sreset_tasklet_hi_schedule(t: *mut XmitTasklet);
+        fn host_sreset_rtw_scan_abort(padapter: HostPadapter);
+        fn host_sreset_rtw_set_to_roam(padapter: HostPadapter, to_roam: u8);
+        fn host_sreset_rtw_join_timeout_handler(padapter: HostPadapter);
+        fn host_sreset_restore_network_status(padapter: HostPadapter);
+        fn host_sreset_set_timer(t: *mut TimerList, ms: u32);
+    }
+
+    fn check_fwstate(m: &MlmePriv, mask: u32) -> bool {
+        unsafe { host_sreset_check_fwstate(m as *const _ as *mut MlmePriv, mask as i32) != 0 }
+    }
+
+    pub fn stop_adapter(padapter: HostPadapter) {
+        if padapter.is_null() {
+            return;
+        }
+        unsafe {
+            let pnetdev = (*padapter).pnetdev;
+            host_sreset_rtw_netif_stop_queue(pnetdev);
+            host_sreset_rtw_cancel_all_timer(padapter);
+            host_sreset_tasklet_kill(&mut (*padapter).xmitpriv.xmit_tasklet);
+            if check_fwstate(&(*padapter).mlmepriv, WIFI_UNDER_SURVEY) {
+                host_sreset_rtw_scan_abort(padapter);
+            }
+            if check_fwstate(&(*padapter).mlmepriv, WIFI_UNDER_LINKING) {
+                host_sreset_rtw_set_to_roam(padapter, 0);
+                host_sreset_rtw_join_timeout_handler(padapter);
+            }
+        }
+    }
+
+    pub fn start_adapter(padapter: HostPadapter) {
+        if padapter.is_null() {
+            return;
+        }
+        unsafe {
+            let pnetdev = (*padapter).pnetdev;
+            if check_fwstate(&(*padapter).mlmepriv, WIFI_ASOC_STATE) {
+                host_sreset_restore_network_status(padapter);
+            }
+            host_sreset_tasklet_hi_schedule(&mut (*padapter).xmitpriv.xmit_tasklet);
+            if host_is_primary_adapter(&*padapter) {
+                host_sreset_set_timer(&mut (*padapter).dvobj.dynamic_chk_timer, 2000);
+            }
+            host_sreset_rtw_netif_wake_queue(pnetdev);
+        }
+    }
+}
+
 #[cfg(host_sreset_test)]
 static mut G_REG_TXDMA: u32 = 0;
 
@@ -257,6 +391,18 @@ pub extern "C" fn sreset_set_wifi_error_status(padapter: Padapter, status: c_uin
             *err = status as u8;
         }
     }
+}
+
+#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
+#[no_mangle]
+pub extern "C" fn sreset_stop_adapter(padapter: HostPadapter) {
+    host_adapter::stop_adapter(padapter);
+}
+
+#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
+#[no_mangle]
+pub extern "C" fn sreset_start_adapter(padapter: HostPadapter) {
+    host_adapter::start_adapter(padapter);
 }
 
 #[no_mangle]

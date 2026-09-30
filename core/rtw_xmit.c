@@ -806,6 +806,8 @@ u8 query_ra_short_GI(struct sta_info *psta, u8 bw)
 #endif /* !CONFIG_RUST */
 
 void update_attrib_vcs_info(_adapter *padapter, struct xmit_frame *pxmitframe);
+void update_attrib_phy_info(_adapter *padapter, struct pkt_attrib *pattrib,
+			    struct sta_info *psta);
 
 #ifdef CONFIG_WMMPS_STA
 /*
@@ -838,80 +840,6 @@ static void update_attrib_trigger_frame_info(_adapter *padapter, struct pkt_attr
 	pattrib->trigger_frame = trigger_frame_en;
 }
 #endif /* CONFIG_WMMPS_STA */
-
-static void update_attrib_phy_info(_adapter *padapter, struct pkt_attrib *pattrib, struct sta_info *psta)
-{
-	struct mlme_ext_priv *mlmeext = &padapter->mlmeextpriv;
-	u8 bw;
-
-	pattrib->rtsen = psta->rtsen;
-	pattrib->cts2self = psta->cts2self;
-
-	pattrib->mdata = 0;
-	pattrib->eosp = 0;
-	pattrib->triggered = 0;
-	pattrib->ampdu_spacing = 0;
-
-	/* ht_en, init rate, ,bw, ch_offset, sgi */
-
-	pattrib->raid = psta->cmn.ra_info.rate_id;
-
-	bw = rtw_get_tx_bw_mode(padapter, psta);
-	pattrib->bwmode = rtw_min(bw, mlmeext->cur_bwmode);
-	pattrib->sgi = query_ra_short_GI(psta, pattrib->bwmode);
-
-	pattrib->ldpc = psta->cmn.ldpc_en;
-	pattrib->stbc = psta->cmn.stbc_en;
-
-#ifdef CONFIG_80211N_HT
-	if(padapter->registrypriv.ht_enable &&
-		is_supported_ht(padapter->registrypriv.wireless_mode)) {
-		pattrib->ht_en = psta->htpriv.ht_option;
-		pattrib->ch_offset = psta->htpriv.ch_offset;
-		pattrib->ampdu_en = _FALSE;
-
-		if (padapter->driver_ampdu_spacing != 0xFF) /* driver control AMPDU Density for peer sta's rx */
-			pattrib->ampdu_spacing = padapter->driver_ampdu_spacing;
-		else
-			pattrib->ampdu_spacing = psta->htpriv.rx_ampdu_min_spacing;
-
-		/* check if enable ampdu */
-		if (pattrib->ht_en && psta->htpriv.ampdu_enable) {
-			if (psta->htpriv.agg_enable_bitmap & BIT(pattrib->priority)) {
-				pattrib->ampdu_en = _TRUE;
-				if (psta->htpriv.tx_amsdu_enable == _TRUE)
-					pattrib->amsdu_ampdu_en = _TRUE;
-				else
-					pattrib->amsdu_ampdu_en = _FALSE;
-			}
-		}
-	}
-#endif /* CONFIG_80211N_HT */
-	/* if(pattrib->ht_en && psta->htpriv.ampdu_enable) */
-	/* { */
-	/*	if(psta->htpriv.agg_enable_bitmap & BIT(pattrib->priority)) */
-	/*		pattrib->ampdu_en = _TRUE; */
-	/* }	 */
-
-#ifdef CONFIG_TDLS
-	if (pattrib->direct_link == _TRUE) {
-		psta = pattrib->ptdls_sta;
-
-		pattrib->raid = psta->cmn.ra_info.rate_id;
-#ifdef CONFIG_80211N_HT
-	if(padapter->registrypriv.ht_enable &&
-		is_supported_ht(padapter->registrypriv.wireless_mode)) {
-			pattrib->bwmode = rtw_get_tx_bw_mode(padapter, psta);
-			pattrib->ht_en = psta->htpriv.ht_option;
-			pattrib->ch_offset = psta->htpriv.ch_offset;
-			pattrib->sgi = query_ra_short_GI(psta, pattrib->bwmode);
-	}
-#endif /* CONFIG_80211N_HT */
-	}
-#endif /* CONFIG_TDLS */
-
-	pattrib->retry_ctrl = _FALSE;
-}
 
 static s32 update_attrib_sec_info(_adapter *padapter, struct pkt_attrib *pattrib, struct sta_info *psta, enum eap_type eapol_type)
 {

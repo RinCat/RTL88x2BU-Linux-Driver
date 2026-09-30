@@ -162,6 +162,8 @@ u8 query_ra_short_GI(struct sta_info *psta, u8 bw)
 	return sgi;
 }
 
+#endif /* HOST_XMIT_UPDATE_ATTRIB_TEST */
+
 void update_attrib_phy_info(_adapter *padapter, struct pkt_attrib *pattrib,
 			    struct sta_info *psta)
 {
@@ -228,5 +230,3 @@ void update_attrib_phy_info(_adapter *padapter, struct pkt_attrib *pattrib,
 
 	pattrib->retry_ctrl = _FALSE;
 }
-
-#endif /* HOST_XMIT_UPDATE_ATTRIB_TEST */

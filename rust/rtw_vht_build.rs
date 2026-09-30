@@ -364,6 +364,7 @@ mod host {
         ((combined >> offset) & ((1u16 << length) - 1)) as u8
     }
 
+    // Duplicated from `rust/rtw_vht.rs` for a self-contained caps-handler staticlib; keep in sync until in-kernel wiring allows a shared module.
     fn rtw_vht_nss_to_mcsmap(nss: u8, target_mcs_map: &mut [u8; 2], cur_mcs_map: &[u8; 2]) {
         for i in 0..2 {
             target_mcs_map[i] = 0;

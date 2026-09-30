@@ -1,0 +1,39 @@
+{
+  "vectors": [
+    {
+      "name": "enter_idle_count_bump",
+      "b_fw_ready": 1,
+      "b_leisure_ps": 1,
+      "lps_idle_count": 0,
+      "expect_lps_idle_count": 1
+    },
+    {
+      "name": "enter_leisure_ps_active",
+      "b_fw_ready": 1,
+      "b_leisure_ps": 1,
+      "lps_idle_count": 2,
+      "power_mgnt": 2,
+      "expect_set_ps_mode": 1,
+      "expect_bpower_saving": 1,
+      "expect_lps_idle_count": 2,
+      "expect_last_ps_mode": 2
+    },
+    {
+      "name": "enter_ps_not_ready_survey",
+      "b_fw_ready": 1,
+      "fw_state": 2048,
+      "b_leisure_ps": 1,
+      "lps_idle_count": 3,
+      "expect_lps_idle_count": 3
+    },
+    {
+      "name": "leave_from_min_ps",
+      "action": "leave",
+      "b_leisure_ps": 1,
+      "pwr_mode": 1,
+      "bpower_saving": 1,
+      "expect_set_ps_mode": 1,
+      "expect_last_ps_mode": 0
+    }
+  ]
+}

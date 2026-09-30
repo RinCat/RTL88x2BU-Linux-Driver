@@ -74,14 +74,14 @@ test_traffic_lps_cmd: test_traffic_lps_cmd.c host_cmd_traffic_lps_shim.c \
 
 test-rust-cmd-traffic-lps: test_traffic_lps_cmd_rust
 	./test_traffic_lps_cmd_rust traffic_lps_vectors.json
+	./test_traffic_lps_cmd_rust traffic_lps_watchdog_vectors.json
 
 CFLAGS_CMD_TRAFFIC_LPS_RUST := $(CFLAGS_CMD_TRAFFIC_LPS) -DHOST_CMD_TRAFFIC_LPS_RUST_TEST
 
 test_traffic_lps_cmd_rust: test_traffic_lps_cmd.c host_cmd_traffic_lps_shim.c \
-		$(CMD_TRAFFIC_LPS_ORACLE) librust_traffic_lps_cmd.a $(HOST_JSON)
+		librust_traffic_lps_cmd.a $(HOST_JSON)
 	$(CC) $(CFLAGS_CMD_TRAFFIC_LPS_RUST) -o $@ test_traffic_lps_cmd.c \
-		host_cmd_traffic_lps_shim.c $(CMD_TRAFFIC_LPS_ORACLE) $(HOST_JSON) \
-		librust_traffic_lps_cmd.a
+		host_cmd_traffic_lps_shim.c $(HOST_JSON) librust_traffic_lps_cmd.a
 
 librust_traffic_lps_cmd.a: $(RUST_CMD_REST)
 	$(RUSTC) -C opt-level=2 -C overflow-checks=on \

@@ -1,0 +1,67 @@
+{
+  "vectors": [
+    {
+      "name": "pkt_cnts_idle_enter",
+      "test_fn": 1,
+      "num_tx": 1,
+      "num_rx_unicast": 1,
+      "expect_enter_ps": 1,
+      "expect_lps_enter": 1
+    },
+    {
+      "name": "pkt_cnts_busy_leave",
+      "test_fn": 1,
+      "num_tx": 5,
+      "num_rx_unicast": 5,
+      "expect_enter_ps": 0,
+      "expect_lps_leave": 1
+    },
+    {
+      "name": "pkt_cnts_busy_from_timer_wk",
+      "test_fn": 1,
+      "from_timer": 1,
+      "num_tx": 10,
+      "num_rx_unicast": 0,
+      "expect_enter_ps": 0,
+      "expect_lps_ctrl_wk": 1
+    },
+    {
+      "name": "tp_high_resets_chk",
+      "test_fn": 2,
+      "tx_tp_mbits": 5,
+      "lps_chk_cnt": 0,
+      "lps_chk_cnt_th": 3,
+      "expect_enter_ps": 0,
+      "expect_lps_leave": 1
+    },
+    {
+      "name": "tp_low_enter_after_cnt",
+      "test_fn": 2,
+      "tx_tp_mbits": 0,
+      "rx_tp_mbits": 0,
+      "lps_chk_cnt": 1,
+      "lps_chk_cnt_th": 2,
+      "expect_enter_ps": 1,
+      "expect_lps_enter": 1
+    },
+    {
+      "name": "watchdog_pkt_path_idle",
+      "test_fn": 3,
+      "assoc": 1,
+      "lps_chk_by_tp": 0,
+      "num_tx": 0,
+      "num_rx_unicast": 0,
+      "expect_enter_ps": 1,
+      "expect_lps_enter": 1
+    },
+    {
+      "name": "watchdog_tp_path_busy",
+      "test_fn": 3,
+      "assoc": 1,
+      "lps_chk_by_tp": 1,
+      "tx_tp_mbits": 8,
+      "expect_enter_ps": 0,
+      "expect_lps_leave": 1
+    }
+  ]
+}

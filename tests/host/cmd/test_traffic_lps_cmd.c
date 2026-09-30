@@ -16,6 +16,11 @@ enum vec_kind {
 struct vector {
 	char name[64];
 	char kind[32];
+	int test_fn;
+	int assoc;
+	int tx_tp_mbits, rx_tp_mbits;
+	int num_tx;
+	int expect_lps_ctrl_wk;
 	int lps_ctrl_type, adhoc, fw_state_adhoc_master;
 	int from_timer;
 	int fw_asoc, fw_sta, leisure_ps, lps_chk_by_tp, hw_port;
@@ -55,6 +60,12 @@ static int parse_vec(const char *o, size_t l, void *vv)
 	if (host_json_parse_string_in(o, l, "name", v->name, sizeof(v->name)))
 		return -1;
 	host_json_parse_string_in(o, l, "kind", v->kind, sizeof(v->kind));
+	host_json_parse_int_in(o, l, "test_fn", &v->test_fn);
+	host_json_parse_int_in(o, l, "assoc", &v->assoc);
+	host_json_parse_int_in(o, l, "tx_tp_mbits", &v->tx_tp_mbits);
+	host_json_parse_int_in(o, l, "rx_tp_mbits", &v->rx_tp_mbits);
+	host_json_parse_int_in(o, l, "num_tx", &v->num_tx);
+	host_json_parse_int_in(o, l, "expect_lps_ctrl_wk", &v->expect_lps_ctrl_wk);
 	host_json_parse_int_in(o, l, "lps_ctrl_type", &v->lps_ctrl_type);
 	host_json_parse_int_in(o, l, "adhoc", &v->adhoc);
 	host_json_parse_int_in(o, l, "fw_state_adhoc_master", &v->fw_state_adhoc_master);
@@ -134,7 +145,9 @@ static int trace_ok(struct vector *v, struct host_traffic_lps_trace *tr)
 		return 0;
 	if (v->expect_lps_ctrl_wk_cmd && tr->lps_ctrl_wk_cmd != v->expect_lps_ctrl_wk_cmd)
 		return 0;
-	if (!v->expect_lps_ctrl_wk_cmd && tr->lps_ctrl_wk_cmd)
+	if (v->expect_lps_ctrl_wk && tr->lps_ctrl_wk_cmd != v->expect_lps_ctrl_wk)
+		return 0;
+	if (!v->expect_lps_ctrl_wk_cmd && !v->expect_lps_ctrl_wk && tr->lps_ctrl_wk_cmd)
 		return 0;
 	return 1;
 }
@@ -207,11 +220,67 @@ static int run_lps_pkt(struct vector *v)
 	return trace_ok(v, tr);
 }
 
+static void setup_watchdog_json(struct vector *v)
+{
+	struct pwrctrl_priv *pwr = adapter_to_pwrctl(&g_adapter);
+
+	memset(&g_adapter, 0, sizeof(g_adapter));
+	host_traffic_lps_set_sta(&g_adapter);
+	pwr->bLeisurePs = 1;
+	pwr->lps_chk_by_tp = (u8)v->lps_chk_by_tp;
+	pwr->lps_chk_cnt = v->lps_chk_cnt;
+	pwr->lps_chk_cnt_th = v->lps_chk_cnt_th ? v->lps_chk_cnt_th : 2;
+	pwr->lps_bi_tp_th = pwr->lps_tx_tp_th = pwr->lps_rx_tp_th = 2;
+	if (g_adapter.stapriv.sta) {
+		g_adapter.stapriv.sta->sta_stats.tx_tp_kbits = (u32)v->tx_tp_mbits << 10;
+		g_adapter.stapriv.sta->sta_stats.rx_tp_kbits = (u32)v->rx_tp_mbits << 10;
+	}
+	g_adapter.mlmepriv.LinkDetectInfo.NumTxOkInPeriod = (u32)v->num_tx;
+	g_adapter.mlmepriv.LinkDetectInfo.NumRxUnicastOkInPeriod = (u32)v->num_rx_unicast;
+	if (v->assoc)
+		g_adapter.mlmepriv.fw_state = WIFI_ASOC_STATE | WIFI_STATION_STATE;
+}
+
+static int run_test_fn_vec(struct vector *v)
+{
+	struct host_traffic_lps_trace *tr;
+	u8 ret;
+
+	setup_watchdog_json(v);
+	tr = host_traffic_lps_get_trace();
+	switch (v->test_fn) {
+	case 1:
+		ret = _lps_chk_by_pkt_cnts(&g_adapter, (u8)v->from_timer, _FALSE);
+		break;
+	case 2:
+		ret = _lps_chk_by_tp(&g_adapter, (u8)v->from_timer);
+		break;
+	case 3:
+		ret = traffic_status_watchdog(&g_adapter, (u8)v->from_timer);
+		break;
+	default:
+		return 0;
+	}
+	if ((int)ret != v->expect_enter_ps)
+		return 0;
+	if (!trace_ok(v, tr))
+		return 0;
+	if (v->expect_lps_ctrl_wk && tr->lps_ctrl_wk_cmd != v->expect_lps_ctrl_wk)
+		return 0;
+	if (!v->expect_lps_ctrl_wk && tr->lps_ctrl_wk_cmd)
+		return 0;
+	return 1;
+}
+
 static int run_vec(struct vector *v)
 {
 	int ok = 0;
 
 	host_traffic_lps_reset();
+	if (v->test_fn != 0) {
+		ok = run_test_fn_vec(v);
+		goto done;
+	}
 	switch (parse_kind(v->kind)) {
 	case VEC_WATCHDOG:
 		ok = run_watchdog(v);
@@ -227,6 +296,7 @@ static int run_vec(struct vector *v)
 		ok = run_lps_ctrl(v);
 		break;
 	}
+done:
 	if (ok) {
 		printf("PASS %s\n", v->name);
 		return 0;

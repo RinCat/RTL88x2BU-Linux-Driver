@@ -220,3 +220,7 @@ jobs:
         if: steps.filter.outputs.l2 == 'true'
         run: make -C tests/host/sreset test
 
+      - name: Host roch handlers parity (L2)
+        if: steps.filter.outputs.l2 == 'true'
+        run: make -C tests/host/roch test
+

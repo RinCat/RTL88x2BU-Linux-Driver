@@ -39,7 +39,11 @@ static struct host_roch_trace g_tr;
 static struct dvobj_priv g_dv;
 static struct _adapter g_if[2], g_a;
 
+struct host_roch_trace *host_roch_trace(void) { return &g_tr; }
+
+#ifndef HOST_ROCH_RUST
 static s32 chk(struct mlme_priv *m, s32 st) { return (m->fwstate & st) ? _TRUE : _FALSE; }
+#endif
 
 static void setup(mlme_state_t st, u8 union_ch)
 {
@@ -54,10 +58,11 @@ static void setup(mlme_state_t st, u8 union_ch)
 	g_a = g_if[0];
 }
 
+#ifndef HOST_ROCH_RUST
 static u8 union_chan(PADAPTER a) { return (a && a->dvobj && a->dvobj->union_ch) ? a->dvobj->union_ch : 6; }
 static u8 freq_to_ch(int f) { return f ? (u8)((f - 2407) / 5) : 0; }
 
-static u8 stay_in_cur_chan(PADAPTER padapter)
+u8 rtw_roch_stay_in_cur_chan(PADAPTER padapter)
 {
 	u8 i;
 
@@ -78,7 +83,7 @@ static int ro_ch(PADAPTER a, struct rtw_roch_parm *p)
 
 	if (a->rochinfo.is_roch != _TRUE)
 		return H2C_SUCCESS;
-	if (stay_in_cur_chan(a))
+	if (rtw_roch_stay_in_cur_chan(a))
 		remain = union_chan(a);
 	if (remain != a->oper_ch && !chk(&a->mlmepriv, WIFI_ASOC_STATE)) {
 		g_tr.set_channel = 1;
@@ -103,7 +108,7 @@ static int cancel_ro(PADAPTER a)
 	return H2C_SUCCESS;
 }
 
-static s32 wk_hdl(PADAPTER a, int cmd, struct rtw_roch_parm *p)
+s32 rtw_roch_wk_hdl(PADAPTER a, int cmd, struct rtw_roch_parm *p)
 {
 	if (cmd == ROCH_RO_CH_WK)
 		return ro_ch(a, p);
@@ -112,11 +117,11 @@ static s32 wk_hdl(PADAPTER a, int cmd, struct rtw_roch_parm *p)
 	return H2C_SUCCESS;
 }
 
-static u8 wk_cmd(PADAPTER a, int cmd, struct rtw_roch_parm *p, u8 flags)
+u8 rtw_roch_wk_cmd(PADAPTER a, int cmd, struct rtw_roch_parm *p, u8 flags)
 {
 	if (flags & RTW_CMDF_DIRECTLY) {
 		g_tr.wk_cmd_direct++;
-		if (H2C_SUCCESS != wk_hdl(a, cmd, p))
+		if (H2C_SUCCESS != rtw_roch_wk_hdl(a, cmd, p))
 			return _FALSE;
 		if (p) {
 			g_tr.mfree++;
@@ -125,6 +130,11 @@ static u8 wk_cmd(PADAPTER a, int cmd, struct rtw_roch_parm *p, u8 flags)
 	}
 	return _TRUE;
 }
+#else
+u8 rtw_roch_stay_in_cur_chan(PADAPTER padapter);
+s32 rtw_roch_wk_hdl(PADAPTER a, int cmd, struct rtw_roch_parm *p);
+u8 rtw_roch_wk_cmd(PADAPTER a, int cmd, struct rtw_roch_parm *p, u8 flags);
+#endif
 
 typedef struct {
 	char name[48], op[12];
@@ -161,19 +171,19 @@ static int run_vec(vector_t *v)
 	g_a.rochinfo.restore_channel = (u8)v->restore;
 
 	if (!strcmp(v->op, "stay")) {
-		if (stay_in_cur_chan(&g_a) != (u8)v->exp_stay)
+		if (rtw_roch_stay_in_cur_chan(&g_a) != (u8)v->exp_stay)
 			goto fail;
 	} else if (!strcmp(v->op, "ro_ch")) {
 		memset(&parm, 0, sizeof(parm));
 		parm.ch.center_freq = v->freq;
 		parm.duration = (unsigned int)v->dur;
-		wk_hdl(&g_a, ROCH_RO_CH_WK, &parm);
+		rtw_roch_wk_hdl(&g_a, ROCH_RO_CH_WK, &parm);
 		if (g_tr.set_channel != v->exp_set_ch || g_tr.set_timer != v->exp_timer ||
 		    (v->exp_ch && g_tr.set_channel_ch != (u8)v->exp_ch) ||
 		    (v->exp_dur && g_tr.set_timer_ms != (unsigned int)v->exp_dur))
 			goto fail;
 	} else if (!strcmp(v->op, "cancel")) {
-		wk_hdl(&g_a, ROCH_CANCEL_RO_CH_WK, NULL);
+		rtw_roch_wk_hdl(&g_a, ROCH_CANCEL_RO_CH_WK, NULL);
 		if (g_tr.cancel_timer != v->exp_cancel || g_tr.roch_expired != v->exp_expired ||
 		    g_a.rochinfo.is_roch != _FALSE ||
 		    (v->exp_ch && g_a.oper_ch != (u8)v->exp_ch))
@@ -182,7 +192,7 @@ static int run_vec(vector_t *v)
 		heap = calloc(1, sizeof(*heap));
 		heap->ch.center_freq = v->freq;
 		heap->duration = (unsigned int)v->dur;
-		if (wk_cmd(&g_a, v->cmd, heap, (u8)v->flags) != _TRUE ||
+		if (rtw_roch_wk_cmd(&g_a, v->cmd, heap, (u8)v->flags) != _TRUE ||
 		    g_tr.wk_cmd_direct != v->exp_direct || g_tr.mfree != v->exp_mfree)
 			goto fail;
 	} else

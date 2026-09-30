@@ -1,1 +1,3 @@
 test_roch_handlers
+test_roch_handlers_rust
+librust_roch.a

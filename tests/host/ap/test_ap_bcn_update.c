@@ -26,6 +26,10 @@ struct vector {
 	int has_expect_ht_info;
 	int expect_ielen;
 	int has_expect_ielen;
+	int expect_vendor_kind;
+	int has_expect_vendor_kind;
+	u8 oui[4];
+	int has_oui;
 	u8 wps_beacon_ie[64];
 	size_t wps_beacon_ie_len;
 	u8 ies[256];
@@ -53,6 +57,7 @@ static int parse_vector_object(const char *obj, size_t len, void *vec_void)
 	struct vector *v = vec_void;
 	char hex[HOST_VECTOR_MAX_HEX_BUF];
 	char wps_hex[HOST_VECTOR_MAX_HEX_BUF];
+	char oui_hex[16];
 	int tmp;
 
 	memset(v, 0, sizeof(*v));
@@ -104,6 +109,19 @@ static int parse_vector_object(const char *obj, size_t len, void *vec_void)
 	if (!host_json_parse_int_in(obj, len, "expect_ielen", &tmp)) {
 		v->expect_ielen = tmp;
 		v->has_expect_ielen = 1;
+	}
+	if (!host_json_parse_int_in(obj, len, "expect_vendor_kind", &tmp)) {
+		v->expect_vendor_kind = tmp;
+		v->has_expect_vendor_kind = 1;
+	}
+	if (!host_json_parse_string_in(obj, len, "oui_hex", oui_hex,
+				       sizeof(oui_hex))) {
+		size_t oui_len = 0;
+
+		if (parse_hex(oui_hex, v->oui, sizeof(v->oui), &oui_len) ||
+		    oui_len != 4)
+			return -1;
+		v->has_oui = 1;
 	}
 	if (!host_json_parse_string_in(obj, len, "wps_beacon_ie_hex", wps_hex,
 				       sizeof(wps_hex)) &&
@@ -182,17 +200,41 @@ static int run_vector(struct vector *v)
 		}
 		return 0;
 	}
+	if (!strcmp(v->fn, "update_bcn_vendor_spec_ie")) {
+		if (!v->has_oui) {
+			fprintf(stderr, "FAIL %s missing oui_hex\n", v->name);
+			return -1;
+		}
+		host_bcn_update_last_vendor_kind = 0;
+		host_bcn_update_last_ielen = 0;
+		update_bcn_vendor_spec_ie(&ad, v->oui);
+		if (v->has_expect_vendor_kind &&
+		    (int)host_bcn_update_last_vendor_kind != v->expect_vendor_kind) {
+			fprintf(stderr, "FAIL %s vendor kind got %u want %d\n",
+				v->name, host_bcn_update_last_vendor_kind,
+				v->expect_vendor_kind);
+			return -1;
+		}
+		if (v->has_expect_ielen &&
+		    (int)host_bcn_update_last_ielen != v->expect_ielen) {
+			fprintf(stderr, "FAIL %s vendor wps ielen got %u want %d\n",
+				v->name, host_bcn_update_last_ielen,
+				v->expect_ielen);
+			return -1;
+		}
+		return 0;
+	}
 	fprintf(stderr, "FAIL %s unknown fn %s\n", v->name, v->fn);
 	return -1;
 }
 
 int main(int argc, char **argv)
 {
-	struct vector v[24];
+	struct vector v[32];
 	size_t n = 0, i, fail = 0;
 
 	if (argc != 2 ||
-	    host_load_vectors(argv[1], v, sizeof(v[0]), 24, parse_vector_object, &n))
+	    host_load_vectors(argv[1], v, sizeof(v[0]), 32, parse_vector_object, &n))
 		return 2;
 	for (i = 0; i < n; i++)
 		if (run_vector(&v[i]))

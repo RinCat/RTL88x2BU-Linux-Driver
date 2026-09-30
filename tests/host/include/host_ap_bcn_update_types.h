@@ -79,6 +79,9 @@ void ERP_IE_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE);
 void update_bcn_erpinfo_ie(_adapter *padapter);
 void update_bcn_htinfo_ie(_adapter *padapter);
 void update_bcn_wps_ie(_adapter *padapter);
+void update_bcn_vendor_spec_ie(_adapter *padapter, u8 *oui);
+
+extern u8 host_bcn_update_last_vendor_kind;
 
 void *rtw_malloc(size_t sz);
 void rtw_mfree(void *p, size_t sz);

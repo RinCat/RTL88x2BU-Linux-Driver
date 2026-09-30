@@ -77,6 +77,29 @@
       "fn": "update_bcn_wps_ie",
       "ies_hex": "000102030405060708090a0bdd060050f2041122",
       "expect_ielen": 0
+    },
+    {
+      "name": "vendor_routes_wps",
+      "fn": "update_bcn_vendor_spec_ie",
+      "oui_hex": "0050f204",
+      "ies_hex": "000102030405060708090a0bdd060050f2041122ff00",
+      "wps_beacon_ie_hex": "dd040050f204aabb",
+      "expect_vendor_kind": 3,
+      "expect_ielen": 20
+    },
+    {
+      "name": "vendor_routes_wpa",
+      "fn": "update_bcn_vendor_spec_ie",
+      "oui_hex": "0050f201",
+      "ies_hex": "000102030405060708090a0b",
+      "expect_vendor_kind": 1
+    },
+    {
+      "name": "vendor_unknown_oui",
+      "fn": "update_bcn_vendor_spec_ie",
+      "oui_hex": "aabbccdd",
+      "ies_hex": "000102030405060708090a0b",
+      "expect_vendor_kind": 255
     }
   ]
 }

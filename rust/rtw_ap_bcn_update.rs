@@ -110,6 +110,16 @@ extern "C" {
     static mut host_bcn_update_last_ht_op_mode: U16;
     static mut host_bcn_update_last_ht_info_byte: U8;
     static mut host_bcn_update_last_ielen: U32;
+    static mut host_bcn_update_last_vendor_kind: U8;
+}
+
+const RTW_WPA_OUI: [U8; 4] = [0x00, 0x50, 0xf2, 0x01];
+const WMM_OUI: [U8; 4] = [0x00, 0x50, 0xf2, 0x02];
+const WPS_OUI: [U8; 4] = [0x00, 0x50, 0xf2, 0x04];
+const P2P_OUI: [U8; 4] = [0x50, 0x6F, 0x9A, 0x09];
+
+fn oui_eq(a: &[U8; 4], b: *const U8) -> bool {
+    unsafe { a[0] == *b && a[1] == *b.add(1) && a[2] == *b.add(2) && a[3] == *b.add(3) }
 }
 
 fn cpu_to_le16(x: U16) -> U16 {
@@ -313,5 +323,27 @@ pub extern "C" fn update_bcn_wps_ie(padapter: *mut c_void) {
             );
         }
         host_bcn_update_last_ielen = pnetwork.ie_length;
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn update_bcn_vendor_spec_ie(padapter: *mut c_void, oui: *mut U8) {
+    if padapter.is_null() || oui.is_null() {
+        return;
+    }
+    unsafe {
+        host_bcn_update_last_vendor_kind = 0;
+        if oui_eq(&RTW_WPA_OUI, oui) {
+            host_bcn_update_last_vendor_kind = 1;
+        } else if oui_eq(&WMM_OUI, oui) {
+            host_bcn_update_last_vendor_kind = 2;
+        } else if oui_eq(&WPS_OUI, oui) {
+            host_bcn_update_last_vendor_kind = 3;
+            update_bcn_wps_ie(padapter);
+        } else if oui_eq(&P2P_OUI, oui) {
+            host_bcn_update_last_vendor_kind = 4;
+        } else {
+            host_bcn_update_last_vendor_kind = 255;
+        }
     }
 }

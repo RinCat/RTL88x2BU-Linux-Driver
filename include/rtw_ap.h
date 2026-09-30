@@ -35,6 +35,7 @@ void update_BCNTIM(_adapter *padapter);
 void update_bcn_erpinfo_ie(_adapter *padapter);
 void update_bcn_htinfo_ie(_adapter *padapter);
 void update_bcn_wps_ie(_adapter *padapter);
+void update_bcn_vendor_spec_ie(_adapter *padapter, u8 *oui);
 void rtw_add_bcn_ie(_adapter *padapter, WLAN_BSSID_EX *pnetwork, u8 index, u8 *data, u8 len);
 void rtw_remove_bcn_ie(_adapter *padapter, WLAN_BSSID_EX *pnetwork, u8 index);
 void _update_beacon(_adapter *padapter, u8 ie_id, u8 *oui, u8 tx, u8 flags, const char *tag);

@@ -8,6 +8,7 @@ u8 host_bcn_update_last_erp_byte;
 u16 host_bcn_update_last_ht_op_mode;
 u8 host_bcn_update_last_ht_info_byte;
 u32 host_bcn_update_last_ielen;
+u8 host_bcn_update_last_vendor_kind;
 
 u8 *rtw_get_ie(const u8 *pbuf, sint index, sint *len, sint limit)
 {

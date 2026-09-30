@@ -15,7 +15,25 @@ extern u8 host_bcn_update_last_erp_byte;
 extern u16 host_bcn_update_last_ht_op_mode;
 extern u8 host_bcn_update_last_ht_info_byte;
 extern u32 host_bcn_update_last_ielen;
+extern u8 host_bcn_update_last_vendor_kind;
 
+unsigned char RTW_WPA_OUI[] = {0x00, 0x50, 0xf2, 0x01};
+unsigned char WMM_OUI[] = {0x00, 0x50, 0xf2, 0x02};
+unsigned char WPS_OUI[] = {0x00, 0x50, 0xf2, 0x04};
+unsigned char P2P_OUI[] = {0x50, 0x6F, 0x9A, 0x09};
+
+static int host_rtw_memcmp4(const u8 *a, const u8 *b)
+{
+	return a[0] == b[0] && a[1] == b[1] && a[2] == b[2] && a[3] == b[3];
+}
+#else
+extern unsigned char RTW_WPA_OUI[];
+extern unsigned char WMM_OUI[];
+extern unsigned char WPS_OUI[];
+extern unsigned char P2P_OUI[];
+#endif
+
+#ifdef HOST_AP_BCN_UPDATE_TEST
 void ERP_IE_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE)
 {
 	(void)padapter;
@@ -214,3 +232,77 @@ void update_bcn_wps_ie(_adapter *padapter)
 }
 
 #endif /* !CONFIG_RUST_AP_BCN_UPDATE || HOST_AP_BCN_UPDATE_TEST */
+
+#if defined(HOST_AP_BCN_UPDATE_TEST) || defined(CONFIG_AP_MODE)
+
+#ifndef HOST_AP_BCN_UPDATE_TEST
+extern unsigned char RTW_WPA_OUI[];
+extern unsigned char WMM_OUI[];
+extern unsigned char WPS_OUI[];
+extern unsigned char P2P_OUI[];
+#endif
+
+static void update_bcn_wpa_ie(_adapter *padapter)
+{
+#ifdef HOST_AP_BCN_UPDATE_TEST
+	host_bcn_update_last_vendor_kind = 1;
+	(void)padapter;
+#else
+	RTW_INFO("%s\n", __FUNCTION__);
+#endif
+}
+
+static void update_bcn_wmm_ie(_adapter *padapter)
+{
+#ifdef HOST_AP_BCN_UPDATE_TEST
+	host_bcn_update_last_vendor_kind = 2;
+	(void)padapter;
+#else
+	RTW_INFO("%s\n", __FUNCTION__);
+#endif
+}
+
+static void update_bcn_p2p_ie(_adapter *padapter)
+{
+#ifdef HOST_AP_BCN_UPDATE_TEST
+	host_bcn_update_last_vendor_kind = 4;
+	(void)padapter;
+#else
+	(void)padapter;
+#endif
+}
+
+void update_bcn_vendor_spec_ie(_adapter *padapter, u8 *oui)
+{
+#ifndef HOST_AP_BCN_UPDATE_TEST
+	RTW_INFO("%s\n", __FUNCTION__);
+#endif
+
+#ifdef HOST_AP_BCN_UPDATE_TEST
+	host_bcn_update_last_vendor_kind = 0;
+	if (host_rtw_memcmp4(RTW_WPA_OUI, oui))
+		update_bcn_wpa_ie(padapter);
+	else if (host_rtw_memcmp4(WMM_OUI, oui))
+		update_bcn_wmm_ie(padapter);
+	else if (host_rtw_memcmp4(WPS_OUI, oui)) {
+		host_bcn_update_last_vendor_kind = 3;
+		update_bcn_wps_ie(padapter);
+	} else if (host_rtw_memcmp4(P2P_OUI, oui))
+		update_bcn_p2p_ie(padapter);
+	else
+		host_bcn_update_last_vendor_kind = 255;
+#else
+	if (_rtw_memcmp(RTW_WPA_OUI, oui, 4))
+		update_bcn_wpa_ie(padapter);
+	else if (_rtw_memcmp(WMM_OUI, oui, 4))
+		update_bcn_wmm_ie(padapter);
+	else if (_rtw_memcmp(WPS_OUI, oui, 4))
+		update_bcn_wps_ie(padapter);
+	else if (_rtw_memcmp(P2P_OUI, oui, 4))
+		update_bcn_p2p_ie(padapter);
+	else
+		RTW_INFO("unknown OUI type!\n");
+#endif
+}
+
+#endif /* HOST_AP_BCN_UPDATE_TEST || CONFIG_AP_MODE */

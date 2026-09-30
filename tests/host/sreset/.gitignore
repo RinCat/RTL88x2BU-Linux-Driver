@@ -1,1 +1,3 @@
 test_sreset_lifecycle
+test_sreset_lifecycle_rust
+librust_sreset.a

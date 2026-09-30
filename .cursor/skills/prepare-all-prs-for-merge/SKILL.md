@@ -59,8 +59,10 @@ flowchart TD
 ./scripts/workflow/find-work.sh prs
 ```
 
-Use `eligible`, `skipped`, `needs_prep`, and `merge_ready` from the JSON. For
-full path selection (Path A vs B/C), prefer `./scripts/workflow/find-work.sh path`.
+Use `prepQueue` (oldest eligible PRs first), `needs_prep`, `merge_ready`, and
+`stackBlockedOldestFirst` from the JSON — **never** rely on a raw `gh pr list`
+without pagination (default limit 100 is newest-only and drops older open PRs).
+For full path selection (Path A vs B/C), prefer `./scripts/workflow/find-work.sh path`.
 
 ### Manual fallback — list open PRs
 

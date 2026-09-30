@@ -37,10 +37,10 @@ Encodes:
 
 ### Performance / limits
 
-- Open PRs are listed in one lightweight `gh pr list` call (limit **500**; no
-  `statusCheckRollup` in the bulk query — GitHub 502s on large rollups). Eligible
-  PRs get a follow-up `gh pr view` for checks/reviews/body. Raise `OPEN_PR_LIMIT`
-  if the queue outgrows the cap.
+- Open PRs are fetched with **GraphQL pagination** (100 per page until exhausted).
+  A single `gh pr list --limit 100` only returns the **newest** 100 open PRs and
+  hides older stack tips (e.g. #850+) — do not use that for Path A. Eligible PRs
+  get a follow-up `gh pr view` for checks/reviews/body (no bulk `statusCheckRollup`).
 - Stacked PR eligibility uses batched `git fetch` for unique base branches (not one
   fetch per PR).
 - `needs_prep` / `merge_ready` lists are sorted by PR number (oldest first) so Path A
@@ -52,7 +52,7 @@ Encodes:
 
 | Key | Contents |
 |-----|----------|
-| `prs` | `total`, `eligible`, `skipped`, `needs_prep`, `merge_ready` |
+| `prs` | `total`, `oldestOpenNumber`, `eligible`, `skipped`, `needs_prep`, `merge_ready`, `prepQueue`, `stackBlockedOldestFirst` |
 | `issues` | `selected`, `readyCandidates`, `chainHeadBlocked`, `chainHeadInFlight`, `saturation`, `wholeWaveSaturated`, `pathCGap`, `overrideWarning` |
 | `pathDecision` | `path` (`A`/`B`/`C`/`stop`), `reason`, `action` |
 

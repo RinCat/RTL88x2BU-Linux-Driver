@@ -30,9 +30,9 @@ ISSUE_MAP = REPO_ROOT / "docs/rust-migration/issues/ISSUE-MAP.md"
 ISSUE_DIR = REPO_ROOT / "docs/rust-migration/issues"
 DEFAULT_BRANCH = "master"
 SINGLE_LANE_SATURATION = 15
-# gh returns newest-first; `--limit 100` dropped older open PRs once the queue
-# passed 100, hiding eligible stack tips (e.g. parent merged → needs retarget).
-OPEN_PR_LIMIT = 500
+# Page size for GraphQL open-PR fetch. gh pr list defaults to newest-first with
+# --limit 100, which omits the *oldest* open PRs once the queue exceeds 100.
+OPEN_PR_PAGE_SIZE = 100
 _GIT_FETCHED_REFS: set[str] = set()
 
 # statusCheckRollup on 100+ PRs in one GraphQL response can 502; fetch per eligible PR.
@@ -363,18 +363,75 @@ def enrich_pr_from_view(pr: PullRequest) -> None:
 
 
 def fetch_open_prs(owner: str) -> list[PullRequest]:
-    rows = gh_json(
-        [
-            "pr",
-            "list",
-            "--state",
-            "open",
-            "--limit",
-            str(OPEN_PR_LIMIT),
-            "--json",
-            PR_LIST_FIELDS,
+    """Fetch every open PR via GraphQL pagination (not a single newest-first page)."""
+    owner_name, repo_name = owner.split("/", 1)
+    query = """
+query($owner: String!, $name: String!, $pageSize: Int!, $after: String) {
+  repository(owner: $owner, name: $name) {
+    pullRequests(
+      states: OPEN
+      first: $pageSize
+      after: $after
+      orderBy: { field: CREATED_AT, direction: DESC }
+    ) {
+      nodes {
+        number
+        title
+        isDraft
+        url
+        baseRefName
+        headRefName
+        mergeable
+        mergeStateStatus
+        reviewDecision
+      }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+}
+"""
+    rows: list[dict[str, Any]] = []
+    after: str | None = None
+    while True:
+        cmd = [
+            "gh",
+            "api",
+            "graphql",
+            "-f",
+            f"query={query}",
+            "-f",
+            f"owner={owner_name}",
+            "-f",
+            f"name={repo_name}",
+            "-F",
+            f"pageSize={OPEN_PR_PAGE_SIZE}",
         ]
-    )
+        if after:
+            cmd.extend(["-f", f"after={after}"])
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=REPO_ROOT,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"gh api graphql failed ({result.returncode}): {result.stderr.strip()}"
+            )
+        payload = json.loads(result.stdout)
+        if payload.get("errors"):
+            raise RuntimeError(f"GraphQL errors: {payload['errors']}")
+        pr_data = payload["data"]["repository"]["pullRequests"]
+        batch = pr_data["nodes"]
+        rows.extend(batch)
+        page_info = pr_data["pageInfo"]
+        if not page_info.get("hasNextPage"):
+            break
+        after = page_info.get("endCursor")
+        if not after:
+            break
+    rows.sort(key=lambda r: r["number"])
     prs: list[PullRequest] = []
     for row in rows:
         pr = PullRequest.from_summary(row)
@@ -387,13 +444,33 @@ def fetch_open_prs(owner: str) -> list[PullRequest]:
         }
         pr.enrich(detail, "")
         prs.append(pr)
-    if len(rows) >= OPEN_PR_LIMIT:
-        print(
-            f"warning: open PR count may exceed OPEN_PR_LIMIT={OPEN_PR_LIMIT}; "
-            "raise the cap in find_work.py",
-            file=sys.stderr,
-        )
     return prs
+
+
+def stack_blocked_oldest_first(
+    prs: list[PullRequest],
+    skipped: list[dict[str, Any]],
+    merge_ready: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Skipped PRs sorted by number, with open parent PR when base is another PR's head."""
+    head_to_pr: dict[str, int] = {p.head_ref: p.number for p in prs}
+    merge_ready_nums = {p["number"] for p in merge_ready}
+    merge_ready_heads = {p["headRefName"] for p in merge_ready}
+    hints: list[dict[str, Any]] = []
+    for entry in sorted(skipped, key=lambda e: e["number"]):
+        parent_branch = entry["blockingParent"]
+        parent_pr = head_to_pr.get(parent_branch)
+        hints.append(
+            {
+                "number": entry["number"],
+                "title": entry["title"],
+                "blockingParent": parent_branch,
+                "parentPr": parent_pr,
+                "parentMergeReady": parent_pr in merge_ready_nums
+                or parent_branch in merge_ready_heads,
+            }
+        )
+    return hints
 
 
 def classify_prs(prs: list[PullRequest], owner: str) -> dict[str, Any]:
@@ -427,12 +504,22 @@ def classify_prs(prs: list[PullRequest], owner: str) -> dict[str, Any]:
         [p for p in eligible if p["prep"] == "merge_ready"],
         key=lambda p: p["number"],
     )
+    skipped_sorted = sorted(skipped, key=lambda p: p["number"])
+    prep_queue = sorted(
+        [dict(p, queue="needs_prep") for p in needs_prep]
+        + [dict(p, queue="merge_ready") for p in merge_ready],
+        key=lambda p: p["number"],
+    )
+    oldest_open = prs[0].number if prs else None
     return {
         "total": len(prs),
+        "oldestOpenNumber": oldest_open,
         "eligible": eligible,
-        "skipped": skipped,
+        "skipped": skipped_sorted,
         "needs_prep": needs_prep,
         "merge_ready": merge_ready,
+        "prepQueue": prep_queue,
+        "stackBlockedOldestFirst": stack_blocked_oldest_first(prs, skipped_sorted, merge_ready),
     }
 
 
@@ -833,9 +920,31 @@ def format_human(report: dict[str, Any]) -> str:
             lines.append(f"  needs_prep: #{p['number']} {p['title']}")
         for p in prs["merge_ready"]:
             lines.append(f"  merge_ready: #{p['number']} {p['title']}")
-        for p in prs["skipped"]:
+        if prs.get("prepQueue"):
+            lines.append("")
+            lines.append("### Prep queue (oldest eligible first — merge in this order)")
+            for p in prs["prepQueue"]:
+                lines.append(f"  #{p['number']} [{p['queue']}] {p['title']}")
+        if prs.get("oldestOpenNumber") is not None:
             lines.append(
-                f"  skipped: #{p['number']} (base {p['baseRefName']} not on master)"
+                f"\noldest_open_pr=#{prs['oldestOpenNumber']} "
+                f"(paginated fetch, total={prs['total']})"
+            )
+        blocked = prs.get("stackBlockedOldestFirst") or []
+        if blocked:
+            lines.append("")
+            lines.append("### Stack blocked (oldest first; merge parent PR to unlock)")
+            for h in blocked[:12]:
+                parent = (
+                    f"parent PR #{h['parentPr']}"
+                    if h.get("parentPr")
+                    else f"base {h['blockingParent']}"
+                )
+                ready = " [parent merge-ready]" if h.get("parentMergeReady") else ""
+                lines.append(f"  #{h['number']} blocked by {parent}{ready}")
+        if len(prs["skipped"]) > len(blocked):
+            lines.append(
+                f"\n({len(prs['skipped'])} stacked PRs waiting on parents — full list in JSON)"
             )
         lines.append("")
 

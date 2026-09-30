@@ -79,5 +79,8 @@ GitHub queries and dependency graphs in chat:
 ./scripts/workflow/find-work.sh path --human  # readable summary
 ```
 
+Path A uses **`prepQueue`** (lowest PR number first). Do not classify work from
+`gh pr list --limit 100` alone — it returns only the newest 100 open PRs.
+
 See [`scripts/workflow/README.md`](scripts/workflow/README.md) and
 `.cursor/skills/pick-up-work-item/SKILL.md`.

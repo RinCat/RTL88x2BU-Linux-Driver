@@ -3,4 +3,6 @@ test_vht_build_operation_rust
 test_vht_build_cap
 test_vht_build_cap_rust
 test_vht_caps_handler
+test_vht_caps_handler_rust
 librust_vht_build.a
+librust_vht_caps_handler.a

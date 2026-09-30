@@ -22,6 +22,8 @@ struct pwrctrl_priv {
 	u32 ps_deny;
 	u8 bpower_saving;
 	systime ips_deny_time;
+	u8 pwr_mode;
+	u8 rf_pwrstate;
 };
 
 struct _adapter;
@@ -32,6 +34,8 @@ struct _adapter {
 	struct mlme_priv mlmepriv;
 	struct xmit_priv xmitpriv;
 	struct pwrctrl_priv pwrctrlpriv;
+	u8 bup;
+	u8 bSurpriseRemoved;
 };
 
 typedef struct _adapter _adapter;

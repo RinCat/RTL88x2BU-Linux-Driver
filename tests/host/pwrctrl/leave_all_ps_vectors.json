@@ -1,0 +1,65 @@
+{
+  "vectors": [
+    {
+      "name": "direct_surprise_skip",
+      "fn": "direct",
+      "bSurpriseRemoved": 1,
+      "expect_lps_ctrl": 0
+    },
+    {
+      "name": "direct_linked_already_active",
+      "fn": "direct",
+      "mi_linked": 1,
+      "pwr_mode": 0,
+      "expect_lps_ctrl": 0
+    },
+    {
+      "name": "direct_linked_leave_lps",
+      "fn": "direct",
+      "mi_linked": 1,
+      "pwr_mode": 2,
+      "expect_lps_ctrl": 1,
+      "expect_lps_type": 5,
+      "expect_lps_flags": 1
+    },
+    {
+      "name": "direct_unlinked_ips",
+      "fn": "direct",
+      "mi_linked": 0,
+      "rf_pwrstate": 0,
+      "expect_ips_leave": 0
+    },
+    {
+      "name": "all_bup_skip",
+      "fn": "all",
+      "bup": 0,
+      "assoc_if_num": 1,
+      "expect_lps_ctrl": 0
+    },
+    {
+      "name": "all_surprise_skip",
+      "fn": "all",
+      "bup": 1,
+      "bSurpriseRemoved": 1,
+      "assoc_if_num": 1,
+      "expect_lps_ctrl": 0
+    },
+    {
+      "name": "all_linked_leave_lps",
+      "fn": "all",
+      "bup": 1,
+      "assoc_if_num": 2,
+      "expect_lps_ctrl": 1,
+      "expect_lps_type": 5,
+      "expect_lps_flags": 0
+    },
+    {
+      "name": "all_unlinked_ips",
+      "fn": "all",
+      "bup": 1,
+      "assoc_if_num": 0,
+      "rf_pwrstate": 0,
+      "expect_ips_leave": 0
+    }
+  ]
+}

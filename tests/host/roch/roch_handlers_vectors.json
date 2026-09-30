@@ -1,0 +1,13 @@
+{
+  "vectors": [
+    {"name": "stay_idle", "op": "stay", "exp_stay": 0},
+    {"name": "stay_link", "op": "stay", "fwstate": 128, "exp_stay": 1},
+    {"name": "ro_skip", "op": "ro_ch", "is_roch": 0, "freq": 2437, "dur": 100, "oper": 1, "exp_set_ch": 0, "exp_timer": 0},
+    {"name": "ro_go", "op": "ro_ch", "is_roch": 1, "freq": 2437, "dur": 200, "oper": 1, "exp_set_ch": 1, "exp_ch": 6, "exp_timer": 1, "exp_dur": 200},
+    {"name": "ro_assoc", "op": "ro_ch", "fwstate": 1, "is_roch": 1, "freq": 2437, "dur": 200, "oper": 1, "exp_set_ch": 0, "exp_timer": 1, "exp_dur": 200},
+    {"name": "ro_union", "op": "ro_ch", "fwstate": 128, "union_ch": 11, "is_roch": 1, "freq": 2437, "dur": 200, "oper": 1, "exp_set_ch": 1, "exp_ch": 11, "exp_timer": 1, "exp_dur": 200},
+    {"name": "cancel", "op": "cancel", "is_roch": 1, "restore": 11, "exp_cancel": 1, "exp_expired": 1, "exp_ch": 11},
+    {"name": "wk_direct", "op": "wk_cmd", "cmd": 0, "flags": 1, "is_roch": 1, "freq": 2437, "dur": 50, "oper": 2, "exp_direct": 1, "exp_mfree": 1},
+    {"name": "wk_enqueue", "op": "wk_cmd", "cmd": 0, "flags": 0, "is_roch": 1, "freq": 2437, "dur": 50, "oper": 2, "exp_direct": 0, "exp_mfree": 0}
+  ]
+}

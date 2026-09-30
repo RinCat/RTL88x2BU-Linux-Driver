@@ -21,7 +21,7 @@ type Sint = i32;
 const _BEACON_IE_OFFSET_: usize = 12;
 const _ERPINFO_IE_: Sint = 42;
 const _HT_ADD_INFO_IE_: Sint = 61;
-const MAX_IE_SZ: U32 = 257;
+const MAX_IE_SZ: U32 = 768;
 const _TRUE: U8 = 1;
 const _FALSE: U8 = 0;
 const CHANNEL_WIDTH_40: U8 = 2;
@@ -45,7 +45,7 @@ type Pndis80211VariableIes = *mut Ndis80211VariableIes;
 #[repr(C)]
 struct WlanBssidEx {
     ie_length: U32,
-    ies: [U8; 256],
+    ies: [U8; 768],
 }
 
 #[repr(C)]

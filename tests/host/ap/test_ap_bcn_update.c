@@ -32,7 +32,7 @@ struct vector {
 	int has_oui;
 	u8 wps_beacon_ie[64];
 	size_t wps_beacon_ie_len;
-	u8 ies[256];
+	u8 ies[MAX_IE_SZ];
 	size_t ies_len;
 };
 

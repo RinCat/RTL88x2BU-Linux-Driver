@@ -24,7 +24,10 @@ const _BEACON_IE_OFFSET_: usize = 12;
 const _FIXED_IE_LENGTH_: U32 = 12;
 const _ERPINFO_IE_: Sint = 42;
 const _HT_ADD_INFO_IE_: Sint = 61;
-const MAX_IE_SZ: U32 = 257;
+/// Kernel `WLAN_BSSID_EX.IEs[]` is `MAX_IE_SZ` (768) in `include/wlan_bssdef.h`.
+/// Do not use the host-L2 stub size (256/257): a real HT/VHT AP beacon is
+/// typically 300–500 bytes, and a too-small cap silently drops WPS IE updates.
+const MAX_IE_SZ: U32 = 768;
 const _TRUE: U8 = 1;
 const _FALSE: U8 = 0;
 const CHANNEL_WIDTH_40: U8 = 2;

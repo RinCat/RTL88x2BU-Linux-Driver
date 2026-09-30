@@ -9,7 +9,7 @@
 #define _ERPINFO_IE_ 42
 #define _HT_ADD_INFO_IE_ 61
 #define WLAN_EID_VENDOR_SPECIFIC 221
-#define MAX_IE_SZ 257
+#define MAX_IE_SZ 768
 #define _TRUE 1
 #define _FALSE 0
 #define CHANNEL_WIDTH_40 2
@@ -30,7 +30,7 @@ typedef struct _NDIS_802_11_VARIABLE_IEs {
 
 typedef struct _WLAN_BSSID_EX {
 	u32 IELength;
-	u8 IEs[256];
+	u8 IEs[MAX_IE_SZ];
 } WLAN_BSSID_EX;
 
 struct ht_priv {

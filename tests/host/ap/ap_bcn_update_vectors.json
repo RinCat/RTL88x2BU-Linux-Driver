@@ -73,6 +73,13 @@
       "expect_ielen": 20
     },
     {
+      "name": "wps_replace_when_total_exceeds_257",
+      "fn": "update_bcn_wps_ie",
+      "ies_hex": "000102030405060708090a0bdd060050f2041122ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "wps_beacon_ie_hex": "dd040050f204aabb",
+      "expect_ielen": 258
+    },
+    {
       "name": "wps_no_source_ie",
       "fn": "update_bcn_wps_ie",
       "ies_hex": "000102030405060708090a0bdd060050f2041122",

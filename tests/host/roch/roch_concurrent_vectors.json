@@ -1,0 +1,30 @@
+{
+  "vectors": [
+    {
+      "name": "init_defaults",
+      "op": "init",
+      "exp_min_home": 1500,
+      "exp_max_away": 250,
+      "exp_ap_timer": 1,
+      "exp_ro_timer": 1
+    },
+    {
+      "name": "remain_freq",
+      "op": "remain",
+      "freq": 2437,
+      "exp_ch": 6
+    },
+    {
+      "name": "chk_stay_false",
+      "op": "chk_stay",
+      "exp_stay": 0
+    },
+    {
+      "name": "ap_timer_wk",
+      "op": "ap_timer",
+      "exp_switch_to": 1,
+      "exp_wk_cmd": 1,
+      "exp_wk_type": 2
+    }
+  ]
+}

@@ -69,6 +69,11 @@ extern "C" {
     fn rtw_rust_bcn_update_cur_ch_offset(adapter: Adapter) -> U8;
     #[cfg(any(config_interrupt_based_txbcn, config_pci_hci))]
     fn rtw_rust_bcn_update_wps_fwstate(adapter: Adapter, pwps_ie_src: *mut U8, wps_ielen: U32);
+    fn _rtw_memcmp(a: *const c_void, b: *const c_void, n: U32) -> Sint;
+    static RTW_WPA_OUI: [U8; 4];
+    static WMM_OUI: [U8; 4];
+    static WPS_OUI: [U8; 4];
+    static P2P_OUI: [U8; 4];
 }
 
 fn net(adapter: Adapter) -> NetPtr {
@@ -243,5 +248,24 @@ pub extern "C" fn update_bcn_wps_ie(padapter: Adapter) {
 
         #[cfg(any(config_interrupt_based_txbcn, config_pci_hci))]
         rtw_rust_bcn_update_wps_fwstate(padapter, pwps_ie_src, wps_ielen);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn update_bcn_vendor_spec_ie(padapter: Adapter, oui: *mut U8) {
+    if padapter.is_null() || oui.is_null() {
+        return;
+    }
+    unsafe {
+        let oui_c = oui as *const c_void;
+        if _rtw_memcmp(RTW_WPA_OUI.as_ptr() as *const c_void, oui_c, 4) != 0 {
+            /* update_bcn_wpa_ie: log-only in C */
+        } else if _rtw_memcmp(WMM_OUI.as_ptr() as *const c_void, oui_c, 4) != 0 {
+            /* update_bcn_wmm_ie: log-only in C */
+        } else if _rtw_memcmp(WPS_OUI.as_ptr() as *const c_void, oui_c, 4) != 0 {
+            update_bcn_wps_ie(padapter);
+        } else if _rtw_memcmp(P2P_OUI.as_ptr() as *const c_void, oui_c, 4) != 0 {
+            /* update_bcn_p2p_ie: no-op in C */
+        }
     }
 }

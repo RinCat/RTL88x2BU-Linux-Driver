@@ -233,6 +233,7 @@ void update_bcn_wps_ie(_adapter *padapter)
 
 #endif /* !CONFIG_RUST_AP_BCN_UPDATE || HOST_AP_BCN_UPDATE_TEST */
 
+#if !defined(CONFIG_RUST_AP_BCN_UPDATE) || defined(HOST_AP_BCN_UPDATE_TEST)
 #if defined(HOST_AP_BCN_UPDATE_TEST) || defined(CONFIG_AP_MODE)
 
 #ifndef HOST_AP_BCN_UPDATE_TEST
@@ -306,3 +307,4 @@ void update_bcn_vendor_spec_ie(_adapter *padapter, u8 *oui)
 }
 
 #endif /* HOST_AP_BCN_UPDATE_TEST || CONFIG_AP_MODE */
+#endif /* !CONFIG_RUST_AP_BCN_UPDATE || HOST_AP_BCN_UPDATE_TEST */

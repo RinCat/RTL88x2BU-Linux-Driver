@@ -2479,6 +2479,7 @@ rtk_core :=	core/rtw_cmd.o \
 		core/rtw_ap_bcn_ie_rust_acc.o \
 		core/rtw_ap_bcn_update.o \
 		core/rtw_ap_bcn_update_rust_acc.o \
+		core/rtw_ap_bcn_dispatch_rust_acc.o \
 		core/rtw_ap_bmc_update.o \
 		core/rtw_ap_bmc_update_rust_acc.o \
 		core/rtw_ap_sta_alive.o \
@@ -2664,6 +2665,7 @@ ccflags-y += -DCONFIG_RUST_AP_REST
 ccflags-y += -DCONFIG_RUST_AP_BCN_IE
 ccflags-y += -DCONFIG_RUST_AP_BMC_UPDATE
 ccflags-y += -DCONFIG_RUST_AP_BCN_UPDATE
+ccflags-y += -DCONFIG_RUST_AP_BCN_DISPATCH
 ccflags-y += -DCONFIG_RUST_RF_OP_CLASS_PREF
 ccflags-y += -DCONFIG_RUST_RF_OP_CLASS_DUMP
 ccflags-y += -DCONFIG_RUST_RF_DUMP_TXPWR_LMT
@@ -2743,6 +2745,9 @@ rustflags-y += --cfg config_interrupt_based_txbcn
 endif
 ifeq ($(CONFIG_PCI_HCI), y)
 rustflags-y += --cfg config_pci_hci
+endif
+ifeq ($(CONFIG_USB_HCI), y)
+rustflags-y += --cfg config_usb_hci
 endif
 ifneq ($(filter -DCONFIG_PCI_HCI,$(ccflags-y) $(USER_EXTRA_CFLAGS) $(EXTRA_CFLAGS)),)
 rustflags-y += --cfg config_pci_hci
@@ -2834,6 +2839,7 @@ $(MODULE_NAME)-y += rust/rtw_ap_rest.o
 $(MODULE_NAME)-y += rust/rtw_ap_bcn_ie.o
 $(MODULE_NAME)-y += rust/rtw_ap_bmc_update_kern.o
 $(MODULE_NAME)-y += rust/rtw_ap_bcn_update_kern.o
+$(MODULE_NAME)-y += rust/rtw_ap_bcn_dispatch.o
 $(MODULE_NAME)-y += rust/rtw_ap_sta_alive.o
 $(MODULE_NAME)-y += rust/rtw_ap_sta_ra.o
 $(MODULE_NAME)-y += rust/rtw_ap_sta_info.o

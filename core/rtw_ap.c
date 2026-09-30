@@ -1807,6 +1807,13 @@ static void update_bcn_ext_capab_ie(_adapter *padapter)
 
 }
 
+#if defined(CONFIG_RUST_AP_BCN_DISPATCH) && !defined(HOST_AP_BCN_DISPATCH_TEST)
+void rtw_rust_bcn_dispatch_update_ext_capab_ie(_adapter *padapter)
+{
+	update_bcn_ext_capab_ie(padapter);
+}
+#endif
+
 static void update_bcn_htcap_ie(_adapter *padapter)
 {
 	RTW_INFO("%s\n", __FUNCTION__);
@@ -1819,6 +1826,7 @@ static void update_bcn_rsn_ie(_adapter *padapter)
 
 }
 
+#if !defined(CONFIG_RUST_AP_BCN_DISPATCH) || defined(HOST_AP_BCN_DISPATCH_TEST)
 void _update_beacon(_adapter *padapter, u8 ie_id, u8 *oui, u8 tx, u8 flags, const char *tag)
 {
 	_irqL irqL;
@@ -1902,6 +1910,7 @@ void _update_beacon(_adapter *padapter, u8 ie_id, u8 *oui, u8 tx, u8 flags, cons
 #endif
 #endif /* !CONFIG_INTERRUPT_BASED_TXBCN */
 }
+#endif /* !CONFIG_RUST_AP_BCN_DISPATCH || HOST_AP_BCN_DISPATCH_TEST */
 
 #ifdef CONFIG_80211N_HT
 

@@ -3,4 +3,5 @@ test_pwrctrl_ps_deny_rust
 test_pwrctrl_lps
 test_pwrctrl_lps_rust
 test_pwrctrl_leave_all_ps
+test_pwrctrl_leave_all_ps_rust
 librust_pwrctrl.a

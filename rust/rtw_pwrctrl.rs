@@ -69,6 +69,8 @@ pub struct PwrctrlPriv {
     pub ps_deny: u32,
     pub bpower_saving: u8,
     pub ips_deny_time: Systime,
+    pub pwr_mode: u8,
+    pub rf_pwrstate: u8,
 }
 
 #[cfg(host_pwrctrl_test)]
@@ -85,6 +87,8 @@ pub struct Adapter {
     pub mlmepriv: MlmePriv,
     pub xmitpriv: XmitPriv,
     pub pwrctrlpriv: PwrctrlPriv,
+    pub bup: u8,
+    pub bSurpriseRemoved: u8,
 }
 
 #[cfg(host_pwrctrl_test)]
@@ -299,5 +303,125 @@ pub extern "C" fn rtw_pwr_unassociated_idle(padapter: Padapter) -> u8 {
     {
         let _ = padapter;
         0
+    }
+}
+
+#[cfg(host_pwrctrl_test)]
+mod leave_all_ps {
+    use super::*;
+
+    const PS_MODE_ACTIVE: u8 = 0;
+    const LPS_CTRL_LEAVE: u8 = 5;
+    const RTW_CMDF_DIRECTLY: u8 = 1;
+    const RF_OFF: u8 = 0;
+    const IFACE_ID0: usize = 0;
+
+    #[repr(C)]
+    pub struct HostPwrctrlLeaveAllPsTrace {
+        pub lps_ctrl_wk_cmd: i32,
+        pub last_lps_ctrl_type: u8,
+        pub last_lps_ctrl_flags: u8,
+        pub ips_leave: i32,
+    }
+
+    static mut G_ASSOC_IF_NUM: i32 = 0;
+    static mut G_MI_LINKED: u8 = 0;
+    static mut G_TRACE: HostPwrctrlLeaveAllPsTrace = HostPwrctrlLeaveAllPsTrace {
+        lps_ctrl_wk_cmd: 0,
+        last_lps_ctrl_type: 0,
+        last_lps_ctrl_flags: 0,
+        ips_leave: 0,
+    };
+
+    fn lps_ctrl_wk_cmd(_adapter: Padapter, lps_ctrl_type: u8, flags: u8) {
+        unsafe {
+            G_TRACE.lps_ctrl_wk_cmd += 1;
+            G_TRACE.last_lps_ctrl_type = lps_ctrl_type;
+            G_TRACE.last_lps_ctrl_flags = flags;
+        }
+    }
+
+    fn ips_leave(_a: Padapter) {
+        unsafe {
+            G_TRACE.ips_leave += 1;
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn host_pwrctrl_leave_all_ps_reset_trace() {
+        unsafe {
+            G_TRACE = HostPwrctrlLeaveAllPsTrace {
+                lps_ctrl_wk_cmd: 0,
+                last_lps_ctrl_type: 0,
+                last_lps_ctrl_flags: 0,
+                ips_leave: 0,
+            };
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn host_pwrctrl_leave_all_ps_get_trace() -> *mut HostPwrctrlLeaveAllPsTrace {
+        core::ptr::addr_of_mut!(G_TRACE)
+    }
+
+    #[no_mangle]
+    pub extern "C" fn host_pwrctrl_leave_all_ps_set_assoc_if_num(n: i32) {
+        unsafe {
+            G_ASSOC_IF_NUM = n;
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn host_pwrctrl_leave_all_ps_set_mi_linked(linked: u8) {
+        unsafe {
+            G_MI_LINKED = linked;
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn LeaveAllPowerSaveModeDirect(adapter: Padapter) {
+        if adapter.is_null() {
+            return;
+        }
+        unsafe {
+            let a = &*adapter;
+            let dvobj = match (*adapter).dvobj.as_ref() {
+                Some(d) => d,
+                None => return,
+            };
+            let pri = dvobj.padapters[IFACE_ID0];
+            let pwr = adapter_to_pwrctl(adapter);
+            if a.bSurpriseRemoved != 0 {
+                return;
+            }
+            if G_MI_LINKED != 0 {
+                if (*pwr).pwr_mode == PS_MODE_ACTIVE {
+                    return;
+                }
+                lps_ctrl_wk_cmd(pri, LPS_CTRL_LEAVE, RTW_CMDF_DIRECTLY);
+            } else if (*pwr).rf_pwrstate == RF_OFF {
+                // Host L2 shim omits IPS leave unless FWLPS/SWLPS/8188E cfgs are set.
+            }
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn LeaveAllPowerSaveMode(adapter: Padapter) {
+        if adapter.is_null() {
+            return;
+        }
+        unsafe {
+            let a = &*adapter;
+            let pwr = adapter_to_pwrctl(adapter);
+            if a.bup == 0 || a.bSurpriseRemoved != 0 {
+                return;
+            }
+            if G_ASSOC_IF_NUM != 0 {
+                // CONFIG_LPS_LCLK enqueue path (host shim): flags 0, not RTW_CMDF_DIRECTLY.
+                lps_ctrl_wk_cmd(adapter, LPS_CTRL_LEAVE, 0);
+            } else if (*pwr).rf_pwrstate == RF_OFF {
+                // Host L2 shim omits IPS leave unless FWLPS/SWLPS/8188E cfgs are set.
+            }
+        }
     }
 }

@@ -4,4 +4,6 @@ test_pwrctrl_lps
 test_pwrctrl_lps_rust
 test_pwrctrl_leave_all_ps
 test_pwrctrl_leave_all_ps_rust
+test_pwrctrl_lps_enter
+test_pwrctrl_lps_enter_rust
 librust_pwrctrl.a

@@ -62,3 +62,8 @@ void sreset_set_wifi_error_status(PADAPTER padapter, u32 status)
 {
 	GET_HAL_DATA(padapter)->srestpriv.Wifi_Error_Status = (u8)status;
 }
+
+u8 sreset_inprogress(PADAPTER padapter)
+{
+	return GET_HAL_DATA(padapter)->srestpriv.silent_reset_inprogress;
+}

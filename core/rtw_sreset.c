@@ -17,6 +17,8 @@
 #include <hal_data.h>
 #include <rtw_sreset.h>
 
+#if !defined(CONFIG_RUST) || defined(HOST_SRESET_TEST)
+
 void sreset_init_value(_adapter *padapter)
 {
 #if defined(DBG_CONFIG_ERROR_DETECT)
@@ -83,14 +85,6 @@ void sreset_set_wifi_error_status(_adapter *padapter, u32 status)
 #endif
 }
 
-void sreset_set_trigger_point(_adapter *padapter, s32 tgp)
-{
-#if defined(DBG_CONFIG_ERROR_DETECT)
-	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(padapter);
-	pHalData->srestpriv.dbg_trigger_point = tgp;
-#endif
-}
-
 bool sreset_inprogress(_adapter *padapter)
 {
 #if defined(DBG_CONFIG_ERROR_RESET)
@@ -98,6 +92,16 @@ bool sreset_inprogress(_adapter *padapter)
 	return pHalData->srestpriv.silent_reset_inprogress;
 #else
 	return _FALSE;
+#endif
+}
+
+#endif /* !CONFIG_RUST || HOST_SRESET_TEST */
+
+void sreset_set_trigger_point(_adapter *padapter, s32 tgp)
+{
+#if defined(DBG_CONFIG_ERROR_DETECT)
+	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(padapter);
+	pHalData->srestpriv.dbg_trigger_point = tgp;
 #endif
 }
 
@@ -318,3 +322,43 @@ void sreset_reset(_adapter *padapter)
 	psrtpriv->rx_cnt = 0;
 #endif
 }
+
+#if defined(CONFIG_RUST) && !defined(HOST_SRESET_TEST)
+
+void rtw_rust_sreset_mutex_init(_adapter *padapter)
+{
+#if defined(DBG_CONFIG_ERROR_DETECT)
+	struct sreset_priv *psrtpriv = &GET_HAL_DATA(padapter)->srestpriv;
+
+	_rtw_mutex_init(&psrtpriv->silentreset_mutex);
+#else
+	(void)padapter;
+#endif
+}
+
+u8 *rtw_rust_sreset_silent_inprogress_ptr(_adapter *padapter)
+{
+	return &GET_HAL_DATA(padapter)->srestpriv.silent_reset_inprogress;
+}
+
+u8 *rtw_rust_sreset_wifi_error_status_ptr(_adapter *padapter)
+{
+	return &GET_HAL_DATA(padapter)->srestpriv.Wifi_Error_Status;
+}
+
+systime *rtw_rust_sreset_last_tx_time_ptr(_adapter *padapter)
+{
+	return &GET_HAL_DATA(padapter)->srestpriv.last_tx_time;
+}
+
+systime *rtw_rust_sreset_last_tx_complete_time_ptr(_adapter *padapter)
+{
+	return &GET_HAL_DATA(padapter)->srestpriv.last_tx_complete_time;
+}
+
+u32 rtw_rust_sreset_read32(_adapter *padapter, u32 addr)
+{
+	return rtw_read32(padapter, addr);
+}
+
+#endif /* CONFIG_RUST && !HOST_SRESET_TEST */

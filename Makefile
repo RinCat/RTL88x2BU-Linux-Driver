@@ -2850,6 +2850,7 @@ $(MODULE_NAME)-y += rust/rtw_rf_kfree_tx_gain.o
 $(MODULE_NAME)-y += rust/rtw_recv.o
 $(MODULE_NAME)-y += rust/rtw_xmit.o
 $(MODULE_NAME)-y += rust/rtw_iol_rest.o
+$(MODULE_NAME)-y += rust/rtw_sreset.o
 $(MODULE_NAME)-y += rust/rtw_mlme_rest.o
 $(MODULE_NAME)-y += rust/rtw_mlme_ht_restructure.o
 $(MODULE_NAME)-y += rust/rtw_mlme_80211d.o
@@ -3869,6 +3870,20 @@ rust-objects-rtw-iol-rest-c:
 rust-check-symbols-rtw-iol-rest: rust-objects-rtw-iol-rest-c rust-objects-rtw-iol-rest
 	$(MAKE) rust-check-symbols OLD=tests/host/iol/iol_rest_c_ref.o NEW=rust/rtw_iol_rest.o \
 		ALLOWLIST=docs/rust-migration/scripts/rtw_iol_rest.allow ALLOW_VACUOUS=1
+
+# W3-95 PR3: host C oracle (sreset lifecycle shim) vs rust/rtw_sreset.o.
+rust-objects-rtw-sreset:
+	@test -n "$(KDIR)" || { echo "Usage: make KDIR=… LLVM=1 rust-objects-rtw-sreset"; exit 1; }
+	$(MAKE) $(KBUILD_OPTS) -C $(KSRC) M=$(shell pwd) rust/rtw_sreset.o
+rust-objects-rtw-sreset-c:
+	gcc -c -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unused-const-variable -O2 \
+		-I tests/host/include -I include \
+		-include tests/host/include/host_autoconf.h \
+		-DHOST_SRESET_TEST -o tests/host/sreset/sreset_lifecycle_c_ref.o \
+		tests/host/sreset/host_sreset_lifecycle_shim.c
+rust-check-symbols-rtw-sreset: rust-objects-rtw-sreset-c rust-objects-rtw-sreset
+	$(MAKE) rust-check-symbols OLD=tests/host/sreset/sreset_lifecycle_c_ref.o NEW=rust/rtw_sreset.o \
+		ALLOWLIST=docs/rust-migration/scripts/rtw_sreset.allow ALLOW_VACUOUS=1
 
 # Smoke test for check-symbols.sh (T1). Builds only rust/aes_ctr.o via kbuild, not the
 # full module. The C reference uses host gcc + HOST_CRYPTO_TEST for speed; production

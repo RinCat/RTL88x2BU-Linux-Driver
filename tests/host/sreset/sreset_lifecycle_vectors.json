@@ -26,6 +26,18 @@
       "txdma_reg": 1,
       "expect_u8": 8
     },
-    { "name": "set_error", "op": "set_error", "error_status": 12, "expect_u8": 12 }
+    { "name": "set_error", "op": "set_error", "error_status": 12, "expect_u8": 12 },
+    {
+      "name": "inprogress_false",
+      "op": "inprogress",
+      "silent_inprogress": 0,
+      "expect_u8": 0
+    },
+    {
+      "name": "inprogress_true",
+      "op": "inprogress",
+      "silent_inprogress": 1,
+      "expect_u8": 1
+    }
   ]
 }

@@ -41,5 +41,6 @@ void sreset_init_value(PADAPTER padapter);
 void sreset_reset_value(PADAPTER padapter);
 u8 sreset_get_wifi_status(PADAPTER padapter);
 void sreset_set_wifi_error_status(PADAPTER padapter, u32 status);
+u8 sreset_inprogress(PADAPTER padapter);
 
 #endif

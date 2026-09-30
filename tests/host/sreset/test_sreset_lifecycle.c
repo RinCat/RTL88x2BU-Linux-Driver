@@ -57,6 +57,9 @@ static int run_vec(struct vector *v)
 	} else if (!strcmp(v->op, "set_error")) {
 		sreset_set_wifi_error_status(&g_adapter, (u32)v->error_status);
 		got = p->Wifi_Error_Status;
+	} else if (!strcmp(v->op, "inprogress")) {
+		p->silent_reset_inprogress = (u8)v->silent_inprogress;
+		got = sreset_inprogress(&g_adapter);
 	} else
 		return 1;
 

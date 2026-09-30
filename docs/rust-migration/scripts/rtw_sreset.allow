@@ -1,0 +1,10 @@
+# L1 allowlist for W3-95: Rust owns lifecycle helpers; kernel FFI shims stay in C.
+drop rtw_read32
+drop host_sreset_set_reg_read
+drop host_sreset_clear_reg_reads
+drop rtw_rust_sreset_mutex_init
+drop rtw_rust_sreset_silent_inprogress_ptr
+drop rtw_rust_sreset_wifi_error_status_ptr
+drop rtw_rust_sreset_last_tx_time_ptr
+drop rtw_rust_sreset_last_tx_complete_time_ptr
+drop rtw_rust_sreset_read32

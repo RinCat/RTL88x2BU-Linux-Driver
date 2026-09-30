@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0
-//! W3-95 sreset lifecycle — Rust port of `core/rtw_sreset.c` helpers (host L2 scope).
+//! W3-95 sreset lifecycle — Rust port of `core/rtw_sreset.c` helpers.
 
 #![allow(
     dead_code,
@@ -15,7 +15,7 @@
 use std::os::raw::c_uint;
 
 #[cfg(not(host_sreset_test))]
-use core::ffi::c_uint;
+use core::ffi::{c_uint, c_ulong, c_void};
 
 const _TRUE: u8 = 1;
 const _FALSE: u8 = 0;
@@ -28,6 +28,9 @@ const WIFI_IF_NOT_EXIST: u8 = 64;
 
 #[cfg(host_sreset_test)]
 type Systime = u32;
+
+#[cfg(not(host_sreset_test))]
+type Systime = c_ulong;
 
 #[cfg(host_sreset_test)]
 #[repr(C)]
@@ -78,6 +81,44 @@ fn hal_data(adapter: Padapter) -> *mut HalData {
     unsafe { &mut (*adapter).HalData }
 }
 
+#[cfg(not(host_sreset_test))]
+mod kernel {
+    use super::*;
+
+    extern "C" {
+        fn rtw_rust_sreset_mutex_init(padapter: Padapter);
+        fn rtw_rust_sreset_silent_inprogress_ptr(padapter: Padapter) -> *mut u8;
+        fn rtw_rust_sreset_wifi_error_status_ptr(padapter: Padapter) -> *mut u8;
+        fn rtw_rust_sreset_last_tx_time_ptr(padapter: Padapter) -> *mut Systime;
+        fn rtw_rust_sreset_last_tx_complete_time_ptr(padapter: Padapter) -> *mut Systime;
+        fn rtw_rust_sreset_read32(padapter: Padapter, addr: u32) -> u32;
+    }
+
+    pub fn mutex_init(padapter: Padapter) {
+        unsafe { rtw_rust_sreset_mutex_init(padapter) };
+    }
+
+    pub fn silent_inprogress(padapter: Padapter) -> *mut u8 {
+        unsafe { rtw_rust_sreset_silent_inprogress_ptr(padapter) }
+    }
+
+    pub fn wifi_error_status(padapter: Padapter) -> *mut u8 {
+        unsafe { rtw_rust_sreset_wifi_error_status_ptr(padapter) }
+    }
+
+    pub fn last_tx_time(padapter: Padapter) -> *mut Systime {
+        unsafe { rtw_rust_sreset_last_tx_time_ptr(padapter) }
+    }
+
+    pub fn last_tx_complete_time(padapter: Padapter) -> *mut Systime {
+        unsafe { rtw_rust_sreset_last_tx_complete_time_ptr(padapter) }
+    }
+
+    pub fn read32(padapter: Padapter, addr: u32) -> u32 {
+        unsafe { rtw_rust_sreset_read32(padapter, addr) }
+    }
+}
+
 #[cfg(host_sreset_test)]
 fn read32(_adapter: Padapter, addr: u32) -> u32 {
     if addr == REG_TXDMA_STATUS {
@@ -100,6 +141,26 @@ pub extern "C" fn sreset_init_value(padapter: Padapter) {
         p.last_tx_time = 0;
         p.last_tx_complete_time = 0;
     }
+    #[cfg(not(host_sreset_test))]
+    unsafe {
+        kernel::mutex_init(padapter);
+        let inprog = kernel::silent_inprogress(padapter);
+        let err = kernel::wifi_error_status(padapter);
+        let tx = kernel::last_tx_time(padapter);
+        let txc = kernel::last_tx_complete_time(padapter);
+        if !inprog.is_null() {
+            *inprog = _FALSE;
+        }
+        if !err.is_null() {
+            *err = WIFI_STATUS_SUCCESS;
+        }
+        if !tx.is_null() {
+            *tx = 0;
+        }
+        if !txc.is_null() {
+            *txc = 0;
+        }
+    }
 }
 
 #[no_mangle]
@@ -113,6 +174,21 @@ pub extern "C" fn sreset_reset_value(padapter: Padapter) {
         p.wifi_error_status = WIFI_STATUS_SUCCESS;
         p.last_tx_time = 0;
         p.last_tx_complete_time = 0;
+    }
+    #[cfg(not(host_sreset_test))]
+    unsafe {
+        let err = kernel::wifi_error_status(padapter);
+        let tx = kernel::last_tx_time(padapter);
+        let txc = kernel::last_tx_complete_time(padapter);
+        if !err.is_null() {
+            *err = WIFI_STATUS_SUCCESS;
+        }
+        if !tx.is_null() {
+            *tx = 0;
+        }
+        if !txc.is_null() {
+            *txc = 0;
+        }
     }
 }
 
@@ -141,7 +217,28 @@ pub extern "C" fn sreset_get_wifi_status(padapter: Padapter) -> u8 {
         status
     }
     #[cfg(not(host_sreset_test))]
-    WIFI_STATUS_SUCCESS
+    unsafe {
+        let mut status = WIFI_STATUS_SUCCESS;
+        let inprog = kernel::silent_inprogress(padapter);
+        let err = kernel::wifi_error_status(padapter);
+        if inprog.is_null() || err.is_null() {
+            return WIFI_STATUS_SUCCESS;
+        }
+        if *inprog == _TRUE {
+            return status;
+        }
+        let val32 = kernel::read32(padapter, REG_TXDMA_STATUS);
+        if val32 == 0xeaeaeaea {
+            *err = WIFI_IF_NOT_EXIST;
+        } else if val32 != 0 {
+            *err = WIFI_MAC_TXDMA_ERROR;
+        }
+        if *err != WIFI_STATUS_SUCCESS {
+            status = *err & !(USB_READ_PORT_FAIL | USB_WRITE_PORT_FAIL);
+        }
+        *err = WIFI_STATUS_SUCCESS;
+        status
+    }
 }
 
 #[no_mangle]
@@ -152,5 +249,32 @@ pub extern "C" fn sreset_set_wifi_error_status(padapter: Padapter, status: c_uin
     #[cfg(host_sreset_test)]
     unsafe {
         (*hal_data(padapter)).srestpriv.wifi_error_status = status as u8;
+    }
+    #[cfg(not(host_sreset_test))]
+    unsafe {
+        let err = kernel::wifi_error_status(padapter);
+        if !err.is_null() {
+            *err = status as u8;
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sreset_inprogress(padapter: Padapter) -> u8 {
+    if padapter.is_null() {
+        return _FALSE;
+    }
+    #[cfg(host_sreset_test)]
+    unsafe {
+        (*hal_data(padapter)).srestpriv.silent_reset_inprogress
+    }
+    #[cfg(not(host_sreset_test))]
+    unsafe {
+        let inprog = kernel::silent_inprogress(padapter);
+        if inprog.is_null() {
+            _FALSE
+        } else {
+            *inprog
+        }
     }
 }

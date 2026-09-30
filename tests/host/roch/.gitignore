@@ -3,4 +3,3 @@ test_roch_handlers_rust
 test_roch_concurrent
 test_roch_concurrent_rust
 librust_roch.a
-test_roch_concurrent

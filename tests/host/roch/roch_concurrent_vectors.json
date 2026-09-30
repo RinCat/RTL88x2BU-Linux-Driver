@@ -25,6 +25,52 @@
       "exp_switch_to": 1,
       "exp_wk_cmd": 1,
       "exp_wk_type": 2
+    },
+    {
+      "name": "conc_skip_no_roch",
+      "op": "concurrent",
+      "is_roch": 0,
+      "mi_linked": 1,
+      "exp_set_ch": 0
+    },
+    {
+      "name": "conc_to_listen",
+      "op": "concurrent",
+      "is_roch": 1,
+      "mi_linked": 1,
+      "oper": 6,
+      "union_ch": 6,
+      "freq": 2462,
+      "max_away": 250,
+      "exp_leave": 1,
+      "exp_set_ch": 1,
+      "exp_ch": 11,
+      "exp_timer": 1,
+      "exp_dur": 250
+    },
+    {
+      "name": "conc_to_union",
+      "op": "concurrent",
+      "is_roch": 1,
+      "mi_linked": 1,
+      "oper": 11,
+      "union_ch": 6,
+      "freq": 2437,
+      "min_home": 1500,
+      "exp_back": 1,
+      "exp_set_ch": 1,
+      "exp_ch": 6,
+      "exp_timer": 1,
+      "exp_dur": 1500
+    },
+    {
+      "name": "conc_unlinked",
+      "op": "concurrent",
+      "is_roch": 1,
+      "mi_linked": 0,
+      "freq": 2412,
+      "exp_set_ch": 1,
+      "exp_ch": 1
     }
   ]
 }

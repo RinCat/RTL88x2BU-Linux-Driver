@@ -17,7 +17,8 @@
     not(host_cmd_queue_test),
     not(host_cmd_thread_test),
     not(host_cmd_joinbss_test),
-    not(host_cmd_drvextra_test)
+    not(host_cmd_drvextra_test),
+    not(host_cmd_traffic_lps_test)
 ))]
 use core::ffi::{c_int, c_void};
 #[cfg(any(
@@ -25,7 +26,8 @@ use core::ffi::{c_int, c_void};
     host_cmd_queue_test,
     host_cmd_thread_test,
     host_cmd_joinbss_test,
-    host_cmd_drvextra_test
+    host_cmd_drvextra_test,
+    host_cmd_traffic_lps_test
 ))]
 use std::os::raw::{c_int, c_void};
 
@@ -1278,6 +1280,108 @@ mod drvextra_cmd {
                 rtw_mfree(pdrvextra_cmd.pbuf, pdrvextra_cmd.size as u32);
             }
             H2C_SUCCESS
+        }
+    }
+}
+
+#[cfg(any(host_cmd_traffic_lps_test, rust_traffic_lps_cmd))]
+mod traffic_lps_cmd {
+    use super::c_int;
+
+    const _TRUE: c_int = 1;
+    const WIFI_ADHOC_STATE: u32 = 0x20;
+    const WIFI_ADHOC_MASTER_STATE: u32 = 0x40;
+    const LPS_CTRL_CONNECT: u8 = 2;
+    const LPS_CTRL_SPECIAL_PACKET: u8 = 4;
+    const LPS_CTRL_LEAVE: u8 = 5;
+    const LPS_CTRL_ENTER: u8 = 9;
+    const HW_VAR_H2C_FW_JOINBSSRPT: c_int = 0;
+    const LPS_DELAY_MS: c_int = 1000;
+    const ETH_ALEN: usize = 6;
+
+    #[repr(C)]
+    struct RtLinkDetect {
+        num_rx_ok_in_period: u32,
+        num_tx_ok_in_period: u32,
+        num_rx_unicast_ok_in_period: u32,
+        b_busy_traffic: u8,
+        b_tx_busy_traffic: u8,
+        b_rx_busy_traffic: u8,
+        b_higher_busy_traffic: u8,
+        b_higher_busy_rx_traffic: u8,
+        b_higher_busy_tx_traffic: u8,
+    }
+
+    #[repr(C)]
+    struct MlmePriv {
+        fw_state: u32,
+        link_detect_info: RtLinkDetect,
+        assoc_bssid: [u8; ETH_ALEN],
+    }
+
+    #[repr(C)]
+    struct PwrctrlPriv {
+        lps_level: i8,
+        LpsIdleCount: u8,
+        b_leisure_ps: u8,
+        lps_chk_by_tp: u8,
+        lps_bi_tp_th: c_int,
+        lps_tx_tp_th: c_int,
+        lps_rx_tp_th: c_int,
+        lps_chk_cnt: c_int,
+        lps_chk_cnt_th: c_int,
+    }
+
+    #[repr(C)]
+    struct StaPriv {
+        sta: *mut core::ffi::c_void,
+    }
+
+    #[repr(C)]
+    pub struct Adapter {
+        mlmepriv: MlmePriv,
+        pwrctrlpriv: PwrctrlPriv,
+        stapriv: StaPriv,
+        hw_port: u8,
+    }
+
+    extern "C" {
+        fn check_fwstate(m: *mut MlmePriv, s: c_int) -> c_int;
+        fn LPS_Enter(a: *mut Adapter, reason: *const u8);
+        fn LPS_Leave(a: *mut Adapter, reason: *const u8);
+        fn rtw_hal_set_hwreg(a: *mut Adapter, id: c_int, val: *mut u8);
+        fn rtw_set_lps_deny(a: *mut Adapter, ms: c_int);
+    }
+
+    #[no_mangle]
+    pub extern "C" fn lps_ctrl_wk_hdl(padapter: *mut Adapter, t: u8, buf: *mut u8) {
+        if padapter.is_null() {
+            return;
+        }
+        unsafe {
+            let mlme = &mut (*padapter).mlmepriv;
+            if check_fwstate(mlme as *mut MlmePriv, WIFI_ADHOC_MASTER_STATE as c_int) == _TRUE
+                || check_fwstate(mlme as *mut MlmePriv, WIFI_ADHOC_STATE as c_int) == _TRUE
+            {
+                return;
+            }
+            let pwr = &mut (*padapter).pwrctrlpriv;
+            match t {
+                LPS_CTRL_CONNECT => {
+                    let mut mstatus = 1u8;
+                    pwr.LpsIdleCount = 0;
+                    rtw_hal_set_hwreg(padapter, HW_VAR_H2C_FW_JOINBSSRPT, &mut mstatus);
+                }
+                LPS_CTRL_SPECIAL_PACKET => {
+                    rtw_set_lps_deny(padapter, LPS_DELAY_MS);
+                    LPS_Leave(padapter, b"LPS_CTRL_SPECIAL_PACKET\0".as_ptr());
+                }
+                LPS_CTRL_LEAVE => LPS_Leave(padapter, b"LPS_CTRL_LEAVE\0".as_ptr()),
+                LPS_CTRL_ENTER => LPS_Enter(padapter, b"TRAFFIC_IDLE_1\0".as_ptr()),
+                _ => {
+                    let _ = buf;
+                }
+            }
         }
     }
 }

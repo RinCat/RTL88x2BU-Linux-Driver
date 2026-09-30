@@ -29,6 +29,11 @@
       "adhoc": 1
     },
     {
+      "name": "lps_ctrl_adhoc_master_skip",
+      "lps_ctrl_type": 5,
+      "fw_state_adhoc_master": 1
+    },
+    {
       "name": "watchdog_busy_rx_flags",
       "kind": "watchdog",
       "fw_asoc": 1,

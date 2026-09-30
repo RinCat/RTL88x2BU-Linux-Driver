@@ -13,6 +13,8 @@ test_joinbss_cmd
 test_joinbss_cmd_rust
 test_drvextra_cmd_rust
 test_traffic_lps_cmd
+test_traffic_lps_cmd_rust
 librust_joinbss_cmd.a
 librust_drvextra_cmd.a
+librust_traffic_lps_cmd.a
 librust_cmd_queue_kernel.a

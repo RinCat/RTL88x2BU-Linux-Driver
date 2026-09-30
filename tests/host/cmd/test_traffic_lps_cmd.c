@@ -16,7 +16,7 @@ enum vec_kind {
 struct vector {
 	char name[64];
 	char kind[32];
-	int lps_ctrl_type, adhoc;
+	int lps_ctrl_type, adhoc, fw_state_adhoc_master;
 	int from_timer;
 	int fw_asoc, fw_sta, leisure_ps, lps_chk_by_tp, hw_port;
 	int num_rx_ok, num_tx_ok, num_rx_unicast;
@@ -57,6 +57,7 @@ static int parse_vec(const char *o, size_t l, void *vv)
 	host_json_parse_string_in(o, l, "kind", v->kind, sizeof(v->kind));
 	host_json_parse_int_in(o, l, "lps_ctrl_type", &v->lps_ctrl_type);
 	host_json_parse_int_in(o, l, "adhoc", &v->adhoc);
+	host_json_parse_int_in(o, l, "fw_state_adhoc_master", &v->fw_state_adhoc_master);
 	host_json_parse_int_in(o, l, "from_timer", &v->from_timer);
 	host_json_parse_int_in(o, l, "fw_asoc", &v->fw_asoc);
 	host_json_parse_int_in(o, l, "fw_sta", &v->fw_sta);
@@ -104,6 +105,8 @@ static void setup_adapter(struct vector *v)
 		g_adapter.mlmepriv.fw_state |= WIFI_STATION_STATE;
 	if (v->adhoc)
 		g_adapter.mlmepriv.fw_state = WIFI_ADHOC_STATE;
+	if (v->fw_state_adhoc_master)
+		g_adapter.mlmepriv.fw_state = WIFI_ADHOC_MASTER_STATE;
 	pwr->bLeisurePs = (u8)v->leisure_ps;
 	pwr->lps_chk_by_tp = (u8)v->lps_chk_by_tp;
 	pwr->lps_bi_tp_th = v->lps_bi_tp_th ? v->lps_bi_tp_th : 2;

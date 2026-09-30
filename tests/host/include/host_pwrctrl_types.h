@@ -12,13 +12,25 @@
 
 typedef int _lock;
 typedef _lock _pwrlock;
+typedef u32 systime;
+
+struct mlme_priv { u32 fw_state; };
+struct xmit_priv { u16 free_xmitbuf_cnt, free_xmit_extbuf_cnt; };
 
 struct pwrctrl_priv {
 	_pwrlock lock;
 	u32 ps_deny;
+	u8 bpower_saving;
+	systime ips_deny_time;
 };
 
+struct _adapter;
+struct dvobj_priv { u8 iface_nums; struct _adapter *padapters[4]; };
+
 struct _adapter {
+	struct dvobj_priv *dvobj;
+	struct mlme_priv mlmepriv;
+	struct xmit_priv xmitpriv;
 	struct pwrctrl_priv pwrctrlpriv;
 };
 
@@ -26,6 +38,7 @@ typedef struct _adapter _adapter;
 typedef _adapter *PADAPTER;
 
 #define adapter_to_pwrctl(a) (&(a)->pwrctrlpriv)
+#define adapter_to_dvobj(a) ((a)->dvobj)
 
 typedef enum {
 	PS_DENY_DRV_INITIAL = 0,

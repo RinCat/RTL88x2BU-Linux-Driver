@@ -15,11 +15,11 @@ LPS_CFLAGS := $(CFLAGS)
 RUST_PWRCTRL := $(ROOT)/rust/rtw_pwrctrl.rs
 RUSTC := rustc
 
-.PHONY: all test test-c test-rust test-lps clean
+.PHONY: all test test-c test-rust test-lps test-lps-rust clean
 
 all: test test-lps
 
-test: test-c test-rust test-lps
+test: test-c test-rust test-lps test-lps-rust
 
 test-c: test_pwrctrl_ps_deny
 	./test_pwrctrl_ps_deny ps_deny_vectors.json
@@ -29,6 +29,9 @@ test-rust: test_pwrctrl_ps_deny_rust
 
 test-lps: test_pwrctrl_lps
 	./test_pwrctrl_lps lps_vectors.json
+
+test-lps-rust: test_pwrctrl_lps_rust
+	./test_pwrctrl_lps_rust lps_vectors.json
 
 test_pwrctrl_lps: test_pwrctrl_lps.c $(LPS_SHIM) $(HOST_JSON)
 	$(CC) $(LPS_CFLAGS) -o $@ test_pwrctrl_lps.c $(LPS_SHIM) $(HOST_JSON)
@@ -43,5 +46,9 @@ librust_pwrctrl.a: $(RUST_PWRCTRL)
 test_pwrctrl_ps_deny_rust: test_pwrctrl_ps_deny.c librust_pwrctrl.a $(HOST_JSON)
 	$(CC) $(CFLAGS) -o $@ test_pwrctrl_ps_deny.c $(HOST_JSON) librust_pwrctrl.a
 
+test_pwrctrl_lps_rust: test_pwrctrl_lps.c librust_pwrctrl.a $(HOST_JSON)
+	$(CC) $(LPS_CFLAGS) -o $@ test_pwrctrl_lps.c $(HOST_JSON) librust_pwrctrl.a
+
 clean:
-	rm -f test_pwrctrl_ps_deny test_pwrctrl_ps_deny_rust test_pwrctrl_lps librust_pwrctrl.a
+	rm -f test_pwrctrl_ps_deny test_pwrctrl_ps_deny_rust test_pwrctrl_lps \
+		test_pwrctrl_lps_rust librust_pwrctrl.a

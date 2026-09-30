@@ -2,10 +2,8 @@
 #ifndef HOST_PWRCTRL_LPS_TYPES_H
 #define HOST_PWRCTRL_LPS_TYPES_H
 
-#include "host_types.h"
+#include "host_pwrctrl_types.h"
 
-#define _TRUE 1
-#define _FALSE 0
 #define NR_XMITBUFF 4
 #define NR_XMIT_EXTBUFF 32
 #define WIFI_ASOC_STATE 0x00000001
@@ -16,25 +14,8 @@
 #define WIFI_ADHOC_MASTER_STATE 0x00000020
 #define WIFI_ADHOC_STATE 0x00000040
 
-typedef u32 systime;
 typedef s32 sint;
 
-struct mlme_priv { u32 fw_state; };
-struct xmit_priv { u16 free_xmitbuf_cnt, free_xmit_extbuf_cnt; };
-struct pwrctrl_priv { u8 bpower_saving; systime ips_deny_time; };
-struct _adapter;
-struct dvobj_priv { u8 iface_nums; struct _adapter *padapters[4]; };
-struct _adapter {
-	struct dvobj_priv *dvobj;
-	struct mlme_priv mlmepriv;
-	struct xmit_priv xmitpriv;
-	struct pwrctrl_priv pwrctrlpriv;
-};
-
-typedef struct _adapter _adapter;
-
-#define adapter_to_pwrctl(a) (&(a)->pwrctrlpriv)
-#define adapter_to_dvobj(a) ((a)->dvobj)
 #define MLME_IS_AP(a) (((a)->mlmepriv.fw_state & WIFI_AP_STATE) != 0)
 #define MLME_IS_MESH(a) _FALSE
 

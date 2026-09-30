@@ -1,4 +1,5 @@
 test_pwrctrl_ps_deny
 test_pwrctrl_ps_deny_rust
 test_pwrctrl_lps
+test_pwrctrl_lps_rust
 librust_pwrctrl.a

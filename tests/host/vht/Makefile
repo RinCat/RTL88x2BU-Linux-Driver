@@ -31,20 +31,22 @@ VHT20_CFLAGS := $(BASE_CFLAGS) -I$(WLAN_UTIL) -Wno-format-truncation \
 RESTRUCT_CFLAGS := $(BASE_CFLAGS) -DHOST_VHT_RESTRUCTURE_TEST -Wno-pointer-sign
 VHT_BUILD_SRC := $(CORE)/rtw_vht_build.c
 VHT_BUILD_SHIM := host_vht_build_shim.c
+VHT_IES_ATTACH_SHIM := host_vht_ies_attach_shim.c
 BUILD_CFLAGS := $(BASE_CFLAGS) -DHOST_VHT_BUILD_TEST
+IES_ATTACH_CFLAGS := $(BASE_CFLAGS) -DHOST_VHT_BUILD_TEST -DHOST_VHT_IES_ATTACH_TEST
 
 RUST_VHT_BUILD := $(ROOT)/rust/rtw_vht_build.rs
 
 .PHONY: all test test-c test-rust test-mcs-rate test-mcs-rate-rust test-vht20 \
 	test-vht20-rust vht-restructure-compile test-restructure test-restructure-rust \
 	test-build-operation test-build-operation-rust test-build-cap test-build-cap-rust \
-	test-caps-handler test-caps-handler-rust clean
+	test-caps-handler test-caps-handler-rust test-ies-attach clean
 
 all: test
 
 test: test-c test-rust test-mcs-rate test-mcs-rate-rust test-vht20 test-vht20-rust \
 	test-restructure test-restructure-rust test-build-operation test-build-operation-rust \
-	test-build-cap test-build-cap-rust test-caps-handler test-caps-handler-rust
+	test-build-cap test-build-cap-rust test-caps-handler test-caps-handler-rust test-ies-attach
 
 test-c: test_vht
 	./test_vht vht_vectors.json
@@ -166,6 +168,14 @@ test_vht_caps_handler_rust: test_vht_caps_handler.c librust_vht_caps_handler.a $
 	$(CC) $(CAPS_HANDLER_CFLAGS) -DRUST_VHT_CAPS_HANDLER_ORACLE -o $@ test_vht_caps_handler.c \
 		$(VHT_BUILD_SHIM) $(HOST_JSON) librust_vht_caps_handler.a
 
+test-ies-attach: test_vht_ies_attach
+	./test_vht_ies_attach vht_ies_attach_vectors.json
+
+test_vht_ies_attach: test_vht_ies_attach.c $(VHT_BUILD_SRC) $(VHT_BUILD_SHIM) $(VHT_IES_ATTACH_SHIM) \
+		$(VHT_MCS_RATE_ORACLE) $(HOST_JSON)
+	$(CC) $(IES_ATTACH_CFLAGS) -o $@ test_vht_ies_attach.c $(VHT_BUILD_SRC) $(VHT_BUILD_SHIM) \
+		$(VHT_IES_ATTACH_SHIM) $(VHT_MCS_RATE_ORACLE) $(HOST_JSON)
+
 clean:
 	rm -f test_vht test_vht_rust test_vht_mcs_rate test_vht_mcs_rate_rust test_vht_vht20 \
 		test_vht_vht20_rust test_vht_restructure test_vht_restructure_rust librust_vht.a \
@@ -173,4 +183,4 @@ clean:
 		vht_rest_host.o vht_rest_shim_host.o vht_mcs_rate_c_ref.o vht_mcs_rate_rust_ref.o \
 		test_vht_build_operation test_vht_build_operation_rust test_vht_build_cap \
 		test_vht_build_cap_rust test_vht_caps_handler test_vht_caps_handler_rust \
-		librust_vht_build.a librust_vht_caps_handler.a
+		test_vht_ies_attach librust_vht_build.a librust_vht_caps_handler.a

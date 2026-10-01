@@ -6,6 +6,7 @@
 #include <stdbool.h>
 
 typedef unsigned int uint;
+typedef int sint;
 #define BIT(x) (1U << (x))
 #define BIT0 BIT(0)
 #define BIT1 BIT(1)
@@ -23,8 +24,12 @@ typedef u8 BOOLEAN;
 #define RTW_INFO(...) do { } while (0)
 #define RTW_ERR(...) do { } while (0)
 #define MGN_VHT1SS_MCS0 0xA0
+#define EID_EXTCapability 127
 #define EID_VHTCapability 191
 #define EID_VHTOperation 192
+#define _BEACON_IE_OFFSET_ 12
+#define SET_EXT_CAPABILITY_ELE_OP_MODE_NOTIF(p, v) \
+	SET_BITS_TO_LE_1BYTE((p) + 7, 6, 1, (v))
 #define VHT_CAP_IE_LEN 12
 #define CHANNEL_WIDTH_20 0
 #define CHANNEL_WIDTH_80 2
@@ -86,7 +91,13 @@ struct vht_priv {
 };
 struct mlme_ext_info { u8 assoc_AP_vendor; u8 VHT_enable; };
 struct mlme_ext_priv { struct mlme_ext_info mlmext_info; };
-struct mlme_priv { struct vht_priv vhtpriv; };
+struct mlme_priv {
+	struct vht_priv vhtpriv;
+#ifdef HOST_VHT_IES_ATTACH_TEST
+	u8 ext_capab_ie_data[8];
+	u8 ext_capab_ie_len;
+#endif
+};
 struct host_vht_build_fixture {
 	u32 rx_packet_offset;
 	u32 max_recvbuf_sz;
@@ -112,6 +123,9 @@ bool hal_chk_bw_cap(_adapter *adapter, u8 cap);
 u8 hal_largest_bw(_adapter *padapter, u8 bw_cap);
 u8 rtw_get_center_ch(u8 ch, u8 bw, u8 offset);
 void rtw_hal_get_def_var(_adapter *padapter, HAL_DEF_VARIABLE variable, void *value);
+u8 *rtw_get_ie(const u8 *pbuf, sint index, sint *len, sint limit);
+void rtw_check_for_vht20(_adapter *padapter, u8 *ies, int ies_len);
+void rtw_vht_use_default_setting(_adapter *padapter);
 u32 rtw_build_vht_cap_ie(_adapter *padapter, u8 *pbuf);
 u32 rtw_build_vht_operation_ie(_adapter *padapter, u8 *pbuf, u8 channel);
 void VHT_caps_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE);

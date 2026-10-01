@@ -125,6 +125,14 @@ u8 rtw_p2p_nego_intent_compare(u8 req, u8 resp)
 		return req & 0x01 ? _TRUE : _FALSE;
 	return (req >> 1) > (resp >> 1) ? _TRUE : _FALSE;
 }
+#else
+int rtw_p2p_is_channel_list_ok(u8 desired_ch, u8 *ch_list, u8 ch_cnt);
+u8 rtw_p2p_get_peer_ch_list(struct wifidirect_info *pwdinfo, u8 *ch_content, u8 ch_cnt,
+			    u8 *peer_ch_list);
+u8 rtw_p2p_ch_inclusion(PADAPTER adapter, u8 *peer_ch_list, u8 peer_ch_num,
+			u8 *ch_list_inclusioned);
+u8 rtw_p2p_nego_intent_compare(u8 req, u8 resp);
+#endif
 
 static u8 *p2p_ie(const u8 *in, int len, uint *ielen)
 {
@@ -174,6 +182,7 @@ static u8 *p2p_attr_content(u8 *ie, uint ilen, u8 id, u8 *buf, uint *len)
 	return NULL;
 }
 
+#ifndef HOST_P2P_RUST_IE
 int process_p2p_cross_connect_ie(PADAPTER a, u8 *IEs, u32 len)
 {
 	u8 *ies, *pie, attr[32];
@@ -256,12 +265,6 @@ void process_p2p_ps_ie(PADAPTER a, u8 *IEs, u32 len)
 #else
 int process_p2p_cross_connect_ie(PADAPTER a, u8 *IEs, u32 len);
 void process_p2p_ps_ie(PADAPTER a, u8 *IEs, u32 len);
-int rtw_p2p_is_channel_list_ok(u8 desired_ch, u8 *ch_list, u8 ch_cnt);
-u8 rtw_p2p_get_peer_ch_list(struct wifidirect_info *pwdinfo, u8 *ch_content, u8 ch_cnt,
-			    u8 *peer_ch_list);
-u8 rtw_p2p_ch_inclusion(PADAPTER adapter, u8 *peer_ch_list, u8 peer_ch_num,
-			u8 *ch_list_inclusioned);
-u8 rtw_p2p_nego_intent_compare(u8 req, u8 resp);
 #endif
 
 typedef struct {

@@ -22,6 +22,7 @@ u32 rtw_set_p2p_attr_content(u8 *pbuf, u8 attr_id, u16 attr_len, u8 *pdata_attr)
 	return attr_len + 3;
 }
 
+#ifndef HOST_P2P_RUST_IE_BUILD
 u32 build_beacon_p2p_ie(struct wifidirect_info *pwdinfo, u8 *pbuf)
 {
 	u8 p2pie[MAX_P2P_IE_LEN] = {0}, cap_le[2];
@@ -43,8 +44,10 @@ u32 build_beacon_p2p_ie(struct wifidirect_info *pwdinfo, u8 *pbuf)
 	pbuf = rtw_set_ie(pbuf, _VENDOR_SPECIFIC_IE_, p2pielen, p2pie, &len);
 	return len;
 }
+#endif /* !HOST_P2P_RUST_IE_BUILD */
 
 /* Mirrors core/rtw_p2p.c: build_assoc_resp_p2p_ie / build_deauth_p2p_ie */
+#ifndef HOST_P2P_RUST_IE_BUILD
 u32 build_assoc_resp_p2p_ie(struct wifidirect_info *pwdinfo, u8 *pbuf, u8 status_code)
 {
 	u8 p2pie[MAX_P2P_IE_LEN] = {0};
@@ -66,3 +69,4 @@ u32 build_deauth_p2p_ie(struct wifidirect_info *pwdinfo, u8 *pbuf)
 	(void)pbuf;
 	return 0;
 }
+#endif /* !HOST_P2P_RUST_IE_BUILD */

@@ -4,6 +4,19 @@
 #include "host_p2p_ie_build.h"
 #include "host_vector_json.h"
 
+#ifdef HOST_P2P_RUST_IE_BUILD
+typedef struct {
+	struct wifidirect_info wdinfo;
+} host_p2p_adapter;
+
+void p2p_ps_wk_cmd(host_p2p_adapter *a, u8 c, u8 e)
+{
+	(void)a;
+	(void)c;
+	(void)e;
+}
+#endif
+
 typedef struct {
 	char name[48];
 	char fn[16];

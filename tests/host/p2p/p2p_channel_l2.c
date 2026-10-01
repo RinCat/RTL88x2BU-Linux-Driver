@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0
-/* W3-98 L2 C oracle: P2P channel/negotiation pure helpers (PR1). */
+/* W3-98 L2 C oracle: P2P channel/negotiation leaf helpers. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +8,11 @@
 
 #define _TRUE 1
 #define _FALSE 0
+#define _BE 12
+#define P2P_ATTR_MANAGEABILITY 0x0a
+#define LE16(x) ((u16)(((x)[1] << 8) | (x)[0]))
+
+typedef unsigned int uint;
 
 struct wifidirect_info {
 	u8 _pad;
@@ -86,7 +91,81 @@ u8 rtw_p2p_nego_intent_compare(u8 req, u8 resp)
 		return req & 0x01 ? _TRUE : _FALSE;
 	return (req >> 1) > (resp >> 1) ? _TRUE : _FALSE;
 }
+
+static u8 *p2p_ie(const u8 *in, int len, uint *ielen)
+{
+	u8 oui[4] = {0x50, 0x6F, 0x9A, 0x09};
+	uint c = 0;
+
+	if (ielen)
+		*ielen = 0;
+	if (!in || len <= 0)
+		return NULL;
+	while (c + 5 < (uint)len) {
+		if (in[c] == 221 && !memcmp(&in[c + 2], oui, 4)) {
+			if (ielen)
+				*ielen = in[c + 1] + 2;
+			return (u8 *)(in + c);
+		}
+		c += in[c + 1] + 2;
+	}
+	return NULL;
+}
+
+static u8 *p2p_attr_content(u8 *ie, uint ilen, u8 id, u8 *buf, uint *len)
+{
+	u8 oui[4] = {0x50, 0x6F, 0x9A, 0x09}, *ap;
+
+	if (!ie || ilen <= 6 || ie[0] != 221 || memcmp(ie + 2, oui, 4))
+		return NULL;
+	for (ap = ie + 6; (ap - ie + 3) <= ilen;) {
+		u16 alen = LE16(ap + 1) + 3;
+		uint content_len = alen - 3;
+
+		if ((ap - ie + alen) > ilen)
+			break;
+		if (*ap == id) {
+			if (len) {
+				if (!buf || *len > content_len)
+					*len = content_len;
+			}
+			if (buf && len)
+				memcpy(buf, ap + 3, *len);
+			else if (buf)
+				memcpy(buf, ap + 3, 1);
+			return ap + 3;
+		}
+		ap += alen;
+	}
+	return NULL;
+}
+
+int process_p2p_cross_connect_ie(PADAPTER a, u8 *IEs, u32 len)
+{
+	u8 *ies, *pie, attr[32];
+	u32 il, pl = 0, al;
+	int ret = _TRUE;
+
+	(void)a;
+	if (len <= _BE)
+		return ret;
+	ies = IEs + _BE;
+	il = len - _BE;
+	pie = p2p_ie(ies, il, &pl);
+	while (pie) {
+		al = sizeof(attr);
+		memset(attr, 0, sizeof(attr));
+		if (p2p_attr_content(pie, pl, P2P_ATTR_MANAGEABILITY, attr, &al)) {
+			if ((attr[0] & 0x03) == 0x01)
+				ret = _FALSE;
+			break;
+		}
+		pie = p2p_ie(pie + pl, il - (pie - ies + pl), &pl);
+	}
+	return ret;
+}
 #else
+int process_p2p_cross_connect_ie(PADAPTER a, u8 *IEs, u32 len);
 int rtw_p2p_is_channel_list_ok(u8 desired_ch, u8 *ch_list, u8 ch_cnt);
 u8 rtw_p2p_get_peer_ch_list(struct wifidirect_info *pwdinfo, u8 *ch_content, u8 ch_cnt,
 			    u8 *peer_ch_list);
@@ -96,7 +175,7 @@ u8 rtw_p2p_nego_intent_compare(u8 req, u8 resp);
 #endif
 
 typedef struct {
-	char name[48], op[12], ch_list[64], ch_content[128], peer[32], rf[64], exp_list[32];
+	char name[48], op[12], ch_list[64], ch_content[128], peer[32], rf[64], exp_list[32], ie[256];
 	int desired, exp, exp_cnt, req, resp;
 } vector_t;
 
@@ -129,6 +208,7 @@ static int parse_vec(const char *o, size_t l, void *vv)
 	S("peer", peer);
 	S("rf", rf);
 	S("exp_list", exp_list);
+	S("ie", ie);
 	I("desired", desired);
 	I("exp", exp);
 	I("exp_cnt", exp_cnt);
@@ -156,8 +236,8 @@ static int lists_eq(const u8 *a, int na, const char *exp)
 static int run_vec(vector_t *v)
 {
 	struct _adapter a;
-	u8 ch_list[32], peer[32], out[32], ch_content[64];
-	size_t clen;
+	u8 ch_list[32], peer[32], out[32], ch_content[64], frame[320];
+	size_t clen, ie_len = 0;
 
 	memset(&a, 0, sizeof(a));
 	if (!strcmp(v->op, "ch_ok")) {
@@ -184,6 +264,12 @@ static int run_vec(vector_t *v)
 	} else if (!strcmp(v->op, "nego")) {
 		if (rtw_p2p_nego_intent_compare((u8)v->req, (u8)v->resp) != (u8)v->exp)
 			goto fail;
+	} else if (!strcmp(v->op, "cross")) {
+		memset(frame, 0, sizeof(frame));
+		if (*v->ie && host_hex_decode(v->ie, frame + _BE, sizeof(frame) - _BE, &ie_len))
+			goto fail;
+		if (process_p2p_cross_connect_ie(&a, frame, (u32)(_BE + ie_len)) != v->exp)
+			goto fail;
 	} else
 		goto fail;
 	printf("PASS %s\n", v->name);
@@ -195,12 +281,12 @@ fail:
 
 int main(int argc, char **argv)
 {
-	vector_t v[8];
+	vector_t v[16];
 	size_t n = 0;
 	int bad = 0;
 	const char *p = argc > 1 ? argv[1] : "p2p_channel_pure_vectors.json";
 
-	if (host_load_vectors(p, v, sizeof(v[0]), 8, parse_vec, &n))
+	if (host_load_vectors(p, v, sizeof(v[0]), 16, parse_vec, &n))
 		return 2;
 	for (size_t i = 0; i < n; i++)
 		bad += run_vec(&v[i]);

@@ -5,6 +5,8 @@
     {"name": "peer_ch_list", "op": "peer_ch", "ch_content": "00 00 00 81 03 01 06 0b", "exp_cnt": 3, "exp_list": "1 6 11"},
     {"name": "ch_inclusion", "op": "inclusion", "peer": "1 6 36", "rf": "1 6 11 36", "exp_cnt": 3, "exp_list": "1 6 36"},
     {"name": "nego_req_go", "op": "nego", "req": 15, "resp": 14, "exp": 1},
-    {"name": "nego_tie_resp", "op": "nego", "req": 10, "resp": 21, "exp": 0}
+    {"name": "nego_tie_resp", "op": "nego", "req": 10, "resp": 21, "exp": 0},
+    {"name": "cross_bad_mgmt", "op": "cross", "ie": "dd 09 50 6f 9a 09 0a 02 00 01 00", "exp": 0},
+    {"name": "cross_no_p2p", "op": "cross", "ie": "", "exp": 1}
   ]
 }

@@ -44,6 +44,7 @@ u32 build_beacon_p2p_ie(struct wifidirect_info *pwdinfo, u8 *pbuf)
 	return len;
 }
 
+/* Mirrors core/rtw_p2p.c: build_assoc_resp_p2p_ie / build_deauth_p2p_ie */
 u32 build_assoc_resp_p2p_ie(struct wifidirect_info *pwdinfo, u8 *pbuf, u8 status_code)
 {
 	u8 p2pie[MAX_P2P_IE_LEN] = {0};

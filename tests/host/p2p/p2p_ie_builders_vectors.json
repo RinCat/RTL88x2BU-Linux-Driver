@@ -69,6 +69,14 @@
       "expect_ie": "dd08506f9a0900010000"
     },
     {
+      "name": "assoc_status_fail",
+      "fn": "assoc_resp",
+      "role": 1,
+      "status": 7,
+      "expect_len": 10,
+      "expect_ie": "dd08506f9a0900010007"
+    },
+    {
       "name": "deauth_empty",
       "fn": "deauth",
       "role": 1,

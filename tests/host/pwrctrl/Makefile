@@ -23,7 +23,7 @@ RUSTC := rustc
 
 all: test test-lps test-lps-enter test-leave-all test-leave-all-rust
 
-test: test-c test-rust test-lps test-lps-rust test-lps-enter test-leave-all test-leave-all-rust
+test: test-c test-rust test-lps test-lps-rust test-lps-enter test-lps-enter-rust test-leave-all test-leave-all-rust
 
 test-c: test_pwrctrl_ps_deny
 	./test_pwrctrl_ps_deny ps_deny_vectors.json

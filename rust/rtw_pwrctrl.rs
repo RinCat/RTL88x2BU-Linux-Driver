@@ -425,3 +425,187 @@ mod leave_all_ps {
         }
     }
 }
+
+#[cfg(host_pwrctrl_test)]
+mod lps_enter_host {
+    #![allow(non_snake_case)]
+
+    use std::os::raw::c_char;
+
+    const PS_MODE_ACTIVE: u8 = 0;
+    const HW_PORT0: u8 = 0;
+    const WIFI_UNDER_SURVEY: u32 = 0x0000_0800;
+    const WIFI_UNDER_LINKING: u32 = 0x0000_0080;
+    const WIFI_UNDER_WPS: u32 = 0x0000_0100;
+    const WIFI_AP_STATE: u32 = 0x0000_0010;
+    const WIFI_ADHOC_MASTER_STATE: u32 = 0x0000_0020;
+    const WIFI_ADHOC_STATE: u32 = 0x0000_0040;
+
+    #[repr(C)]
+    pub struct MlmePriv {
+        pub fw_state: u32,
+    }
+
+    #[repr(C)]
+    pub struct RegistryPriv {
+        pub smart_ps: u8,
+    }
+
+    #[repr(C)]
+    pub struct HalData {
+        pub bFWReady: u8,
+    }
+
+    #[repr(C)]
+    pub struct PwrctrlPriv {
+        pub pwr_mode: u8,
+        pub bpower_saving: u8,
+        pub bLeisurePs: u8,
+        pub LpsIdleCount: u8,
+        pub power_mgnt: u8,
+        pub bInSuspend: u8,
+        pub lps_deny_time: u32,
+    }
+
+    #[repr(C)]
+    pub struct DvobjPriv {
+        pub iface_nums: u8,
+        pub padapters: [*mut LpsEnterAdapter; 4],
+    }
+
+    #[repr(C)]
+    pub struct LpsEnterAdapter {
+        pub dvobj: *mut DvobjPriv,
+        pub mlmepriv: MlmePriv,
+        pub registrypriv: RegistryPriv,
+        pub pwrctrlpriv: PwrctrlPriv,
+        pub HalData: HalData,
+        pub hw_port: u8,
+    }
+
+    #[repr(C)]
+    pub struct HostPwrctrlLpsEnterTrace {
+        pub set_ps_mode_calls: u32,
+        pub last_ps_mode: u8,
+    }
+
+    static mut G_TIME: u32 = 0;
+    static mut G_ASSOC: i32 = 1;
+    static mut G_TRACE: HostPwrctrlLpsEnterTrace = HostPwrctrlLpsEnterTrace {
+        set_ps_mode_calls: 0,
+        last_ps_mode: 0,
+    };
+
+    fn check_fwstate(m: &MlmePriv, s: u32) -> bool {
+        if s == 0 && m.fw_state == 0 {
+            return true;
+        }
+        (m.fw_state & s) != 0
+    }
+
+    fn ps_rdy_check(a: &LpsEnterAdapter) -> bool {
+        let p = &a.pwrctrlpriv;
+        let m = &a.mlmepriv;
+        if p.bInSuspend == 1 || (p.lps_deny_time as i32).wrapping_sub(unsafe { G_TIME } as i32) > 0
+        {
+            return false;
+        }
+        if check_fwstate(m, WIFI_UNDER_SURVEY)
+            || check_fwstate(m, WIFI_UNDER_LINKING | WIFI_UNDER_WPS)
+            || (m.fw_state & WIFI_AP_STATE) != 0
+            || check_fwstate(m, WIFI_ADHOC_MASTER_STATE | WIFI_ADHOC_STATE)
+        {
+            return false;
+        }
+        true
+    }
+
+    fn record_ps_mode(mode: u8) {
+        unsafe {
+            G_TRACE.set_ps_mode_calls += 1;
+            G_TRACE.last_ps_mode = mode;
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn host_pwrctrl_lps_enter_set_time(t: u32) {
+        unsafe {
+            G_TIME = t;
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn host_pwrctrl_lps_enter_set_assoc_if_num(n: i32) {
+        unsafe {
+            G_ASSOC = n;
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn host_pwrctrl_lps_enter_reset_trace() {
+        unsafe {
+            G_TRACE = HostPwrctrlLpsEnterTrace {
+                set_ps_mode_calls: 0,
+                last_ps_mode: 0,
+            };
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn host_pwrctrl_lps_enter_get_trace() -> *mut HostPwrctrlLpsEnterTrace {
+        core::ptr::addr_of_mut!(G_TRACE)
+    }
+
+    #[no_mangle]
+    pub extern "C" fn LPS_Enter(a: *mut LpsEnterAdapter, _msg: *const c_char) {
+        if a.is_null() {
+            return;
+        }
+        unsafe {
+            let a = &mut *a;
+            let d = match a.dvobj.as_mut() {
+                Some(d) => d,
+                None => return,
+            };
+            if a.HalData.bFWReady == 0 || G_ASSOC != 1 || a.hw_port != HW_PORT0 {
+                return;
+            }
+            for i in 0..d.iface_nums as usize {
+                let iface = d.padapters[i];
+                if iface.is_null() || !ps_rdy_check(&*iface) {
+                    return;
+                }
+            }
+            let p = &mut a.pwrctrlpriv;
+            if p.bLeisurePs == 0 {
+                return;
+            }
+            if p.LpsIdleCount >= 2 {
+                if p.pwr_mode == PS_MODE_ACTIVE {
+                    let mgnt = p.power_mgnt;
+                    p.bpower_saving = 1;
+                    p.pwr_mode = mgnt;
+                    record_ps_mode(mgnt);
+                }
+            } else {
+                p.LpsIdleCount += 1;
+            }
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn LPS_Leave(a: *mut LpsEnterAdapter, _msg: *const c_char) {
+        if a.is_null() {
+            return;
+        }
+        unsafe {
+            let a = &mut *a;
+            let p = &mut a.pwrctrlpriv;
+            if p.bLeisurePs != 0 && p.pwr_mode != PS_MODE_ACTIVE {
+                p.pwr_mode = PS_MODE_ACTIVE;
+                record_ps_mode(PS_MODE_ACTIVE);
+            }
+            p.bpower_saving = 0;
+        }
+    }
+}

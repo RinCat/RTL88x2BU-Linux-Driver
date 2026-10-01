@@ -34,6 +34,13 @@
       "bpower_saving": 1,
       "expect_set_ps_mode": 1,
       "expect_last_ps_mode": 0
+    },
+    {
+      "name": "leave_clears_bpower_saving_without_leisure_ps",
+      "action": "leave",
+      "b_leisure_ps": 0,
+      "bpower_saving": 1,
+      "expect_bpower_saving": 0
     }
   ]
 }

@@ -24,6 +24,15 @@
       "ie": "dd 16 50 6f 9a 09 0c 0f 00 02 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d",
       "exp_ps_mode": 0,
       "exp_wk": 0
+    },
+    {
+      "name": "ps_ctw_fw_ps",
+      "op": "ps_ie",
+      "p2p_state": 1,
+      "fw_in_ps": 1,
+      "ie": "dd 0a 50 6f 9a 09 0c 03 00 00 80 00",
+      "exp_ps_mode": 1,
+      "exp_wk": 1
     }
   ]
 }

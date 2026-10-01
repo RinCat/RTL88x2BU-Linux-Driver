@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0
-//! W3-98 P2P channel/negotiation pure helpers (host L2 Rust oracle, PR4).
+//! W3-98 P2P channel/negotiation leaf helpers (host L2 Rust oracle).
 #![allow(
     dead_code,
     improper_ctypes,
@@ -9,10 +9,21 @@
     unreachable_pub
 )]
 
-use std::os::raw::c_int;
+use std::os::raw::{c_int, c_uint};
+use std::ptr;
 
 const _TRUE: u8 = 1;
 const _FALSE: u8 = 0;
+const _BE: u32 = 12;
+const P2P_ATTR_MANAGEABILITY: u8 = 0x0a;
+const P2P_ATTR_NOA: u8 = 0x0c;
+const P2P_STATE_NONE: u8 = 0;
+const P2P_PS_NONE: u32 = 0;
+const P2P_PS_CTWINDOW: u32 = 1;
+const P2P_PS_NOA: u32 = 2;
+const P2P_WK_DISABLE: u8 = 0;
+const P2P_WK_ENABLE: u8 = 1;
+const P2P_OUI: [u8; 4] = [0x50, 0x6F, 0x9A, 0x09];
 
 #[repr(C)]
 pub struct WifidirectInfo {
@@ -53,6 +64,77 @@ pub struct Adapter {
 }
 
 type Padapter = *mut Adapter;
+
+extern "C" {
+    fn p2p_ps_wk_cmd(a: Padapter, cmd: u8, en: u8);
+}
+
+fn le16(x: &[u8]) -> u16 {
+    (x[1] as u16) << 8 | x[0] as u16
+}
+
+fn rd32(s: &[u8], off: usize) -> u32 {
+    u32::from_le_bytes([s[off], s[off + 1], s[off + 2], s[off + 3]])
+}
+
+unsafe fn p2p_ie(in_ie: *mut u8, in_len: c_int, ielen: *mut c_uint) -> *mut u8 {
+    if !ielen.is_null() {
+        *ielen = 0;
+    }
+    if in_ie.is_null() || in_len <= 0 {
+        return ptr::null_mut();
+    }
+    let s = std::slice::from_raw_parts(in_ie, in_len as usize);
+    let mut c = 0;
+    while c + 5 < s.len() {
+        if s[c] == 221 && s[c + 2..c + 6] == P2P_OUI {
+            if !ielen.is_null() {
+                *ielen = s[c + 1] as c_uint + 2;
+            }
+            return in_ie.add(c);
+        }
+        c += s[c + 1] as usize + 2;
+    }
+    ptr::null_mut()
+}
+
+unsafe fn p2p_attr_content(
+    ie: *mut u8,
+    ilen: c_uint,
+    id: u8,
+    buf: *mut u8,
+    len: *mut c_uint,
+) -> *mut u8 {
+    if ie.is_null() || ilen <= 6 {
+        return ptr::null_mut();
+    }
+    let s = std::slice::from_raw_parts(ie, ilen as usize);
+    if s[0] != 221 || s[2..6] != P2P_OUI {
+        return ptr::null_mut();
+    }
+    let mut off = 6usize;
+    while off + 3 <= s.len() {
+        let alen = le16(&s[off + 1..]) as usize + 3;
+        if off + alen > s.len() {
+            break;
+        }
+        if s[off] == id {
+            let cl = alen - 3;
+            if !len.is_null() {
+                let l = &mut *len;
+                if buf.is_null() || *l > cl as c_uint {
+                    *l = cl as c_uint;
+                }
+            }
+            if !buf.is_null() && !len.is_null() {
+                ptr::copy_nonoverlapping(ie.add(off + 3), buf, (*len) as usize);
+            }
+            return ie.add(off + 3);
+        }
+        off += alen;
+    }
+    ptr::null_mut()
+}
 
 #[no_mangle]
 pub extern "C" fn rtw_p2p_is_channel_list_ok(
@@ -137,5 +219,98 @@ pub extern "C" fn rtw_p2p_nego_intent_compare(req: u8, resp: u8) -> u8 {
         _TRUE
     } else {
         _FALSE
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn process_p2p_cross_connect_ie(a: Padapter, ies: *mut u8, len: c_uint) -> c_int {
+    let _ = a;
+    if len <= _BE {
+        return _TRUE as c_int;
+    }
+    let base = unsafe { ies.add(_BE as usize) };
+    let mut rem = len - _BE;
+    let mut pl = 0u32;
+    let mut pie = unsafe { p2p_ie(base, rem as c_int, &mut pl) };
+    let mut ret = _TRUE as c_int;
+    while !pie.is_null() {
+        let mut attr = [0u8; 32];
+        let mut al = attr.len() as c_uint;
+        if !unsafe { p2p_attr_content(pie, pl, P2P_ATTR_MANAGEABILITY, attr.as_mut_ptr(), &mut al) }
+            .is_null()
+        {
+            if (attr[0] & 0x03) == 0x01 {
+                ret = _FALSE as c_int;
+            }
+            break;
+        }
+        let used = unsafe { pie.offset_from(base) as c_uint } + pl;
+        rem = len - _BE - used;
+        pie = unsafe { p2p_ie(pie.add(pl as usize), rem as c_int, &mut pl) };
+    }
+    ret
+}
+
+#[no_mangle]
+pub extern "C" fn process_p2p_ps_ie(a: Padapter, ies: *mut u8, len: c_uint) {
+    if a.is_null() || len <= _BE {
+        return;
+    }
+    let w = unsafe { &mut (*a).wdinfo };
+    if w.p2p_state == P2P_STATE_NONE {
+        return;
+    }
+    let base = unsafe { ies.add(_BE as usize) };
+    let mut rem = len - _BE;
+    let mut pl = 0u32;
+    let mut pie = unsafe { p2p_ie(base, rem as c_int, &mut pl) };
+    let (mut fp, mut fps) = (false, false);
+    while !pie.is_null() {
+        fp = true;
+        let mut al = 0u32;
+        let noa = unsafe { p2p_attr_content(pie, pl, P2P_ATTR_NOA, ptr::null_mut(), &mut al) };
+        if !noa.is_null() {
+            fps = true;
+            let ns = unsafe { std::slice::from_raw_parts(noa, al as usize) };
+            let idx = ns[0];
+            if w.p2p_ps_mode == P2P_PS_NONE || idx != w.noa_index {
+                w.noa_index = idx;
+                w.opp_ps = ns[1] >> 7;
+                w.ctwindow = if w.opp_ps != 0 { ns[1] & 0x7f } else { 0 };
+                let (mut off, mut num) = (2usize, 0u8);
+                if al > 2 && (al - 2) % 13 == 0 {
+                    while (off as u32) < al && (num as usize) < 2 {
+                        w.noa_count[num as usize] = ns[off];
+                        off += 1;
+                        w.noa_duration[num as usize] = rd32(ns, off);
+                        off += 4;
+                        w.noa_interval[num as usize] = rd32(ns, off);
+                        off += 4;
+                        w.noa_start_time[num as usize] = rd32(ns, off);
+                        off += 4;
+                        num += 1;
+                    }
+                }
+                w.noa_num = num;
+                if w.opp_ps == 1 {
+                    w.p2p_ps_mode = P2P_PS_CTWINDOW;
+                    if unsafe { (*a).pwrctrlpriv.bFwCurrentInPSMode } == _TRUE {
+                        unsafe { p2p_ps_wk_cmd(a, P2P_WK_ENABLE, 1) };
+                    }
+                } else if w.noa_num > 0 {
+                    w.p2p_ps_mode = P2P_PS_NOA;
+                    unsafe { p2p_ps_wk_cmd(a, P2P_WK_ENABLE, 1) };
+                } else if w.p2p_ps_mode > P2P_PS_NONE {
+                    unsafe { p2p_ps_wk_cmd(a, P2P_WK_DISABLE, 1) };
+                }
+            }
+            break;
+        }
+        let used = unsafe { pie.offset_from(base) as c_uint } + pl;
+        rem = len - _BE - used;
+        pie = unsafe { p2p_ie(pie.add(pl as usize), rem as c_int, &mut pl) };
+    }
+    if fp && w.p2p_ps_mode > P2P_PS_NONE && !fps {
+        unsafe { p2p_ps_wk_cmd(a, P2P_WK_DISABLE, 1) };
     }
 }

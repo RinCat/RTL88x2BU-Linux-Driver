@@ -23,7 +23,7 @@ librust_p2p.a: $(RUST_P2P)
 		--crate-type staticlib $(RUST_P2P) -o $@
 
 test_p2p_channel_rust: p2p_channel_l2.c librust_p2p.a $(HOST_JSON)
-	$(CC) $(CFLAGS) -DHOST_P2P_RUST -o $@ p2p_channel_l2.c $(HOST_JSON) librust_p2p.a
+	$(CC) $(CFLAGS) -DHOST_P2P_RUST -DHOST_P2P_RUST_IE -o $@ p2p_channel_l2.c $(HOST_JSON) librust_p2p.a
 
 clean:
 	rm -f test_p2p_channel test_p2p_channel_rust librust_p2p.a

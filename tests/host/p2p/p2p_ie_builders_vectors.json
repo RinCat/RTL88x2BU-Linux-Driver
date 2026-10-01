@@ -19,6 +19,48 @@
       "expect_ie": "dd12506f9a090202002249030600021122334455"
     },
     {
+      "name": "probe_device",
+      "fn": "probe_resp",
+      "role": 1,
+      "dev_addr": "02:aa:bb:cc:dd:ee",
+      "dev_name": "rtwp2p",
+      "wps_cm": 128,
+      "expect_len": 48,
+      "expect_ie": "dd2e506f9a090202002708080400ffffffff0d1b0002aabbccddee008000080050f20400050010110006727477703270"
+    },
+    {
+      "name": "probe_go",
+      "fn": "probe_resp",
+      "role": 3,
+      "dev_addr": "02:aa:bb:cc:dd:ee",
+      "dev_name": "go",
+      "wps_cm": 128,
+      "expect_len": 44,
+      "expect_ie": "dd2a506f9a090202002709080400ffffffff0d170002aabbccddee008000080050f20400050010110002676f"
+    },
+    {
+      "name": "prov_device_pbc",
+      "fn": "prov_disc",
+      "role": 1,
+      "persistent": 1,
+      "ui_wps": 3,
+      "dev_addr": "02:de:ad:00:00:01",
+      "dev_name": "peer",
+      "expect_len": 39,
+      "expect_ie": "dd25506f9a09020200270a0d190002dead000001008000080050f2040005001011000470656572"
+    },
+    {
+      "name": "prov_client_group",
+      "fn": "prov_disc",
+      "role": 2,
+      "dev_addr": "02:de:ad:00:00:02",
+      "dev_name": "cli",
+      "ssid": "DIRECT-ab",
+      "go_addr": "02:0a:0b:0c:0d:01",
+      "expect_len": 56,
+      "expect_ie": "dd36506f9a0902020027080d180002dead000002000800080050f20400050010110003636c690f0f00020a0b0c0d014449524543542d6162"
+    },
+    {
       "name": "assoc_status_ok",
       "fn": "assoc_resp",
       "role": 1,

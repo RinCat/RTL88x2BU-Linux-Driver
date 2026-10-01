@@ -28,8 +28,9 @@ test_p2p_channel_rust: p2p_channel_l2.c librust_p2p.a $(HOST_JSON)
 test-ie-build: test_p2p_ie_builders
 	./test_p2p_ie_builders p2p_ie_builders_vectors.json
 
-test_p2p_ie_builders: p2p_ie_builders_l2.c host_p2p_ie_build_oracle.c $(HOST_JSON)
-	$(CC) $(CFLAGS) -I. -o $@ p2p_ie_builders_l2.c host_p2p_ie_build_oracle.c $(HOST_JSON)
+test_p2p_ie_builders: p2p_ie_builders_l2.c host_p2p_ie_build_oracle.c host_p2p_ie_build_oracle_probe.c $(HOST_JSON)
+	$(CC) $(CFLAGS) -I. -o $@ p2p_ie_builders_l2.c host_p2p_ie_build_oracle.c \
+		host_p2p_ie_build_oracle_probe.c $(HOST_JSON)
 
 clean:
 	rm -f test_p2p_channel test_p2p_channel_rust test_p2p_ie_builders librust_p2p.a

@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
+// Host L2 subset: go_add_group_info_attr is a stub (no Group Info attr); probe_go
+// vectors match a GO without client list entries, unlike core/rtw_p2p.c when asoc clients exist.
 #include <string.h>
 #include "host_p2p_ie_build.h"
 

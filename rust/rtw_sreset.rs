@@ -59,11 +59,8 @@ type Padapter = *mut Adapter;
 #[cfg(not(host_sreset_test))]
 type Padapter = *mut c_void;
 
-#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
 const WIFI_ASOC_STATE: u32 = 0x0000_0001;
-#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
 const WIFI_UNDER_SURVEY: u32 = 0x0000_0800;
-#[cfg(all(host_sreset_test, host_sreset_adapter_test))]
 const WIFI_UNDER_LINKING: u32 = 0x0000_0080;
 
 #[cfg(all(host_sreset_test, host_sreset_adapter_test))]
@@ -226,6 +223,18 @@ mod kernel {
         fn rtw_rust_sreset_last_tx_time_ptr(padapter: Padapter) -> *mut Systime;
         fn rtw_rust_sreset_last_tx_complete_time_ptr(padapter: Padapter) -> *mut Systime;
         fn rtw_rust_sreset_read32(padapter: Padapter, addr: u32) -> u32;
+        fn rtw_rust_sreset_check_fwstate(padapter: Padapter, state: u32) -> u8;
+        fn rtw_rust_sreset_netif_stop_queue(padapter: Padapter);
+        fn rtw_rust_sreset_netif_wake_queue(padapter: Padapter);
+        fn rtw_rust_sreset_cancel_all_timer(padapter: Padapter);
+        fn rtw_rust_sreset_tasklet_kill(padapter: Padapter);
+        fn rtw_rust_sreset_tasklet_hi_schedule(padapter: Padapter);
+        fn rtw_rust_sreset_scan_abort(padapter: Padapter);
+        fn rtw_rust_sreset_set_to_roam(padapter: Padapter, to_roam: u8);
+        fn rtw_rust_sreset_join_timeout_handler(padapter: Padapter);
+        fn rtw_rust_sreset_restore_network_status(padapter: Padapter);
+        fn rtw_rust_sreset_set_dynamic_chk_timer(padapter: Padapter, ms: u32);
+        fn rtw_rust_sreset_is_primary_adapter(padapter: Padapter) -> u8;
     }
 
     pub fn mutex_init(padapter: Padapter) {
@@ -250,6 +259,44 @@ mod kernel {
 
     pub fn read32(padapter: Padapter, addr: u32) -> u32 {
         unsafe { rtw_rust_sreset_read32(padapter, addr) }
+    }
+
+    fn check_fwstate(padapter: Padapter, state: u32) -> bool {
+        unsafe { rtw_rust_sreset_check_fwstate(padapter, state) != 0 }
+    }
+
+    pub fn stop_adapter(padapter: Padapter) {
+        if padapter.is_null() {
+            return;
+        }
+        unsafe {
+            rtw_rust_sreset_netif_stop_queue(padapter);
+            rtw_rust_sreset_cancel_all_timer(padapter);
+            rtw_rust_sreset_tasklet_kill(padapter);
+            if check_fwstate(padapter, WIFI_UNDER_SURVEY) {
+                rtw_rust_sreset_scan_abort(padapter);
+            }
+            if check_fwstate(padapter, WIFI_UNDER_LINKING) {
+                rtw_rust_sreset_set_to_roam(padapter, 0);
+                rtw_rust_sreset_join_timeout_handler(padapter);
+            }
+        }
+    }
+
+    pub fn start_adapter(padapter: Padapter) {
+        if padapter.is_null() {
+            return;
+        }
+        unsafe {
+            if check_fwstate(padapter, WIFI_ASOC_STATE) {
+                rtw_rust_sreset_restore_network_status(padapter);
+            }
+            rtw_rust_sreset_tasklet_hi_schedule(padapter);
+            if rtw_rust_sreset_is_primary_adapter(padapter) != 0 {
+                rtw_rust_sreset_set_dynamic_chk_timer(padapter, 2000);
+            }
+            rtw_rust_sreset_netif_wake_queue(padapter);
+        }
     }
 }
 
@@ -403,6 +450,18 @@ pub extern "C" fn sreset_stop_adapter(padapter: HostPadapter) {
 #[no_mangle]
 pub extern "C" fn sreset_start_adapter(padapter: HostPadapter) {
     host_adapter::start_adapter(padapter);
+}
+
+#[cfg(not(host_sreset_test))]
+#[no_mangle]
+pub extern "C" fn sreset_stop_adapter(padapter: Padapter) {
+    kernel::stop_adapter(padapter);
+}
+
+#[cfg(not(host_sreset_test))]
+#[no_mangle]
+pub extern "C" fn sreset_start_adapter(padapter: Padapter) {
+    kernel::start_adapter(padapter);
 }
 
 #[no_mangle]

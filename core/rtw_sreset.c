@@ -221,6 +221,8 @@ void sreset_restore_network_status(_adapter *padapter)
 		RTW_INFO(FUNC_ADPT_FMT" fwstate:0x%08x - ???\n", FUNC_ADPT_ARG(padapter), get_fwstate(mlmepriv));
 }
 
+#if !defined(CONFIG_RUST) || defined(HOST_SRESET_TEST)
+
 void sreset_stop_adapter(_adapter *padapter)
 {
 	struct mlme_priv	*pmlmepriv = &(padapter->mlmepriv);
@@ -273,6 +275,8 @@ void sreset_start_adapter(_adapter *padapter)
 
 	rtw_netif_wake_queue(padapter->pnetdev);
 }
+
+#endif /* !CONFIG_RUST || HOST_SRESET_TEST */
 
 void sreset_reset(_adapter *padapter)
 {
@@ -359,6 +363,74 @@ systime *rtw_rust_sreset_last_tx_complete_time_ptr(_adapter *padapter)
 u32 rtw_rust_sreset_read32(_adapter *padapter, u32 addr)
 {
 	return rtw_read32(padapter, addr);
+}
+
+u8 rtw_rust_sreset_check_fwstate(_adapter *padapter, u32 state)
+{
+	return check_fwstate(&padapter->mlmepriv, state) ? 1 : 0;
+}
+
+void rtw_rust_sreset_netif_stop_queue(_adapter *padapter)
+{
+	rtw_netif_stop_queue(padapter->pnetdev);
+}
+
+void rtw_rust_sreset_netif_wake_queue(_adapter *padapter)
+{
+	rtw_netif_wake_queue(padapter->pnetdev);
+}
+
+void rtw_rust_sreset_cancel_all_timer(_adapter *padapter)
+{
+	rtw_cancel_all_timer(padapter);
+}
+
+void rtw_rust_sreset_tasklet_kill(_adapter *padapter)
+{
+#if defined(PLATFORM_LINUX) && defined(CONFIG_USB_HCI)
+	tasklet_kill(&padapter->xmitpriv.xmit_tasklet);
+#else
+	(void)padapter;
+#endif
+}
+
+void rtw_rust_sreset_tasklet_hi_schedule(_adapter *padapter)
+{
+#if defined(PLATFORM_LINUX) && defined(CONFIG_USB_HCI)
+	tasklet_hi_schedule(&padapter->xmitpriv.xmit_tasklet);
+#else
+	(void)padapter;
+#endif
+}
+
+void rtw_rust_sreset_scan_abort(_adapter *padapter)
+{
+	rtw_scan_abort(padapter);
+}
+
+void rtw_rust_sreset_set_to_roam(_adapter *padapter, u8 to_roam)
+{
+	rtw_set_to_roam(padapter, to_roam);
+}
+
+void rtw_rust_sreset_join_timeout_handler(_adapter *padapter)
+{
+	rtw_join_timeout_handler(padapter);
+}
+
+void rtw_rust_sreset_restore_network_status(_adapter *padapter)
+{
+	sreset_restore_network_status(padapter);
+}
+
+void rtw_rust_sreset_set_dynamic_chk_timer(_adapter *padapter, u32 ms)
+{
+	_set_timer(&adapter_to_dvobj(padapter)->dynamic_chk_timer, ms);
+}
+
+u8 rtw_rust_sreset_is_primary_adapter(_adapter *padapter)
+{
+	return is_primary_adapter(padapter) ? 1 : 0;
 }
 
 #endif /* CONFIG_RUST && !HOST_SRESET_TEST */

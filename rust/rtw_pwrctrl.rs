@@ -204,8 +204,6 @@ mod host {
 
 #[cfg(not(host_pwrctrl_test))]
 mod kernel {
-    use super::*;
-
     extern "C" {
         fn rtw_rust_pwrctrl_enter_lock(pwr: *mut core::ffi::c_void);
         fn rtw_rust_pwrctrl_exit_lock(pwr: *mut core::ffi::c_void);
@@ -293,13 +291,14 @@ pub extern "C" fn rtw_ps_deny_get(padapter: Padapter) -> c_uint {
     }
 }
 
+#[cfg(any(host_pwrctrl_test, rust_pwrctrl_unassociated_idle))]
 #[no_mangle]
 pub extern "C" fn rtw_pwr_unassociated_idle(padapter: Padapter) -> u8 {
     #[cfg(host_pwrctrl_test)]
     {
         return rtw_pwr_unassociated_idle_host(padapter);
     }
-    #[cfg(not(host_pwrctrl_test))]
+    #[cfg(all(not(host_pwrctrl_test), rust_pwrctrl_unassociated_idle))]
     {
         let _ = padapter;
         0

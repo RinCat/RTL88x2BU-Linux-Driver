@@ -1,0 +1,6 @@
+# L1 allowlist for W3-94 follow-up PR4: Rust owns ps deny gate; kernel FFI shims stay in C.
+drop _enter_pwrlock
+drop _exit_pwrlock
+drop rtw_rust_pwrctrl_enter_lock
+drop rtw_rust_pwrctrl_exit_lock
+drop rtw_rust_pwrctrl_ps_deny_ptr

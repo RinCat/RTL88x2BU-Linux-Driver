@@ -2853,6 +2853,8 @@ int rtw_pm_set_ips(_adapter *padapter, u8 mode)
 	return 0;
 }
 
+#if !defined(CONFIG_RUST) || defined(HOST_PWRCTRL_TEST)
+
 /*
  * ATTENTION:
  *	This function will request pwrctrl LOCK!
@@ -2918,6 +2920,31 @@ u32 rtw_ps_deny_get(PADAPTER padapter)
 
 	return deny;
 }
+
+#endif /* !CONFIG_RUST || HOST_PWRCTRL_TEST */
+
+#if defined(CONFIG_RUST) && !defined(HOST_PWRCTRL_TEST)
+
+void rtw_rust_pwrctrl_enter_lock(PADAPTER padapter)
+{
+	struct pwrctrl_priv *pwrpriv = adapter_to_pwrctl(padapter);
+
+	_enter_pwrlock(&pwrpriv->lock);
+}
+
+void rtw_rust_pwrctrl_exit_lock(PADAPTER padapter)
+{
+	struct pwrctrl_priv *pwrpriv = adapter_to_pwrctl(padapter);
+
+	_exit_pwrlock(&pwrpriv->lock);
+}
+
+u32 *rtw_rust_pwrctrl_ps_deny_ptr(PADAPTER padapter)
+{
+	return &adapter_to_pwrctl(padapter)->ps_deny;
+}
+
+#endif /* CONFIG_RUST && !HOST_PWRCTRL_TEST */
 
 static void _rtw_ssmps(_adapter *adapter, struct sta_info *sta)
 {

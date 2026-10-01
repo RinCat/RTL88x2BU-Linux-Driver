@@ -6,20 +6,23 @@ ADAPTER_ORACLE := sreset_adapter_host_oracle.c
 ADAPTER_STUBS := host_sreset_adapter_stubs.c
 SECURITY_ORACLE := sreset_restore_security_host_oracle.c
 SECURITY_STUBS := host_sreset_security_stubs.c
+RESET_ORACLE := sreset_reset_host_oracle.c
+RESET_STUBS := host_sreset_reset_stubs.c
 RUST_SRESET := $(ROOT)/rust/rtw_sreset.rs
 RUSTC := rustc
 RUST_CFG := --cfg host_sreset_test
 RUST_ADAPTER_CFG := $(RUST_CFG) --cfg host_sreset_adapter_test --cfg CONFIG_CONCURRENT_MODE
+RUST_RESET_CFG := $(RUST_ADAPTER_CFG) --cfg host_sreset_reset_test
 CC := gcc
 CFLAGS := -Wall -Wextra -Werror -O2 -I$(HOST_INC) -I$(ROOT)/include \
           -include $(HOST_INC)/host_autoconf.h \
           -DCONFIG_CONCURRENT_MODE
 
 .PHONY: all test test-c test-rust test-c-adapter test-rust-adapter \
-	test-c-restore-security test-rust-restore-security clean
+	test-c-restore-security test-rust-restore-security test-c-reset clean
 all: test
 test: test-c test-rust test-c-adapter test-rust-adapter \
-	test-c-restore-security test-rust-restore-security
+	test-c-restore-security test-rust-restore-security test-c-reset
 
 test-c: test_sreset_lifecycle
 	./test_sreset_lifecycle sreset_lifecycle_vectors.json
@@ -32,6 +35,12 @@ test-c-adapter: test_sreset_adapter
 
 test-rust-adapter: test_sreset_adapter_rust
 	./test_sreset_adapter_rust
+
+test-c-reset: test_sreset_reset
+	./test_sreset_reset
+
+test_sreset_reset: test_sreset_reset.c $(RESET_ORACLE) $(RESET_STUBS)
+	$(CC) $(CFLAGS) -o $@ test_sreset_reset.c $(RESET_ORACLE) $(RESET_STUBS)
 
 test_sreset_adapter: test_sreset_adapter.c $(ADAPTER_ORACLE)
 	$(CC) $(CFLAGS) -o $@ test_sreset_adapter.c $(ADAPTER_ORACLE)
@@ -74,5 +83,6 @@ test_sreset_restore_security_rust: test_sreset_restore_security.c librust_sreset
 clean:
 	rm -f test_sreset_lifecycle test_sreset_lifecycle_rust test_sreset_adapter \
 		test_sreset_adapter_rust test_sreset_restore_security \
-		test_sreset_restore_security_rust librust_sreset.a librust_sreset_adapter.a \
-		librust_sreset_security.a
+		test_sreset_restore_security_rust test_sreset_reset \
+		test_sreset_reset_rust librust_sreset.a librust_sreset_adapter.a \
+		librust_sreset_security.a librust_sreset_reset.a

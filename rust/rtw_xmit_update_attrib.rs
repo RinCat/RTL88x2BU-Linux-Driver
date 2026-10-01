@@ -79,6 +79,7 @@ fn update_attrib_vcs_info_inner(
     cts2self: U8,
     ht_en: U8,
     ampdu_en: U8,
+    ht_path_psta_rssi: Option<i8>,
 ) -> U8 {
     let sz = if nr_frags != 1 {
         frag_len
@@ -86,6 +87,7 @@ fn update_attrib_vcs_info_inner(
         last_txcmdsz
     };
 
+    let mut used_ht_branch = false;
     let mut vcs_mode = if cur_wireless_mode < WIRELESS_11_24N || wifi_spec != 0 {
         if sz > rts_thresh as U32 {
             RTS_CTS
@@ -97,6 +99,7 @@ fn update_attrib_vcs_info_inner(
             NONE_VCS
         }
     } else {
+        used_ht_branch = true;
         let mode = 'ht: {
             if assoc_ap_vendor == HT_IOT_PEER_ATHEROS && ampdu_en == _TRUE && dot11_privacy == _AES_
             {
@@ -123,6 +126,14 @@ fn update_attrib_vcs_info_inner(
         };
         mode
     };
+
+    if used_ht_branch {
+        if let Some(rssi) = ht_path_psta_rssi {
+            if rssi < 18 && vcs_mode == RTS_CTS {
+                vcs_mode = CTS_TO_SELF;
+            }
+        }
+    }
 
     vcs_mode = validate_vcs(vrtl_carrier_sense, vcs_type, vcs_mode);
     if driver_vcs_en == 1 {
@@ -337,6 +348,7 @@ pub extern "C" fn update_attrib_vcs_info(padapter: *mut c_void, pxmitframe: *mut
             att.cts2self,
             att.ht_en,
             att.ampdu_en,
+            None,
         );
     }
 }

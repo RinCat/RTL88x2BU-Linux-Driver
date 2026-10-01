@@ -2856,6 +2856,7 @@ $(MODULE_NAME)-y += rust/rtw_rf_dump_txpwr_lmt.o
 $(MODULE_NAME)-y += rust/rtw_rf_kfree_tx_gain.o
 $(MODULE_NAME)-y += rust/rtw_recv.o
 $(MODULE_NAME)-y += rust/rtw_xmit.o
+$(MODULE_NAME)-y += rust/rtw_xmit_update_attrib_kern.o
 $(MODULE_NAME)-y += rust/rtw_iol_rest.o
 $(MODULE_NAME)-y += rust/rtw_sreset.o
 $(MODULE_NAME)-y += rust/rtw_mlme_rest.o
@@ -3865,6 +3866,12 @@ rust-objects-rtw-xmit-update-attrib-rest-c:
 		-include $(shell pwd)/tests/host/include/host_autoconf.h \
 		-DHOST_XMIT_UPDATE_ATTRIB_TEST -o tests/host/xmit/xmit_update_attrib_c_ref.o \
 		core/rtw_xmit_update_attrib_rest.c
+rust-objects-rtw-xmit-update-attrib:
+	@test -n "$(KDIR)" || { echo "Usage: make KDIR=… LLVM=1 rust-objects-rtw-xmit-update-attrib"; exit 1; }
+	$(MAKE) $(KBUILD_OPTS) -C $(KSRC) M=$(shell pwd) rust/rtw_xmit_update_attrib_kern.o
+rust-check-symbols-rtw-xmit-update-attrib: rust-objects-rtw-xmit-update-attrib-rest-c rust-objects-rtw-xmit-update-attrib
+	$(MAKE) rust-check-symbols OLD=tests/host/xmit/xmit_update_attrib_c_ref.o NEW=rust/rtw_xmit_update_attrib_kern.o \
+		ALLOWLIST=docs/rust-migration/scripts/rtw_xmit_update_attrib.allow ALLOW_VACUOUS=1
 # W3-50: host C oracle iol_rest vs rust/rtw_iol_rest.o.
 rust-objects-rtw-iol-rest:
 	@test -n "$(KDIR)" || { echo "Usage: make KDIR=… LLVM=1 rust-objects-rtw-iol-rest"; exit 1; }

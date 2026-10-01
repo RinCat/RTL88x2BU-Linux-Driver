@@ -20,6 +20,8 @@
 #include <drv_types.h>
 #endif
 
+#if !defined(CONFIG_RUST) || defined(HOST_XMIT_UPDATE_ATTRIB_TEST)
+
 static u8 validate_vcs(_adapter *padapter, u8 mode)
 {
 	u8 vcs_mode = NONE_VCS;
@@ -124,6 +126,68 @@ void update_attrib_vcs_info(_adapter *padapter, struct xmit_frame *pxmitframe)
 	if (padapter->driver_vcs_en == 1)
 		pattrib->vcs_mode = padapter->driver_vcs_type;
 }
+
+#endif /* !CONFIG_RUST || HOST_XMIT_UPDATE_ATTRIB_TEST */
+
+#if defined(CONFIG_RUST) && !defined(HOST_XMIT_UPDATE_ATTRIB_TEST)
+
+struct rtw_rust_xmit_vcs_in {
+	u8 cur_wireless_mode;
+	u8 cur_bwmode;
+	u8 assoc_ap_vendor;
+	u8 ht_protection;
+	u8 wifi_spec;
+	u16 rts_thresh;
+	u8 dot11_privacy;
+	u8 vrtl_carrier_sense;
+	u8 vcs_type;
+	u8 driver_vcs_en;
+	u8 driver_vcs_type;
+	u8 is_hw_8812;
+	u32 frag_len;
+	u8 nr_frags;
+	u32 last_txcmdsz;
+	u8 rtsen;
+	u8 cts2self;
+	u8 ht_en;
+	u8 ampdu_en;
+	s8 psta_rssi;
+};
+
+void rtw_rust_xmit_attrib_vcs_gather(_adapter *padapter, struct xmit_frame *pxmitframe,
+				     struct rtw_rust_xmit_vcs_in *out)
+{
+	struct pkt_attrib *pattrib = &pxmitframe->attrib;
+	struct sta_info *psta = pattrib->psta;
+
+	out->cur_wireless_mode = padapter->mlmeextpriv.cur_wireless_mode;
+	out->cur_bwmode = padapter->mlmeextpriv.cur_bwmode;
+	out->assoc_ap_vendor = padapter->mlmeextpriv.mlmext_info.assoc_AP_vendor;
+	out->ht_protection = padapter->mlmeextpriv.mlmext_info.HT_protection;
+	out->wifi_spec = padapter->registrypriv.wifi_spec;
+	out->rts_thresh = padapter->registrypriv.rts_thresh;
+	out->dot11_privacy = padapter->securitypriv.dot11PrivacyAlgrthm;
+	out->vrtl_carrier_sense = padapter->registrypriv.vrtl_carrier_sense;
+	out->vcs_type = padapter->registrypriv.vcs_type;
+	out->driver_vcs_en = padapter->driver_vcs_en;
+	out->driver_vcs_type = padapter->driver_vcs_type;
+	out->is_hw_8812 = IS_HARDWARE_TYPE_8812(padapter) ? 1 : 0;
+	out->frag_len = padapter->xmitpriv.frag_len;
+	out->nr_frags = pattrib->nr_frags;
+	out->last_txcmdsz = pattrib->last_txcmdsz;
+	out->rtsen = pattrib->rtsen;
+	out->cts2self = pattrib->cts2self;
+	out->ht_en = pattrib->ht_en;
+	out->ampdu_en = pattrib->ampdu_en;
+	out->psta_rssi = (psta != NULL) ? psta->cmn.rssi_stat.rssi : (s8)-128;
+}
+
+void rtw_rust_xmit_attrib_vcs_set_mode(struct xmit_frame *pxmitframe, u8 mode)
+{
+	pxmitframe->attrib.vcs_mode = mode;
+}
+
+#endif /* CONFIG_RUST && !HOST_XMIT_UPDATE_ATTRIB_TEST */
 
 #ifdef HOST_XMIT_UPDATE_ATTRIB_TEST
 

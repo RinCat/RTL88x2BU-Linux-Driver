@@ -1,0 +1,150 @@
+// SPDX-License-Identifier: GPL-2.0
+//! Kernel port of `update_attrib_vcs_info` (W3-86 PR11).
+
+#![allow(
+    dead_code,
+    improper_ctypes,
+    missing_docs,
+    non_camel_case_types,
+    non_snake_case,
+    non_upper_case_globals,
+    unreachable_pub
+)]
+
+use core::ffi::c_void;
+
+type U8 = u8;
+type U16 = u16;
+type U32 = u32;
+
+const NONE_VCS: U8 = 0;
+const RTS_CTS: U8 = 1;
+const CTS_TO_SELF: U8 = 2;
+const DISABLE_VCS: U8 = 0;
+const ENABLE_VCS: U8 = 1;
+const AUTO_VCS: U8 = 2;
+const WIRELESS_11_24N: U8 = 1 << 3;
+const HT_IOT_PEER_ATHEROS: U8 = 5;
+const _AES_: U8 = 0x04;
+const _TRUE: U8 = 1;
+
+#[repr(C)]
+struct VcsIn {
+    cur_wireless_mode: U8,
+    cur_bwmode: U8,
+    assoc_ap_vendor: U8,
+    ht_protection: U8,
+    wifi_spec: U8,
+    rts_thresh: U16,
+    dot11_privacy: U8,
+    vrtl_carrier_sense: U8,
+    vcs_type: U8,
+    driver_vcs_en: U8,
+    driver_vcs_type: U8,
+    is_hw_8812: U8,
+    frag_len: U32,
+    nr_frags: U8,
+    last_txcmdsz: U32,
+    rtsen: U8,
+    cts2self: U8,
+    ht_en: U8,
+    ampdu_en: U8,
+    psta_rssi: i8,
+}
+
+fn validate_vcs(vrtl_carrier_sense: U8, vcs_type: U8, mode: U8) -> U8 {
+    match vrtl_carrier_sense {
+        DISABLE_VCS => NONE_VCS,
+        ENABLE_VCS => vcs_type,
+        AUTO_VCS => mode,
+        _ => NONE_VCS,
+    }
+}
+
+fn update_attrib_vcs_info_inner(vcs_in: &VcsIn) -> U8 {
+    let sz = if vcs_in.nr_frags != 1 {
+        vcs_in.frag_len
+    } else {
+        vcs_in.last_txcmdsz
+    };
+
+    let mut used_ht_branch = false;
+    let mut vcs_mode = if vcs_in.cur_wireless_mode < WIRELESS_11_24N || vcs_in.wifi_spec != 0 {
+        if sz > vcs_in.rts_thresh as U32 {
+            RTS_CTS
+        } else if vcs_in.rtsen != 0 {
+            RTS_CTS
+        } else if vcs_in.cts2self != 0 {
+            CTS_TO_SELF
+        } else {
+            NONE_VCS
+        }
+    } else {
+        used_ht_branch = true;
+        let is_hw_8812 = vcs_in.is_hw_8812 != 0;
+        let mode = 'ht: {
+            if vcs_in.assoc_ap_vendor == HT_IOT_PEER_ATHEROS
+                && vcs_in.ampdu_en == _TRUE
+                && vcs_in.dot11_privacy == _AES_
+            {
+                break 'ht CTS_TO_SELF;
+            }
+            if vcs_in.rtsen != 0 || vcs_in.cts2self != 0 {
+                break 'ht if vcs_in.rtsen != 0 {
+                    RTS_CTS
+                } else {
+                    CTS_TO_SELF
+                };
+            }
+            if vcs_in.ht_en != 0 {
+                let ht_op = vcs_in.ht_protection;
+                if (vcs_in.cur_bwmode != 0 && (ht_op == 2 || ht_op == 3))
+                    || (vcs_in.cur_bwmode == 0 && ht_op == 3)
+                {
+                    break 'ht RTS_CTS;
+                }
+            }
+            if sz > vcs_in.rts_thresh as U32 {
+                break 'ht RTS_CTS;
+            }
+            if vcs_in.ampdu_en == _TRUE && !is_hw_8812 {
+                break 'ht RTS_CTS;
+            }
+            NONE_VCS
+        };
+        mode
+    };
+
+    if used_ht_branch {
+        let rssi = vcs_in.psta_rssi;
+        if rssi > -128 && rssi < 18 && vcs_mode == RTS_CTS {
+            vcs_mode = CTS_TO_SELF;
+        }
+    }
+
+    vcs_mode = validate_vcs(vcs_in.vrtl_carrier_sense, vcs_in.vcs_type, vcs_mode);
+    if vcs_in.driver_vcs_en == 1 {
+        vcs_mode = vcs_in.driver_vcs_type;
+    }
+    vcs_mode
+}
+
+extern "C" {
+    fn rtw_rust_xmit_attrib_vcs_gather(
+        padapter: *mut c_void,
+        pxmitframe: *mut c_void,
+        out: *mut VcsIn,
+    );
+    fn rtw_rust_xmit_attrib_vcs_set_mode(pxmitframe: *mut c_void, mode: U8);
+}
+
+#[no_mangle]
+pub extern "C" fn update_attrib_vcs_info(padapter: *mut c_void, pxmitframe: *mut c_void) {
+    if padapter.is_null() || pxmitframe.is_null() {
+        return;
+    }
+    let mut vcs_in: VcsIn = unsafe { core::mem::zeroed() };
+    unsafe { rtw_rust_xmit_attrib_vcs_gather(padapter, pxmitframe, &mut vcs_in) };
+    let vcs = update_attrib_vcs_info_inner(&vcs_in);
+    unsafe { rtw_rust_xmit_attrib_vcs_set_mode(pxmitframe, vcs) };
+}

@@ -1,1 +1,6 @@
-# L1 allowlist for W3-86 PR5 (kernel swap): Rust owns update_attrib_vcs_info; field shims stay in C.
+# L1 allowlist for W3-86 PR11 (kernel swap): Rust owns update_attrib_vcs_info; field shims stay in C.
+drop rtw_rust_xmit_attrib_vcs_gather
+drop rtw_rust_xmit_attrib_vcs_set_mode
+drop update_attrib_phy_info
+drop query_ra_short_GI
+drop rtw_get_tx_bw_mode

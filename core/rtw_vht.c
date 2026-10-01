@@ -667,41 +667,6 @@ void VHTOnAssocRsp(_adapter *padapter)
 }
 
 #ifdef CONFIG_AP_MODE
-void rtw_vht_ies_attach(_adapter *padapter, WLAN_BSSID_EX *pnetwork)
-{
-	struct mlme_priv *pmlmepriv = &(padapter->mlmepriv);
-	u8 cap_len, operation_len;
-	uint len = 0;
-	sint ie_len = 0;
-	u8 *p = NULL;
-
-	p = rtw_get_ie(pnetwork->IEs + _BEACON_IE_OFFSET_, EID_VHTCapability, &ie_len,
-			(pnetwork->IELength - _BEACON_IE_OFFSET_));
-	if (p && ie_len > 0)
-		return;
-
-	rtw_vht_use_default_setting(padapter);
-
-	/* VHT Operation mode notifiy bit in Extended IE (127) */
-	SET_EXT_CAPABILITY_ELE_OP_MODE_NOTIF(pmlmepriv->ext_capab_ie_data, 1);
-	pmlmepriv->ext_capab_ie_len = 10;
-	rtw_set_ie(pnetwork->IEs + pnetwork->IELength, EID_EXTCapability, 8, pmlmepriv->ext_capab_ie_data, &len);
-	pnetwork->IELength += pmlmepriv->ext_capab_ie_len;
-
-	/* VHT Capabilities element */
-	cap_len = rtw_build_vht_cap_ie(padapter, pnetwork->IEs + pnetwork->IELength);
-	pnetwork->IELength += cap_len;
-
-	/* VHT Operation element */
-	operation_len = rtw_build_vht_operation_ie(padapter, pnetwork->IEs + pnetwork->IELength,
-										pnetwork->Configuration.DSConfig);
-	pnetwork->IELength += operation_len;
-
-	rtw_check_for_vht20(padapter, pnetwork->IEs + _BEACON_IE_OFFSET_, pnetwork->IELength - _BEACON_IE_OFFSET_);
-
-	pmlmepriv->vhtpriv.vht_option = _TRUE;
-}
-
 void rtw_vht_ies_detach(_adapter *padapter, WLAN_BSSID_EX *pnetwork)
 {
 	struct mlme_priv *pmlmepriv = &(padapter->mlmepriv);

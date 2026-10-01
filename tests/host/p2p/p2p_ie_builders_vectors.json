@@ -17,6 +17,21 @@
       "dev_addr": "02:11:22:33:44:55",
       "expect_len": 20,
       "expect_ie": "dd12506f9a090202002249030600021122334455"
+    },
+    {
+      "name": "assoc_status_ok",
+      "fn": "assoc_resp",
+      "role": 1,
+      "status": 0,
+      "expect_len": 10,
+      "expect_ie": "dd08506f9a0900010000"
+    },
+    {
+      "name": "deauth_empty",
+      "fn": "deauth",
+      "role": 1,
+      "expect_len": 0,
+      "expect_ie": ""
     }
   ]
 }

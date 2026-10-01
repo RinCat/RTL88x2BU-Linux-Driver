@@ -7,6 +7,7 @@
 #define _VENDOR_SPECIFIC_IE_ 221
 #define P2P_ATTR_CAPABILITY 0x02
 #define P2P_ATTR_DEVICE_ID 0x03
+#define P2P_ATTR_STATUS 0x00
 #define P2P_DEVCAP_INVITATION_PROC (1 << 5)
 #define P2P_DEVCAP_CLIENT_DISCOVERABILITY (1 << 1)
 #define P2P_GRPCAP_GO (1 << 0)
@@ -26,4 +27,6 @@ static inline int rtw_p2p_chk_state(struct wifidirect_info *w, int s)
 	return w->p2p_state == (u8)s;
 }
 u32 build_beacon_p2p_ie(struct wifidirect_info *pwdinfo, u8 *pbuf);
+u32 build_assoc_resp_p2p_ie(struct wifidirect_info *pwdinfo, u8 *pbuf, u8 status_code);
+u32 build_deauth_p2p_ie(struct wifidirect_info *pwdinfo, u8 *pbuf);
 #endif

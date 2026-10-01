@@ -8,7 +8,7 @@
 typedef struct {
 	char name[48];
 	char fn[16];
-	int role, p2p_state;
+	int role, p2p_state, status;
 	char dev_addr[24];
 	char expect_hex[128];
 	u32 expect_len;
@@ -42,6 +42,10 @@ static u32 dispatch(vector_t *v, u8 *out)
 		return (u32)-1;
 	if (!strcmp(v->fn, "beacon"))
 		return build_beacon_p2p_ie(&wd, out);
+	if (!strcmp(v->fn, "assoc_resp"))
+		return build_assoc_resp_p2p_ie(&wd, out, (u8)v->status);
+	if (!strcmp(v->fn, "deauth"))
+		return build_deauth_p2p_ie(&wd, out);
 	return (u32)-1;
 }
 
@@ -57,6 +61,7 @@ static int parse_vec(const char *o, size_t l, void *vv)
 #define I(k, f) host_json_parse_int_in(o, l, k, &v->f)
 	I("role", role);
 	I("p2p_state", p2p_state);
+	I("status", status);
 #undef I
 	if (!host_json_parse_int_in(o, l, "expect_len", &tmp))
 		v->expect_len = (u32)tmp;
@@ -76,9 +81,10 @@ int main(int argc, char **argv)
 	for (size_t i = 0; i < n; i++) {
 		u32 len = dispatch(&v[i], out);
 
-		if (len == (u32)-1 || host_hex_decode(v[i].expect_hex, exp, sizeof(exp), &elen) ||
-		    elen != v[i].expect_len || len != v[i].expect_len ||
-		    memcmp(out, exp, len)) {
+		if (len == (u32)-1 || len != v[i].expect_len ||
+		    (v[i].expect_len &&
+		     (host_hex_decode(v[i].expect_hex, exp, sizeof(exp), &elen) ||
+		      elen != v[i].expect_len || memcmp(out, exp, len)))) {
 			fprintf(stderr, "FAIL %s\n", v[i].name);
 			fail++;
 		}

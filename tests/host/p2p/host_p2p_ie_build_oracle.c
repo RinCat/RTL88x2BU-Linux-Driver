@@ -43,3 +43,25 @@ u32 build_beacon_p2p_ie(struct wifidirect_info *pwdinfo, u8 *pbuf)
 	pbuf = rtw_set_ie(pbuf, _VENDOR_SPECIFIC_IE_, p2pielen, p2pie, &len);
 	return len;
 }
+
+u32 build_assoc_resp_p2p_ie(struct wifidirect_info *pwdinfo, u8 *pbuf, u8 status_code)
+{
+	u8 p2pie[MAX_P2P_IE_LEN] = {0};
+	u32 len = 0, p2pielen = 0;
+
+	(void)pwdinfo;
+	p2pie[p2pielen++] = 0x50;
+	p2pie[p2pielen++] = 0x6F;
+	p2pie[p2pielen++] = 0x9A;
+	p2pie[p2pielen++] = 0x09;
+	p2pielen += rtw_set_p2p_attr_content(&p2pie[p2pielen], P2P_ATTR_STATUS, 1, &status_code);
+	pbuf = rtw_set_ie(pbuf, _VENDOR_SPECIFIC_IE_, p2pielen, p2pie, &len);
+	return len;
+}
+
+u32 build_deauth_p2p_ie(struct wifidirect_info *pwdinfo, u8 *pbuf)
+{
+	(void)pwdinfo;
+	(void)pbuf;
+	return 0;
+}

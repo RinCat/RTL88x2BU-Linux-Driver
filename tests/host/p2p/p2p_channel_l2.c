@@ -10,12 +10,33 @@
 #define _FALSE 0
 #define _BE 12
 #define P2P_ATTR_MANAGEABILITY 0x0a
+#define P2P_ATTR_NOA 0x0c
+#define P2P_STATE_NONE 0
+#define P2P_MAX_NOA_NUM 2
+
+/* Match include/wifi.h and host_mlme_ext_mgnt_attrib_types.h */
+enum P2P_PS_MODE {
+	P2P_PS_NONE = 0,
+	P2P_PS_CTWINDOW = 1,
+	P2P_PS_NOA = 2,
+};
+
+enum P2P_PS_STATE {
+	P2P_PS_DISABLE = 0,
+	P2P_PS_ENABLE = 1,
+};
 #define LE16(x) ((u16)(((x)[1] << 8) | (x)[0]))
 
 typedef unsigned int uint;
 
+struct pwrctrl_priv {
+	u8 bFwCurrentInPSMode;
+};
+
 struct wifidirect_info {
-	u8 _pad;
+	u8 p2p_state, noa_index, opp_ps, ctwindow, noa_num, noa_count[P2P_MAX_NOA_NUM];
+	enum P2P_PS_MODE p2p_ps_mode;
+	u32 noa_duration[P2P_MAX_NOA_NUM], noa_interval[P2P_MAX_NOA_NUM], noa_start_time[P2P_MAX_NOA_NUM];
 };
 
 struct host_rf_chan {
@@ -30,9 +51,22 @@ struct rf_ctl_t {
 struct _adapter {
 	struct wifidirect_info wdinfo;
 	struct rf_ctl_t rfctl;
+	struct pwrctrl_priv pwrctrlpriv;
 };
 
 typedef struct _adapter *PADAPTER;
+
+#define adapter_to_pwrctl(a) (&(a)->pwrctrlpriv)
+
+static int g_ps_wk_cmd;
+
+static void p2p_ps_wk_cmd(PADAPTER a, enum P2P_PS_STATE c, u8 e)
+{
+	(void)a;
+	(void)c;
+	(void)e;
+	g_ps_wk_cmd++;
+}
 
 #ifndef HOST_P2P_RUST
 int rtw_p2p_is_channel_list_ok(u8 desired_ch, u8 *ch_list, u8 ch_cnt)
@@ -164,8 +198,64 @@ int process_p2p_cross_connect_ie(PADAPTER a, u8 *IEs, u32 len)
 	}
 	return ret;
 }
+
+void process_p2p_ps_ie(PADAPTER a, u8 *IEs, u32 len)
+{
+	struct wifidirect_info *w = &a->wdinfo;
+	u8 *ies, *pie, *noa, fp = _FALSE, fps = _FALSE;
+	u32 il, pl = 0, al;
+	u8 off, num, idx;
+
+	if (w->p2p_state == P2P_STATE_NONE || len <= _BE)
+		return;
+	ies = IEs + _BE;
+	il = len - _BE;
+	pie = p2p_ie(ies, il, &pl);
+	while (pie) {
+		fp = _TRUE;
+		noa = p2p_attr_content(pie, pl, P2P_ATTR_NOA, NULL, &al);
+		if (noa) {
+			fps = _TRUE;
+			idx = noa[0];
+			if (w->p2p_ps_mode == P2P_PS_NONE || idx != w->noa_index) {
+				w->noa_index = idx;
+				w->opp_ps = noa[1] >> 7;
+				w->ctwindow = w->opp_ps ? (noa[1] & 0x7f) : 0;
+				off = 2;
+				num = 0;
+				if (al > 2 && (al - 2) % 13 == 0) {
+					while (off < al && num < P2P_MAX_NOA_NUM) {
+						w->noa_count[num] = noa[off++];
+						memcpy(&w->noa_duration[num], &noa[off], 4);
+						off += 4;
+						memcpy(&w->noa_interval[num], &noa[off], 4);
+						off += 4;
+						memcpy(&w->noa_start_time[num], &noa[off], 4);
+						off += 4;
+						num++;
+					}
+				}
+				w->noa_num = num;
+				if (w->opp_ps == 1) {
+					w->p2p_ps_mode = P2P_PS_CTWINDOW;
+					if (adapter_to_pwrctl(a)->bFwCurrentInPSMode == _TRUE)
+						p2p_ps_wk_cmd(a, P2P_PS_ENABLE, 1);
+				} else if (w->noa_num > 0) {
+					w->p2p_ps_mode = P2P_PS_NOA;
+					p2p_ps_wk_cmd(a, P2P_PS_ENABLE, 1);
+				} else if (w->p2p_ps_mode > P2P_PS_NONE)
+					p2p_ps_wk_cmd(a, P2P_PS_DISABLE, 1);
+			}
+			break;
+		}
+		pie = p2p_ie(pie + pl, il - (pie - ies + pl), &pl);
+	}
+	if (fp && w->p2p_ps_mode > P2P_PS_NONE && !fps)
+		p2p_ps_wk_cmd(a, P2P_PS_DISABLE, 1);
+}
 #else
 int process_p2p_cross_connect_ie(PADAPTER a, u8 *IEs, u32 len);
+void process_p2p_ps_ie(PADAPTER a, u8 *IEs, u32 len);
 int rtw_p2p_is_channel_list_ok(u8 desired_ch, u8 *ch_list, u8 ch_cnt);
 u8 rtw_p2p_get_peer_ch_list(struct wifidirect_info *pwdinfo, u8 *ch_content, u8 ch_cnt,
 			    u8 *peer_ch_list);
@@ -176,7 +266,7 @@ u8 rtw_p2p_nego_intent_compare(u8 req, u8 resp);
 
 typedef struct {
 	char name[48], op[12], ch_list[64], ch_content[128], peer[32], rf[64], exp_list[32], ie[256];
-	int desired, exp, exp_cnt, req, resp;
+	int desired, exp, exp_cnt, req, resp, p2p_state, exp_ps_mode, exp_wk, exp_noa_num, fw_in_ps;
 } vector_t;
 
 static int parse_u8_list(const char *s, u8 *out, int cap)
@@ -214,6 +304,11 @@ static int parse_vec(const char *o, size_t l, void *vv)
 	I("exp_cnt", exp_cnt);
 	I("req", req);
 	I("resp", resp);
+	I("p2p_state", p2p_state);
+	I("exp_ps_mode", exp_ps_mode);
+	I("exp_wk", exp_wk);
+	I("exp_noa_num", exp_noa_num);
+	I("fw_in_ps", fw_in_ps);
 #undef S
 #undef I
 	return 0;
@@ -240,6 +335,8 @@ static int run_vec(vector_t *v)
 	size_t clen, ie_len = 0;
 
 	memset(&a, 0, sizeof(a));
+	g_ps_wk_cmd = 0;
+	a.wdinfo.p2p_state = (u8)v->p2p_state;
 	if (!strcmp(v->op, "ch_ok")) {
 		int n = parse_u8_list(v->ch_list, ch_list, 32);
 		if (rtw_p2p_is_channel_list_ok((u8)v->desired, ch_list, (u8)n) != v->exp)
@@ -269,6 +366,15 @@ static int run_vec(vector_t *v)
 		if (*v->ie && host_hex_decode(v->ie, frame + _BE, sizeof(frame) - _BE, &ie_len))
 			goto fail;
 		if (process_p2p_cross_connect_ie(&a, frame, (u32)(_BE + ie_len)) != v->exp)
+			goto fail;
+	} else if (!strcmp(v->op, "ps_ie")) {
+		memset(frame, 0, sizeof(frame));
+		if (*v->ie && host_hex_decode(v->ie, frame + _BE, sizeof(frame) - _BE, &ie_len))
+			goto fail;
+		a.pwrctrlpriv.bFwCurrentInPSMode = v->fw_in_ps ? _TRUE : _FALSE;
+		process_p2p_ps_ie(&a, frame, (u32)(_BE + ie_len));
+		if (a.wdinfo.p2p_ps_mode != (u8)v->exp_ps_mode || g_ps_wk_cmd != v->exp_wk ||
+		    (v->exp_noa_num && a.wdinfo.noa_num != (u8)v->exp_noa_num))
 			goto fail;
 	} else
 		goto fail;

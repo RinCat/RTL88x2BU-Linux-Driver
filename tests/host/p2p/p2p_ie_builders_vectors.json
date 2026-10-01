@@ -1,0 +1,22 @@
+{
+  "vectors": [
+    {
+      "name": "beacon_idle",
+      "fn": "beacon",
+      "role": 1,
+      "p2p_state": 0,
+      "dev_addr": "02:11:22:33:44:55",
+      "expect_len": 20,
+      "expect_ie": "dd12506f9a090202002209030600021122334455"
+    },
+    {
+      "name": "beacon_provisioning",
+      "fn": "beacon",
+      "role": 1,
+      "p2p_state": 13,
+      "dev_addr": "02:11:22:33:44:55",
+      "expect_len": 20,
+      "expect_ie": "dd12506f9a090202002249030600021122334455"
+    }
+  ]
+}

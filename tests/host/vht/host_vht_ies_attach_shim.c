@@ -35,6 +35,7 @@ void rtw_check_for_vht20(_adapter *padapter, u8 *ies, int ies_len)
 	(void)ies_len;
 }
 
+#ifndef HOST_VHT_IES_ATTACH_RUST_ORACLE
 void rtw_vht_use_default_setting(_adapter *padapter)
 {
 	struct vht_priv *pvhtpriv = &padapter->mlmepriv.vhtpriv;
@@ -45,3 +46,4 @@ void rtw_vht_use_default_setting(_adapter *padapter)
 	pvhtpriv->vht_mcs_map[0] = 0xff;
 	pvhtpriv->vht_mcs_map[1] = 0xff;
 }
+#endif /* !HOST_VHT_IES_ATTACH_RUST_ORACLE */

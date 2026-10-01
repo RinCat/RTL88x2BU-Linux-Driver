@@ -11,13 +11,23 @@
     unreachable_pub
 )]
 
-#[cfg(not(any(host_vht_build_test, host_vht_caps_handler_test)))]
+#[cfg(not(any(
+    host_vht_build_test,
+    host_vht_caps_handler_test,
+    host_vht_ies_attach_test
+)))]
 use core::ffi::c_void;
-#[cfg(any(host_vht_build_test, host_vht_caps_handler_test))]
+#[cfg(any(
+    host_vht_build_test,
+    host_vht_caps_handler_test,
+    host_vht_ies_attach_test
+))]
 use std::os::raw::c_void;
 
+const EID_EXTCapability: u8 = 127;
 const EID_VHTCapability: u8 = 191;
 const EID_VHTOperation: u8 = 192;
+const BEACON_IE_OFFSET: u32 = 12;
 const CHANNEL_WIDTH_80: u8 = 2;
 const CHANNEL_WIDTH_160: u8 = 3;
 const CHANNEL_WIDTH_80_80: u8 = 4;
@@ -56,6 +66,10 @@ pub struct VhtPriv {
 #[repr(C)]
 pub struct MlmePriv {
     pub vhtpriv: VhtPriv,
+    #[cfg(host_vht_ies_attach_test)]
+    pub ext_capab_ie_data: [u8; 8],
+    #[cfg(host_vht_ies_attach_test)]
+    pub ext_capab_ie_len: u8,
 }
 
 #[repr(C)]
@@ -106,11 +120,33 @@ fn test_flag(v: u8, f: u8) -> bool {
     (v & f) != 0
 }
 
-#[cfg(any(host_vht_build_test, host_vht_caps_handler_test))]
+#[repr(C)]
+pub struct Ndis80211Configuration {
+    pub length: u32,
+    pub beacon_period: u32,
+    pub atim_window: u32,
+    pub ds_config: u32,
+}
+
+#[repr(C)]
+pub struct WlanBssidEx {
+    pub length: u32,
+    pub mac_address: [u8; 6],
+    pub reserved: [u8; 2],
+    pub ie_length: u32,
+    pub configuration: Ndis80211Configuration,
+    pub ies: [u8; 256],
+}
+
+#[cfg(any(
+    host_vht_build_test,
+    host_vht_caps_handler_test,
+    host_vht_ies_attach_test
+))]
 mod host {
     use super::*;
 
-    #[cfg(host_vht_build_test)]
+    #[cfg(any(host_vht_build_test, host_vht_ies_attach_test))]
     mod build {
         use super::super::*;
 
@@ -348,8 +384,124 @@ mod host {
         }
     }
 
-    #[cfg(host_vht_build_test)]
+    #[cfg(any(host_vht_build_test, host_vht_ies_attach_test))]
     pub use self::build::{build_vht_cap_ie, build_vht_operation_ie};
+
+    #[cfg(host_vht_ies_attach_test)]
+    mod ies_attach {
+        use super::super::*;
+
+        const TRUE: u8 = 1;
+        const FALSE: u8 = 0;
+
+        extern "C" {
+            fn rtw_set_ie(
+                pbuf: *mut u8,
+                index: i32,
+                len: u32,
+                source: *const u8,
+                frlen: *mut u32,
+            ) -> *mut u8;
+        }
+
+        fn set_ext_capability_op_mode_notif(data: &mut [u8; 8], v: u8) {
+            let mask = (((1u32 << 1) - 1) << 6) as u8;
+            data[7] = (data[7] & !mask) | ((v & 1) << 6);
+        }
+
+        fn rtw_get_ie(pbuf: *const u8, index: i32, len_out: *mut i32, limit: i32) -> *mut u8 {
+            if limit < 1 {
+                return core::ptr::null_mut();
+            }
+            unsafe {
+                let mut p = pbuf;
+                let mut i = 0i32;
+                *len_out = 0;
+                loop {
+                    if *p as i32 == index {
+                        *len_out = *(p.add(1)) as i32;
+                        return p as *mut u8;
+                    }
+                    let tmp = *(p.add(1)) as i32;
+                    p = p.add((tmp + 2) as usize);
+                    i += tmp + 2;
+                    if i >= limit {
+                        break;
+                    }
+                }
+            }
+            core::ptr::null_mut()
+        }
+
+        pub fn vht_use_default_setting(padapter: *mut Adapter) {
+            if padapter.is_null() {
+                return;
+            }
+            unsafe {
+                let padapter = &mut *padapter;
+                let pvhtpriv = &mut padapter.mlmepriv.vhtpriv;
+                pvhtpriv.vht_option = FALSE;
+                pvhtpriv.sgi_80m = TRUE;
+                pvhtpriv.ampdu_len = padapter.registrypriv.ampdu_factor;
+                pvhtpriv.vht_mcs_map = [0xff, 0xff];
+            }
+        }
+
+        pub fn vht_ies_attach(padapter: *mut Adapter, pnetwork: *mut WlanBssidEx) {
+            if padapter.is_null() || pnetwork.is_null() {
+                return;
+            }
+            unsafe {
+                let pnetwork = &mut *pnetwork;
+                let padapter_ptr = padapter;
+                let mut ie_len: i32 = 0;
+                let limit = (pnetwork.ie_length - BEACON_IE_OFFSET) as i32;
+                let p = rtw_get_ie(
+                    pnetwork.ies.as_ptr().add(BEACON_IE_OFFSET as usize),
+                    EID_VHTCapability as i32,
+                    &mut ie_len,
+                    limit,
+                );
+                if !p.is_null() && ie_len > 0 {
+                    return;
+                }
+
+                vht_use_default_setting(padapter_ptr);
+
+                let padapter = &mut *padapter_ptr;
+                let pmlmepriv = &mut padapter.mlmepriv;
+                set_ext_capability_op_mode_notif(&mut pmlmepriv.ext_capab_ie_data, 1);
+                pmlmepriv.ext_capab_ie_len = 10;
+                let mut len: u32 = 0;
+                rtw_set_ie(
+                    pnetwork.ies.as_mut_ptr().add(pnetwork.ie_length as usize),
+                    EID_EXTCapability as i32,
+                    8,
+                    pmlmepriv.ext_capab_ie_data.as_ptr(),
+                    &mut len,
+                );
+                pnetwork.ie_length += pmlmepriv.ext_capab_ie_len as u32;
+
+                let cap_len = super::build::build_vht_cap_ie(
+                    padapter_ptr,
+                    pnetwork.ies.as_mut_ptr().add(pnetwork.ie_length as usize),
+                );
+                pnetwork.ie_length += cap_len;
+
+                let operation_len = super::build::build_vht_operation_ie(
+                    padapter_ptr,
+                    pnetwork.ies.as_mut_ptr().add(pnetwork.ie_length as usize),
+                    pnetwork.configuration.ds_config as u8,
+                );
+                pnetwork.ie_length += operation_len;
+
+                padapter.mlmepriv.vhtpriv.vht_option = TRUE;
+            }
+        }
+    }
+
+    #[cfg(host_vht_ies_attach_test)]
+    pub use self::ies_attach::{vht_ies_attach, vht_use_default_setting};
 
     fn set_flag(v: &mut u8, f: u8) {
         *v |= f;
@@ -443,11 +595,11 @@ mod host {
 
 #[no_mangle]
 pub extern "C" fn rtw_build_vht_cap_ie(padapter: *mut c_void, pbuf: *mut u8) -> u32 {
-    #[cfg(host_vht_build_test)]
+    #[cfg(any(host_vht_build_test, host_vht_ies_attach_test))]
     {
         host::build_vht_cap_ie(padapter as *mut Adapter, pbuf)
     }
-    #[cfg(not(host_vht_build_test))]
+    #[cfg(not(any(host_vht_build_test, host_vht_ies_attach_test)))]
     {
         let _ = (padapter, pbuf);
         0
@@ -460,15 +612,27 @@ pub extern "C" fn rtw_build_vht_operation_ie(
     pbuf: *mut u8,
     channel: u8,
 ) -> u32 {
-    #[cfg(host_vht_build_test)]
+    #[cfg(any(host_vht_build_test, host_vht_ies_attach_test))]
     {
         host::build_vht_operation_ie(padapter as *mut Adapter, pbuf, channel)
     }
-    #[cfg(not(host_vht_build_test))]
+    #[cfg(not(any(host_vht_build_test, host_vht_ies_attach_test)))]
     {
         let _ = (padapter, pbuf, channel);
         0
     }
+}
+
+#[cfg(host_vht_ies_attach_test)]
+#[no_mangle]
+pub extern "C" fn rtw_vht_use_default_setting(padapter: *mut Adapter) {
+    host::vht_use_default_setting(padapter);
+}
+
+#[cfg(host_vht_ies_attach_test)]
+#[no_mangle]
+pub extern "C" fn rtw_vht_ies_attach(padapter: *mut Adapter, pnetwork: *mut WlanBssidEx) {
+    host::vht_ies_attach(padapter, pnetwork);
 }
 
 #[cfg(host_vht_caps_handler_test)]

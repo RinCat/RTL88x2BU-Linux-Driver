@@ -6,3 +6,5 @@ test_vht_caps_handler
 test_vht_caps_handler_rust
 librust_vht_build.a
 librust_vht_caps_handler.a
+test_vht_ies_attach_rust
+librust_vht_ies_attach.a

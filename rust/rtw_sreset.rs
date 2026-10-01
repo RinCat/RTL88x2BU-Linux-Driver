@@ -464,6 +464,152 @@ pub extern "C" fn sreset_start_adapter(padapter: Padapter) {
     kernel::start_adapter(padapter);
 }
 
+#[cfg(host_sreset_security_test)]
+mod security_host {
+    const DOT11_AUTH_8021X: u32 = 2;
+    const PRIV_TKIP: u32 = 0x02;
+    const PRIV_AES: u32 = 0x04;
+    const HW_VAR_SEC_CFG: u32 = 0x100;
+    const UNICAST_KEY: i32 = 1;
+
+    #[repr(C)]
+    pub struct WlanNetwork {
+        pub MacAddress: [u8; 6],
+    }
+
+    #[repr(C)]
+    pub struct CurNetwork {
+        pub network: WlanNetwork,
+    }
+
+    #[repr(C)]
+    pub struct MlmePrivSec {
+        pub cur_network: CurNetwork,
+    }
+
+    #[repr(C)]
+    pub struct MlmeExtInfo {
+        pub auth_algo: u32,
+    }
+
+    #[repr(C)]
+    pub struct MlmeExtPriv {
+        pub mlmext_info: MlmeExtInfo,
+    }
+
+    #[repr(C)]
+    pub struct SecurityPriv {
+        pub dot11PrivacyAlgrthm: u32,
+        pub dot118021XGrpKeyid: u8,
+    }
+
+    #[repr(C)]
+    pub struct StaInfo {
+        pub dummy: u8,
+    }
+
+    #[repr(C)]
+    pub struct StaPriv {
+        pub stub_sta: StaInfo,
+    }
+
+    #[repr(C)]
+    pub struct SecurityAdapter {
+        pub mlmepriv: MlmePrivSec,
+        pub mlmeextpriv: MlmeExtPriv,
+        pub securitypriv: SecurityPriv,
+        pub stapriv: StaPriv,
+    }
+
+    type SecAdapter = *mut SecurityAdapter;
+
+    extern "C" {
+        fn get_bssid(m: *mut MlmePrivSec) -> *mut u8;
+        fn rtw_get_stainfo(p: *mut StaPriv, hwaddr: *mut u8) -> *mut StaInfo;
+        fn rtw_hal_set_hwreg(padapter: SecAdapter, variable: u32, val: *mut u8);
+        fn rtw_setstakey_cmd(padapter: SecAdapter, psta: *mut StaInfo, keytype: i32, enqueue: u8);
+        fn rtw_set_key(
+            padapter: SecAdapter,
+            psecuritypriv: *mut SecurityPriv,
+            keyid: i32,
+            set_tx: u8,
+            enqueue: u8,
+        ) -> i32;
+    }
+
+    pub fn restore_security_station(padapter: SecAdapter) {
+        if padapter.is_null() {
+            return;
+        }
+        unsafe {
+            let mlmepriv = &mut (*padapter).mlmepriv;
+            let pstapriv = &mut (*padapter).stapriv;
+            let pmlmeinfo = &mut (*padapter).mlmeextpriv.mlmext_info;
+            let mut val8 = if pmlmeinfo.auth_algo == DOT11_AUTH_8021X {
+                0xcc_u8
+            } else {
+                0xcf_u8
+            };
+            rtw_hal_set_hwreg(padapter, HW_VAR_SEC_CFG, &mut val8);
+            let priv_alg = (*padapter).securitypriv.dot11PrivacyAlgrthm;
+            if priv_alg == PRIV_TKIP || priv_alg == PRIV_AES {
+                let psta = rtw_get_stainfo(pstapriv, get_bssid(mlmepriv));
+                if !psta.is_null() {
+                    rtw_setstakey_cmd(padapter, psta, UNICAST_KEY, 0);
+                    let sp = &mut (*padapter).securitypriv;
+                    rtw_set_key(padapter, sp, sp.dot118021XGrpKeyid as i32, 0, 0);
+                }
+            }
+        }
+    }
+}
+
+#[cfg(host_sreset_security_test)]
+#[no_mangle]
+pub extern "C" fn sreset_restore_security_station(padapter: *mut security_host::SecurityAdapter) {
+    security_host::restore_security_station(padapter);
+}
+
+#[cfg(all(not(host_sreset_test), not(host_sreset_security_test)))]
+mod security_kernel {
+    use super::*;
+
+    const PRIV_TKIP: u32 = 0x02;
+    const PRIV_AES: u32 = 0x04;
+
+    extern "C" {
+        fn rtw_rust_sreset_sec_cfg_val8(padapter: Padapter) -> u8;
+        fn rtw_rust_sreset_privacy_algrthm(padapter: Padapter) -> u32;
+        fn rtw_rust_sreset_hal_set_hwreg_sec_cfg(padapter: Padapter, val: u8);
+        fn rtw_rust_sreset_get_stainfo(padapter: Padapter) -> u8;
+        fn rtw_rust_sreset_setstakey_unicast(padapter: Padapter);
+        fn rtw_rust_sreset_set_group_key(padapter: Padapter);
+    }
+
+    pub fn restore_security_station(padapter: Padapter) {
+        if padapter.is_null() {
+            return;
+        }
+        unsafe {
+            let val8 = rtw_rust_sreset_sec_cfg_val8(padapter);
+            rtw_rust_sreset_hal_set_hwreg_sec_cfg(padapter, val8);
+            let priv_alg = rtw_rust_sreset_privacy_algrthm(padapter);
+            if priv_alg == PRIV_TKIP || priv_alg == PRIV_AES {
+                if rtw_rust_sreset_get_stainfo(padapter) != 0 {
+                    rtw_rust_sreset_setstakey_unicast(padapter);
+                    rtw_rust_sreset_set_group_key(padapter);
+                }
+            }
+        }
+    }
+}
+
+#[cfg(all(not(host_sreset_test), not(host_sreset_security_test)))]
+#[no_mangle]
+pub extern "C" fn sreset_restore_security_station(padapter: Padapter) {
+    security_kernel::restore_security_station(padapter);
+}
+
 #[no_mangle]
 pub extern "C" fn sreset_inprogress(padapter: Padapter) -> u8 {
     if padapter.is_null() {

@@ -105,6 +105,8 @@ void sreset_set_trigger_point(_adapter *padapter, s32 tgp)
 #endif
 }
 
+#if !defined(CONFIG_RUST) || defined(HOST_SRESET_TEST)
+
 void sreset_restore_security_station(_adapter *padapter)
 {
 	struct mlme_priv *mlmepriv = &padapter->mlmepriv;
@@ -140,6 +142,12 @@ void sreset_restore_security_station(_adapter *padapter)
 		}
 	}
 }
+
+#endif /* !CONFIG_RUST || HOST_SRESET_TEST */
+
+#if defined(CONFIG_RUST) && !defined(HOST_SRESET_TEST)
+void sreset_restore_security_station(_adapter *padapter);
+#endif
 
 void sreset_restore_network_station(_adapter *padapter)
 {
@@ -431,6 +439,62 @@ void rtw_rust_sreset_set_dynamic_chk_timer(_adapter *padapter, u32 ms)
 u8 rtw_rust_sreset_is_primary_adapter(_adapter *padapter)
 {
 	return is_primary_adapter(padapter) ? 1 : 0;
+}
+
+u32 rtw_rust_sreset_auth_algo(_adapter *padapter)
+{
+	return padapter->mlmeextpriv.mlmext_info.auth_algo;
+}
+
+u8 rtw_rust_sreset_sec_cfg_val8(_adapter *padapter)
+{
+	struct mlme_ext_info *pmlmeinfo = &padapter->mlmeextpriv.mlmext_info;
+
+	if (pmlmeinfo->auth_algo == dot11AuthAlgrthm_8021X)
+		return 0xcc;
+#ifdef CONFIG_WAPI_SUPPORT
+	if (padapter->wapiInfo.bWapiEnable && pmlmeinfo->auth_algo == dot11AuthAlgrthm_WAPI)
+		return 0x4c;
+#endif
+	return 0xcf;
+}
+
+u32 rtw_rust_sreset_privacy_algrthm(_adapter *padapter)
+{
+	return padapter->securitypriv.dot11PrivacyAlgrthm;
+}
+
+u8 rtw_rust_sreset_grp_keyid(_adapter *padapter)
+{
+	return padapter->securitypriv.dot118021XGrpKeyid;
+}
+
+void rtw_rust_sreset_hal_set_hwreg_sec_cfg(_adapter *padapter, u8 val)
+{
+	rtw_hal_set_hwreg(padapter, HW_VAR_SEC_CFG, &val);
+}
+
+u8 rtw_rust_sreset_get_stainfo(_adapter *padapter)
+{
+	struct sta_info *psta;
+
+	psta = rtw_get_stainfo(&padapter->stapriv, get_bssid(&padapter->mlmepriv));
+	return psta != NULL ? 1 : 0;
+}
+
+void rtw_rust_sreset_setstakey_unicast(_adapter *padapter)
+{
+	struct sta_info *psta;
+
+	psta = rtw_get_stainfo(&padapter->stapriv, get_bssid(&padapter->mlmepriv));
+	if (psta != NULL)
+		rtw_setstakey_cmd(padapter, psta, UNICAST_KEY, _FALSE);
+}
+
+void rtw_rust_sreset_set_group_key(_adapter *padapter)
+{
+	rtw_set_key(padapter, &padapter->securitypriv,
+		    padapter->securitypriv.dot118021XGrpKeyid, 0, _FALSE);
 }
 
 #endif /* CONFIG_RUST && !HOST_SRESET_TEST */

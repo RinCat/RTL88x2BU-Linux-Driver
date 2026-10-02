@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
-//! Kernel port of `update_attrib_vcs_info` (W3-86 PR11).
+//! Kernel port of `update_attrib_vcs_info` (W3-86 PR11) and
+//! `update_attrib_phy_info` (W3-86 PR12).
 
 #![allow(
     dead_code,
@@ -24,9 +25,22 @@ const DISABLE_VCS: U8 = 0;
 const ENABLE_VCS: U8 = 1;
 const AUTO_VCS: U8 = 2;
 const WIRELESS_11_24N: U8 = 1 << 3;
+const CHANNEL_WIDTH_20: U8 = 0;
+const CHANNEL_WIDTH_40: U8 = 1;
+const CHANNEL_WIDTH_80: U8 = 2;
 const HT_IOT_PEER_ATHEROS: U8 = 5;
 const _AES_: U8 = 0x04;
 const _TRUE: U8 = 1;
+const _FALSE: U8 = 0;
+
+#[inline]
+fn rtw_min_u8(a: U8, b: U8) -> U8 {
+    if a > b {
+        b
+    } else {
+        a
+    }
+}
 
 #[repr(C)]
 struct VcsIn {
@@ -147,4 +161,63 @@ pub extern "C" fn update_attrib_vcs_info(padapter: *mut c_void, pxmitframe: *mut
     unsafe { rtw_rust_xmit_attrib_vcs_gather(padapter, pxmitframe, &mut vcs_in) };
     let vcs = update_attrib_vcs_info_inner(&vcs_in);
     unsafe { rtw_rust_xmit_attrib_vcs_set_mode(pxmitframe, vcs) };
+}
+
+#[repr(C)]
+pub struct PhyBaseIn {
+    cur_bwmode: U8,
+    sta_tx_bw: U8,
+    rtsen: U8,
+    cts2self: U8,
+    raid: U8,
+    ldpc: U8,
+    stbc: U8,
+    sgi_20m: U8,
+    sgi_40m: U8,
+    sgi_80m: U8,
+    vht_option: U8,
+}
+
+#[repr(C)]
+pub struct PhyBaseOut {
+    rtsen: U8,
+    cts2self: U8,
+    raid: U8,
+    bwmode: U8,
+    sgi: U8,
+    ldpc: U8,
+    stbc: U8,
+}
+
+fn query_ra_short_gi_base(base: &PhyBaseIn, bw: U8) -> U8 {
+    let sgi_80m = if base.vht_option != 0 {
+        base.sgi_80m
+    } else {
+        _FALSE
+    };
+    match bw {
+        CHANNEL_WIDTH_80 => sgi_80m,
+        CHANNEL_WIDTH_40 => base.sgi_40m,
+        _ => base.sgi_20m,
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn update_attrib_phy_info_base(phy_in: *const PhyBaseIn, phy_out: *mut PhyBaseOut) {
+    if phy_in.is_null() || phy_out.is_null() {
+        return;
+    }
+    let base = unsafe { &*phy_in };
+    let bwmode = rtw_min_u8(base.sta_tx_bw, base.cur_bwmode);
+    unsafe {
+        *phy_out = PhyBaseOut {
+            rtsen: base.rtsen,
+            cts2self: base.cts2self,
+            raid: base.raid,
+            bwmode,
+            sgi: query_ra_short_gi_base(base, bwmode),
+            ldpc: base.ldpc,
+            stbc: base.stbc,
+        };
+    }
 }

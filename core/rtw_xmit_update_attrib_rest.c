@@ -228,6 +228,8 @@ u8 query_ra_short_GI(struct sta_info *psta, u8 bw)
 
 #endif /* HOST_XMIT_UPDATE_ATTRIB_TEST */
 
+#if !defined(CONFIG_RUST) || defined(HOST_XMIT_UPDATE_ATTRIB_TEST)
+
 void update_attrib_phy_info(_adapter *padapter, struct pkt_attrib *pattrib,
 			    struct sta_info *psta)
 {
@@ -294,3 +296,137 @@ void update_attrib_phy_info(_adapter *padapter, struct pkt_attrib *pattrib,
 
 	pattrib->retry_ctrl = _FALSE;
 }
+
+#endif /* !CONFIG_RUST || HOST_XMIT_UPDATE_ATTRIB_TEST */
+
+#if defined(CONFIG_RUST) && !defined(HOST_XMIT_UPDATE_ATTRIB_TEST)
+
+struct rtw_rust_xmit_phy_base_in {
+	u8 cur_bwmode;
+	u8 sta_tx_bw;
+	u8 rtsen;
+	u8 cts2self;
+	u8 raid;
+	u8 ldpc;
+	u8 stbc;
+	u8 sgi_20m;
+	u8 sgi_40m;
+	u8 sgi_80m;
+	u8 vht_option;
+};
+
+struct rtw_rust_xmit_phy_base_out {
+	u8 rtsen;
+	u8 cts2self;
+	u8 raid;
+	u8 bwmode;
+	u8 sgi;
+	u8 ldpc;
+	u8 stbc;
+};
+
+void rtw_rust_xmit_attrib_phy_base_gather(_adapter *padapter, struct sta_info *psta,
+					  struct rtw_rust_xmit_phy_base_in *out)
+{
+	out->cur_bwmode = padapter->mlmeextpriv.cur_bwmode;
+	out->sta_tx_bw = rtw_get_tx_bw_mode(padapter, psta);
+	out->rtsen = psta->rtsen;
+	out->cts2self = psta->cts2self;
+	out->raid = psta->cmn.ra_info.rate_id;
+	out->ldpc = psta->cmn.ldpc_en;
+	out->stbc = psta->cmn.stbc_en;
+#ifdef CONFIG_80211N_HT
+	out->sgi_20m = psta->htpriv.sgi_20m;
+	out->sgi_40m = psta->htpriv.sgi_40m;
+#else
+	out->sgi_20m = 0;
+	out->sgi_40m = 0;
+#endif
+#ifdef CONFIG_80211AC_VHT
+	out->vht_option = psta->vhtpriv.vht_option;
+	out->sgi_80m = psta->vhtpriv.sgi_80m;
+#else
+	out->vht_option = 0;
+	out->sgi_80m = 0;
+#endif
+}
+
+void update_attrib_phy_info_base(const struct rtw_rust_xmit_phy_base_in *phy_in,
+				 struct rtw_rust_xmit_phy_base_out *phy_out);
+
+void rtw_rust_xmit_attrib_phy_base_apply(struct pkt_attrib *pattrib,
+					 const struct rtw_rust_xmit_phy_base_out *out)
+{
+	pattrib->rtsen = out->rtsen;
+	pattrib->cts2self = out->cts2self;
+	pattrib->mdata = 0;
+	pattrib->eosp = 0;
+	pattrib->triggered = 0;
+	pattrib->ampdu_spacing = 0;
+	pattrib->raid = out->raid;
+	pattrib->bwmode = out->bwmode;
+	pattrib->sgi = out->sgi;
+	pattrib->ldpc = out->ldpc;
+	pattrib->stbc = out->stbc;
+}
+
+static void update_attrib_phy_info_ht_tdls(_adapter *padapter, struct pkt_attrib *pattrib,
+					   struct sta_info *psta)
+{
+#ifdef CONFIG_80211N_HT
+	if (padapter->registrypriv.ht_enable &&
+	    is_supported_ht(padapter->registrypriv.wireless_mode)) {
+		pattrib->ht_en = psta->htpriv.ht_option;
+		pattrib->ch_offset = psta->htpriv.ch_offset;
+		pattrib->ampdu_en = _FALSE;
+
+		if (padapter->driver_ampdu_spacing != 0xFF)
+			pattrib->ampdu_spacing = padapter->driver_ampdu_spacing;
+		else
+			pattrib->ampdu_spacing = psta->htpriv.rx_ampdu_min_spacing;
+
+		if (pattrib->ht_en && psta->htpriv.ampdu_enable) {
+			if (psta->htpriv.agg_enable_bitmap & BIT(pattrib->priority)) {
+				pattrib->ampdu_en = _TRUE;
+				if (psta->htpriv.tx_amsdu_enable == _TRUE)
+					pattrib->amsdu_ampdu_en = _TRUE;
+				else
+					pattrib->amsdu_ampdu_en = _FALSE;
+			}
+		}
+	}
+#endif /* CONFIG_80211N_HT */
+
+#ifdef CONFIG_TDLS
+	if (pattrib->direct_link == _TRUE) {
+		psta = pattrib->ptdls_sta;
+
+		pattrib->raid = psta->cmn.ra_info.rate_id;
+#ifdef CONFIG_80211N_HT
+		if (padapter->registrypriv.ht_enable &&
+		    is_supported_ht(padapter->registrypriv.wireless_mode)) {
+			pattrib->bwmode = rtw_get_tx_bw_mode(padapter, psta);
+			pattrib->ht_en = psta->htpriv.ht_option;
+			pattrib->ch_offset = psta->htpriv.ch_offset;
+			pattrib->sgi = query_ra_short_GI(psta, pattrib->bwmode);
+		}
+#endif /* CONFIG_80211N_HT */
+	}
+#endif /* CONFIG_TDLS */
+
+	pattrib->retry_ctrl = _FALSE;
+}
+
+void update_attrib_phy_info(_adapter *padapter, struct pkt_attrib *pattrib,
+			    struct sta_info *psta)
+{
+	struct rtw_rust_xmit_phy_base_in phy_in;
+	struct rtw_rust_xmit_phy_base_out phy_out;
+
+	rtw_rust_xmit_attrib_phy_base_gather(padapter, psta, &phy_in);
+	update_attrib_phy_info_base(&phy_in, &phy_out);
+	rtw_rust_xmit_attrib_phy_base_apply(pattrib, &phy_out);
+	update_attrib_phy_info_ht_tdls(padapter, pattrib, psta);
+}
+
+#endif /* CONFIG_RUST && !HOST_XMIT_UPDATE_ATTRIB_TEST */

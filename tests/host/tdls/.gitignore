@@ -1,1 +1,3 @@
 test_tdls_lifecycle
+test_tdls_lifecycle_rust
+librust_tdls.a

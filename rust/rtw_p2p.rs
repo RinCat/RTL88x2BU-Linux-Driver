@@ -434,3 +434,202 @@ mod ie_build {
         0
     }
 }
+
+#[cfg(all(host_p2p_ie_build, host_p2p_ie_build_probe))]
+mod ie_build_probe {
+    use std::os::raw::c_uchar;
+
+    const VS_IE: u8 = 221;
+    const P2P_ATTR_CAPABILITY: u8 = 0x02;
+    const P2P_ATTR_EX_LISTEN_TIMING: u8 = 0x08;
+    const P2P_ATTR_DEVICE_INFO: u8 = 0x0d;
+    const P2P_ATTR_GROUP_ID: u8 = 0x0f;
+    const P2P_OUI_IE: [u8; 4] = [0x50, 0x6F, 0x9A, 0x09];
+
+    #[repr(C)]
+    pub struct WifidirectInfoIe {
+        pub role: u8,
+        pub p2p_state: u8,
+        pub device_addr: [u8; 6],
+        pub device_name: [u8; 32],
+        pub device_name_len: u16,
+        pub persistent_supported: u8,
+        pub ui_got_wps_info: u8,
+        pub supported_wps_cm: u16,
+    }
+
+    fn put_le16(b: &mut [u8], v: u16) {
+        b[0] = (v & 0xff) as u8;
+        b[1] = (v >> 8) as u8;
+    }
+    fn put_be16(b: &mut [u8], v: u16) {
+        b[0] = (v >> 8) as u8;
+        b[1] = (v & 0xff) as u8;
+    }
+    fn put_be32(b: &mut [u8], v: u32) {
+        b[0] = (v >> 24) as u8;
+        b[1] = (v >> 16) as u8;
+        b[2] = (v >> 8) as u8;
+        b[3] = v as u8;
+    }
+
+    unsafe fn set_ie(pbuf: *mut u8, len: u32, src: &[u8], frlen: *mut u32) {
+        if pbuf.is_null() {
+            return;
+        }
+        let p = std::slice::from_raw_parts_mut(pbuf, (len + 2) as usize);
+        p[0] = VS_IE;
+        p[1] = len as u8;
+        p[2..2 + len as usize].copy_from_slice(src);
+        if !frlen.is_null() {
+            *frlen += len + 2;
+        }
+    }
+
+    fn append_dev_info(p2p: &mut [u8], mut off: usize, w: &WifidirectInfoIe) -> usize {
+        p2p[off] = P2P_ATTR_DEVICE_INFO;
+        off += 1;
+        put_le16(&mut p2p[off..], 21 + w.device_name_len);
+        off += 2;
+        p2p[off..off + 6].copy_from_slice(&w.device_addr);
+        off += 6;
+        put_be16(&mut p2p[off..], w.supported_wps_cm);
+        off += 2;
+        put_be16(&mut p2p[off..], 0x0008);
+        off += 2;
+        put_be32(&mut p2p[off..], 0x0050f204);
+        off += 4;
+        put_be16(&mut p2p[off..], 0x0005);
+        off += 2;
+        p2p[off] = 0;
+        off += 1;
+        put_be16(&mut p2p[off..], 0x1011);
+        off += 2;
+        put_be16(&mut p2p[off..], w.device_name_len);
+        off += 2;
+        let dn = w.device_name_len as usize;
+        p2p[off..off + dn].copy_from_slice(&w.device_name[..dn]);
+        off + dn
+    }
+
+    #[no_mangle]
+    pub extern "C" fn build_probe_resp_p2p_ie(
+        pwdinfo: *mut WifidirectInfoIe,
+        pbuf: *mut c_uchar,
+    ) -> u32 {
+        if pwdinfo.is_null() || pbuf.is_null() {
+            return 0;
+        }
+        let w = unsafe { &*pwdinfo };
+        let mut p2p = [0u8; 256];
+        let mut off = 4usize;
+        p2p[0..4].copy_from_slice(&P2P_OUI_IE);
+        p2p[off] = P2P_ATTR_CAPABILITY;
+        off += 1;
+        put_le16(&mut p2p[off..], 2);
+        off += 2;
+        p2p[off] = 0x27;
+        off += 1;
+        if w.role == 3 {
+            p2p[off] = 1 | 8;
+            if w.p2p_state == 13 {
+                p2p[off] |= 1 << 6;
+            }
+            off += 1;
+        } else if w.role == 1 {
+            p2p[off] = if w.persistent_supported != 0 {
+                2 | 8
+            } else {
+                8
+            };
+            off += 1;
+        }
+        p2p[off] = P2P_ATTR_EX_LISTEN_TIMING;
+        off += 1;
+        put_le16(&mut p2p[off..], 4);
+        off += 2;
+        put_le16(&mut p2p[off..], 0xffff);
+        off += 2;
+        put_le16(&mut p2p[off..], 0xffff);
+        off += 2;
+        off = append_dev_info(&mut p2p, off, w);
+        let mut total = 0u32;
+        unsafe {
+            set_ie(pbuf, off as u32, &p2p[..off], &mut total);
+        }
+        total
+    }
+
+    #[no_mangle]
+    pub extern "C" fn build_prov_disc_request_p2p_ie(
+        pwdinfo: *mut WifidirectInfoIe,
+        pbuf: *mut c_uchar,
+        pssid: *mut c_uchar,
+        ussidlen: u8,
+        pdev_raddr: *mut c_uchar,
+    ) -> u32 {
+        if pwdinfo.is_null() || pbuf.is_null() {
+            return 0;
+        }
+        let w = unsafe { &*pwdinfo };
+        let mut p2p = [0u8; 256];
+        let mut off = 4usize;
+        p2p[0..4].copy_from_slice(&P2P_OUI_IE);
+        p2p[off] = P2P_ATTR_CAPABILITY;
+        off += 1;
+        put_le16(&mut p2p[off..], 2);
+        off += 2;
+        p2p[off] = 0x27;
+        off += 1;
+        p2p[off] = if w.persistent_supported != 0 {
+            2 | 8
+        } else {
+            8
+        };
+        off += 1;
+        p2p[off] = P2P_ATTR_DEVICE_INFO;
+        off += 1;
+        put_le16(&mut p2p[off..], 21 + w.device_name_len);
+        off += 2;
+        p2p[off..off + 6].copy_from_slice(&w.device_addr);
+        off += 6;
+        let cm = if w.ui_got_wps_info == 3 {
+            0x0080u16
+        } else {
+            0x0008u16
+        };
+        put_be16(&mut p2p[off..], cm);
+        off += 2;
+        put_be16(&mut p2p[off..], 0x0008);
+        off += 2;
+        put_be32(&mut p2p[off..], 0x0050f204);
+        off += 4;
+        put_be16(&mut p2p[off..], 0x0005);
+        off += 2;
+        p2p[off] = 0;
+        off += 1;
+        put_be16(&mut p2p[off..], 0x1011);
+        off += 2;
+        put_be16(&mut p2p[off..], w.device_name_len);
+        off += 2;
+        let dn = w.device_name_len as usize;
+        p2p[off..off + dn].copy_from_slice(&w.device_name[..dn]);
+        off += dn;
+        if w.role == 2 && !pssid.is_null() && !pdev_raddr.is_null() {
+            p2p[off] = P2P_ATTR_GROUP_ID;
+            off += 1;
+            put_le16(&mut p2p[off..], 6 + ussidlen as u16);
+            off += 2;
+            p2p[off..off + 6].copy_from_slice(unsafe { std::slice::from_raw_parts(pdev_raddr, 6) });
+            off += 6;
+            p2p[off..off + ussidlen as usize]
+                .copy_from_slice(unsafe { std::slice::from_raw_parts(pssid, ussidlen as usize) });
+            off += ussidlen as usize;
+        }
+        let mut total = 0u32;
+        unsafe {
+            set_ie(pbuf, off as u32, &p2p[..off], &mut total);
+        }
+        total
+    }
+}

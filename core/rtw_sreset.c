@@ -286,6 +286,8 @@ void sreset_start_adapter(_adapter *padapter)
 
 #endif /* !CONFIG_RUST || HOST_SRESET_TEST */
 
+#if !defined(CONFIG_RUST) || defined(HOST_SRESET_TEST)
+
 void sreset_reset(_adapter *padapter)
 {
 #ifdef DBG_CONFIG_ERROR_RESET
@@ -334,6 +336,8 @@ void sreset_reset(_adapter *padapter)
 	psrtpriv->rx_cnt = 0;
 #endif
 }
+
+#endif /* !CONFIG_RUST || HOST_SRESET_TEST */
 
 #if defined(CONFIG_RUST) && !defined(HOST_SRESET_TEST)
 
@@ -439,6 +443,75 @@ void rtw_rust_sreset_set_dynamic_chk_timer(_adapter *padapter, u32 ms)
 u8 rtw_rust_sreset_is_primary_adapter(_adapter *padapter)
 {
 	return is_primary_adapter(padapter) ? 1 : 0;
+}
+
+void rtw_rust_sreset_set_ps_mode_active(_adapter *padapter)
+{
+#ifdef CONFIG_LPS
+	rtw_set_ps_mode(padapter, PS_MODE_ACTIVE, 0, 0, "SRESET");
+#else
+	(void)padapter;
+#endif
+}
+void rtw_rust_sreset_enter_pwrlock(_adapter *padapter)
+{
+	_enter_pwrlock(&adapter_to_pwrctl(padapter)->lock);
+}
+void rtw_rust_sreset_exit_pwrlock(_adapter *padapter)
+{
+	_exit_pwrlock(&adapter_to_pwrctl(padapter)->lock);
+}
+void rtw_rust_sreset_mi_adapter_hdl(_adapter *padapter, u8 bstart)
+{
+	rtw_mi_sreset_adapter_hdl(padapter, bstart);
+}
+void rtw_rust_sreset_ips_enter(_adapter *padapter)
+{
+#ifdef CONFIG_IPS
+	_ips_enter(padapter);
+#else
+	(void)padapter;
+#endif
+}
+void rtw_rust_sreset_ips_leave(_adapter *padapter)
+{
+#ifdef CONFIG_IPS
+	_ips_leave(padapter);
+#else
+	(void)padapter;
+#endif
+}
+void rtw_rust_sreset_ap_info_restore(_adapter *padapter)
+{
+#if defined(CONFIG_AP_MODE) && defined(CONFIG_CONCURRENT_MODE)
+	rtw_mi_ap_info_restore(padapter);
+#else
+	(void)padapter;
+#endif
+}
+u8 rtw_rust_sreset_error_reset_enabled(void)
+{
+#ifdef DBG_CONFIG_ERROR_RESET
+	return 1;
+#else
+	return 0;
+#endif
+}
+rt_rf_power_state *rtw_rust_sreset_change_rfpwrstate_ptr(_adapter *padapter)
+{
+	return &adapter_to_pwrctl(padapter)->change_rfpwrstate;
+}
+u32 *rtw_rust_sreset_dbg_sreset_cnt_ptr(_adapter *padapter)
+{
+	return &adapter_to_dvobj(padapter)->drv_dbg.dbg_sreset_cnt;
+}
+u8 *rtw_rust_sreset_self_dect_fw_ptr(_adapter *padapter)
+{
+	return &GET_HAL_DATA(padapter)->srestpriv.self_dect_fw;
+}
+u8 *rtw_rust_sreset_rx_cnt_ptr(_adapter *padapter)
+{
+	return &GET_HAL_DATA(padapter)->srestpriv.rx_cnt;
 }
 
 u32 rtw_rust_sreset_auth_algo(_adapter *padapter)

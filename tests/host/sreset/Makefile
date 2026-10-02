@@ -19,10 +19,10 @@ CFLAGS := -Wall -Wextra -Werror -O2 -I$(HOST_INC) -I$(ROOT)/include \
           -DCONFIG_CONCURRENT_MODE
 
 .PHONY: all test test-c test-rust test-c-adapter test-rust-adapter \
-	test-c-restore-security test-rust-restore-security test-c-reset clean
+	test-c-restore-security test-rust-restore-security test-c-reset test-rust-reset clean
 all: test
 test: test-c test-rust test-c-adapter test-rust-adapter \
-	test-c-restore-security test-rust-restore-security test-c-reset
+	test-c-restore-security test-rust-restore-security test-c-reset test-rust-reset
 
 test-c: test_sreset_lifecycle
 	./test_sreset_lifecycle sreset_lifecycle_vectors.json
@@ -39,8 +39,18 @@ test-rust-adapter: test_sreset_adapter_rust
 test-c-reset: test_sreset_reset
 	./test_sreset_reset
 
+test-rust-reset: test_sreset_reset_rust
+	./test_sreset_reset_rust
+
 test_sreset_reset: test_sreset_reset.c $(RESET_ORACLE) $(RESET_STUBS)
 	$(CC) $(CFLAGS) -o $@ test_sreset_reset.c $(RESET_ORACLE) $(RESET_STUBS)
+
+librust_sreset_reset.a: $(RUST_SRESET)
+	$(RUSTC) -C opt-level=2 -C overflow-checks=on $(RUST_RESET_CFG) \
+		--crate-type staticlib $(RUST_SRESET) -o $@
+
+test_sreset_reset_rust: test_sreset_reset.c librust_sreset_reset.a $(RESET_STUBS) $(ADAPTER_STUBS)
+	$(CC) $(CFLAGS) -o $@ test_sreset_reset.c $(RESET_STUBS) $(ADAPTER_STUBS) librust_sreset_reset.a
 
 test_sreset_adapter: test_sreset_adapter.c $(ADAPTER_ORACLE)
 	$(CC) $(CFLAGS) -o $@ test_sreset_adapter.c $(ADAPTER_ORACLE)

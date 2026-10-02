@@ -2,5 +2,8 @@ test_sreset_lifecycle
 test_sreset_lifecycle_rust
 test_sreset_adapter
 test_sreset_adapter_rust
+test_sreset_reset
+test_sreset_reset_rust
 librust_sreset.a
 librust_sreset_adapter.a
+librust_sreset_reset.a

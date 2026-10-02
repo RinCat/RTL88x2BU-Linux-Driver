@@ -464,6 +464,169 @@ pub extern "C" fn sreset_start_adapter(padapter: Padapter) {
     kernel::start_adapter(padapter);
 }
 
+const RF_OFF: i32 = 2;
+#[cfg(all(host_sreset_test, host_sreset_reset_test))]
+mod host_reset {
+    use super::*;
+
+    #[repr(C)]
+    pub struct SresetPrivReset {
+        pub silent_reset_inprogress: u8,
+        pub wifi_error_status: u8,
+        pub self_dect_fw: u8,
+        pub rx_cnt: u8,
+    }
+
+    #[repr(C)]
+    pub struct HalDataReset {
+        pub srestpriv: SresetPrivReset,
+    }
+
+    #[repr(C)]
+    pub struct PwrctrlPrivReset {
+        pub lock: i32,
+        pub change_rfpwrstate: i32,
+    }
+
+    #[repr(C)]
+    pub struct DebugPrivReset {
+        pub dbg_sreset_cnt: u32,
+    }
+
+    #[repr(C)]
+    pub struct DvobjPrivReset {
+        pub drv_dbg: DebugPrivReset,
+    }
+
+    #[repr(C)]
+    pub struct HostResetAdapter {
+        pub dvobj: *mut DvobjPrivReset,
+        pub hal_data: *mut HalDataReset,
+        pub pwrctl_priv: PwrctrlPrivReset,
+    }
+
+    pub type HostResetPadapter = *mut HostResetAdapter;
+
+    extern "C" {
+        fn host_sreset_reset_set_ps_mode(padapter: HostResetPadapter);
+        fn host_sreset_reset_enter_pwrlock(padapter: HostResetPadapter);
+        fn host_sreset_reset_exit_pwrlock(padapter: HostResetPadapter);
+        fn host_sreset_reset_mi_adapter_hdl(padapter: HostResetPadapter, bstart: u8);
+        fn host_sreset_reset_ips_enter(padapter: HostResetPadapter);
+        fn host_sreset_reset_ips_leave(padapter: HostResetPadapter);
+        fn host_sreset_reset_ap_info_restore(padapter: HostResetPadapter);
+    }
+
+    pub fn reset(padapter: HostResetPadapter) {
+        if padapter.is_null() {
+            return;
+        }
+        unsafe {
+            let a = &mut *padapter;
+            if a.hal_data.is_null() || a.dvobj.is_null() {
+                return;
+            }
+            let psrtpriv = &mut (*a.hal_data).srestpriv;
+            let pwrpriv = &mut a.pwrctl_priv;
+            let pdbgpriv = &mut (*a.dvobj).drv_dbg;
+
+            psrtpriv.wifi_error_status = WIFI_STATUS_SUCCESS;
+            host_sreset_reset_set_ps_mode(padapter);
+            host_sreset_reset_enter_pwrlock(padapter);
+            psrtpriv.silent_reset_inprogress = _TRUE;
+            pwrpriv.change_rfpwrstate = RF_OFF;
+            host_sreset_reset_mi_adapter_hdl(padapter, 0);
+            host_sreset_reset_ips_enter(padapter);
+            host_sreset_reset_ips_leave(padapter);
+            host_sreset_reset_ap_info_restore(padapter);
+            host_sreset_reset_mi_adapter_hdl(padapter, 1);
+            psrtpriv.silent_reset_inprogress = _FALSE;
+            host_sreset_reset_exit_pwrlock(padapter);
+            pdbgpriv.dbg_sreset_cnt += 1;
+            psrtpriv.self_dect_fw = 0;
+            psrtpriv.rx_cnt = 0;
+        }
+    }
+}
+
+#[cfg(not(host_sreset_test))]
+mod kernel_reset {
+    use super::kernel;
+    use super::*;
+
+    extern "C" {
+        fn rtw_rust_sreset_error_reset_enabled() -> u8;
+        fn rtw_rust_sreset_set_ps_mode_active(padapter: Padapter);
+        fn rtw_rust_sreset_enter_pwrlock(padapter: Padapter);
+        fn rtw_rust_sreset_exit_pwrlock(padapter: Padapter);
+        fn rtw_rust_sreset_mi_adapter_hdl(padapter: Padapter, bstart: u8);
+        fn rtw_rust_sreset_ips_enter(padapter: Padapter);
+        fn rtw_rust_sreset_ips_leave(padapter: Padapter);
+        fn rtw_rust_sreset_ap_info_restore(padapter: Padapter);
+        fn rtw_rust_sreset_change_rfpwrstate_ptr(padapter: Padapter) -> *mut i32;
+        fn rtw_rust_sreset_dbg_sreset_cnt_ptr(padapter: Padapter) -> *mut u32;
+        fn rtw_rust_sreset_self_dect_fw_ptr(padapter: Padapter) -> *mut u8;
+        fn rtw_rust_sreset_rx_cnt_ptr(padapter: Padapter) -> *mut u8;
+    }
+
+    pub fn reset(padapter: Padapter) {
+        if padapter.is_null() {
+            return;
+        }
+        unsafe {
+            if rtw_rust_sreset_error_reset_enabled() == 0 {
+                return;
+            }
+            let err = kernel::wifi_error_status(padapter);
+            if !err.is_null() {
+                *err = WIFI_STATUS_SUCCESS;
+            }
+            rtw_rust_sreset_set_ps_mode_active(padapter);
+            rtw_rust_sreset_enter_pwrlock(padapter);
+            let inprog = kernel::silent_inprogress(padapter);
+            if !inprog.is_null() {
+                *inprog = _TRUE;
+            }
+            let rf = rtw_rust_sreset_change_rfpwrstate_ptr(padapter);
+            if !rf.is_null() {
+                *rf = RF_OFF;
+            }
+            rtw_rust_sreset_mi_adapter_hdl(padapter, 0);
+            rtw_rust_sreset_ips_enter(padapter);
+            rtw_rust_sreset_ips_leave(padapter);
+            rtw_rust_sreset_ap_info_restore(padapter);
+            rtw_rust_sreset_mi_adapter_hdl(padapter, 1);
+            if !inprog.is_null() {
+                *inprog = _FALSE;
+            }
+            rtw_rust_sreset_exit_pwrlock(padapter);
+            let cnt = rtw_rust_sreset_dbg_sreset_cnt_ptr(padapter);
+            if !cnt.is_null() {
+                *cnt += 1;
+            }
+            let fw = rtw_rust_sreset_self_dect_fw_ptr(padapter);
+            if !fw.is_null() {
+                *fw = 0;
+            }
+            let rx = rtw_rust_sreset_rx_cnt_ptr(padapter);
+            if !rx.is_null() {
+                *rx = 0;
+            }
+        }
+    }
+}
+
+#[cfg(all(host_sreset_test, host_sreset_reset_test))]
+#[no_mangle]
+pub extern "C" fn sreset_reset(padapter: host_reset::HostResetPadapter) {
+    host_reset::reset(padapter);
+}
+#[cfg(not(host_sreset_test))]
+#[no_mangle]
+pub extern "C" fn sreset_reset(padapter: Padapter) {
+    kernel_reset::reset(padapter);
+}
+
 #[cfg(host_sreset_security_test)]
 mod security_host {
     const DOT11_AUTH_8021X: u32 = 2;

@@ -1,0 +1,43 @@
+{
+  "vectors": [
+    {
+      "name": "ap_prohibited_short",
+      "op": "ap_prohibited",
+      "frame_hex": "0000000000",
+      "pkt_len": 4,
+      "expect_int": 0
+    },
+    {
+      "name": "ap_prohibited_set",
+      "op": "ap_prohibited",
+      "frame_hex": "0000000040",
+      "pkt_len": 5,
+      "expect_int": 1
+    },
+    {
+      "name": "ap_chsw_prohibited_set",
+      "op": "ap_chsw_prohibited",
+      "frame_hex": "0000000080",
+      "pkt_len": 5,
+      "expect_int": 1
+    },
+    {
+      "name": "ch_state_idle",
+      "op": "check_ch_state",
+      "tdls_state": 0,
+      "expect_int": 0
+    },
+    {
+      "name": "ch_state_switch",
+      "op": "check_ch_state",
+      "tdls_state": 196608,
+      "expect_int": 1
+    },
+    {
+      "name": "ch_state_uapsd_switch",
+      "op": "check_ch_state",
+      "tdls_state": 2293760,
+      "expect_int": 2
+    }
+  ]
+}

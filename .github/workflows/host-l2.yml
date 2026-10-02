@@ -220,6 +220,10 @@ jobs:
         if: steps.filter.outputs.l2 == 'true'
         run: make -C tests/host/sreset test
 
+      - name: Host tdls lifecycle parity (L2)
+        if: steps.filter.outputs.l2 == 'true'
+        run: make -C tests/host/tdls test-c
+
       - name: Host roch handlers parity (L2)
         if: steps.filter.outputs.l2 == 'true'
         run: make -C tests/host/roch test

@@ -1,0 +1,56 @@
+{
+  "vectors": [
+    {
+      "name": "24g_bg_add_erp",
+      "ch": 6,
+      "wireless_mode": 3,
+      "ht_option": 0,
+      "vht_enable": 0,
+      "ori_vht_en": 0,
+      "country_en_11ac": 1,
+      "ies_in": "0000000000000000640031000000030106010882848b960c121824",
+      "expect_ies": "0000000000000000640031000000030106010882848b960c1218242a01043204b048606c",
+      "expect_rates": "82848b968c129824b048606c",
+      "expect_length": 180
+    },
+    {
+      "name": "5g_11a_strip_erp",
+      "ch": 36,
+      "wireless_mode": 68,
+      "ht_option": 1,
+      "vht_enable": 0,
+      "ori_vht_en": 0,
+      "country_en_11ac": 1,
+      "ies_in": "0000000000000000640031000000030106010882848b960c121824",
+      "expect_ies": "0000000000000000640031000000030106010882848b960c121824",
+      "expect_rates": "8c129824b048606c",
+      "expect_length": 171
+    },
+    {
+      "name": "5g_vht_attach",
+      "ch": 36,
+      "wireless_mode": 68,
+      "ht_option": 1,
+      "vht_enable": 1,
+      "ori_vht_en": 1,
+      "country_en_11ac": 1,
+      "ies_in": "0000000000000000640031000000030106010882848b960c121824",
+      "expect_ies": "0000000000000000640031000000030106010882848b960c1218247f080100000000000000bf04aabbccddc003010203",
+      "expect_rates": "8c129824b048606c",
+      "expect_length": 192
+    },
+    {
+      "name": "24g_vht_detach",
+      "ch": 6,
+      "wireless_mode": 3,
+      "ht_option": 1,
+      "vht_enable": 1,
+      "ori_vht_en": 0,
+      "country_en_11ac": 1,
+      "ies_in": "0000000000000000640031000000030106010882848b960c1218247f080100000000000000bf04aabbccddc003010203",
+      "expect_ies": "0000000000000000640031000000030106010882848b960c1218242a01043204b048606c",
+      "expect_rates": "82848b968c129824b048606c",
+      "expect_length": 180
+    }
+  ]
+}

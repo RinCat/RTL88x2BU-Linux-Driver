@@ -189,7 +189,7 @@ test_pick_ch_rust: test_pick_ch.c librust_mlme_ext_pick_ch.a $(MLME_EXT_REST_SRC
 		$(MLME_EXT_REST_SRC) $(SCAN_SHIM) librust_mlme_ext_pick_ch.a
 
 test-band-ie: test_band_ie
-	./test_band_ie
+	./test_band_ie band_ie_vectors.json
 
 librust_mlme_ext_band_ie.a: $(RUST_MLME_EXT_BAND_IE)
 	$(RUSTC) -C opt-level=2 -C overflow-checks=on \
@@ -197,18 +197,18 @@ librust_mlme_ext_band_ie.a: $(RUST_MLME_EXT_BAND_IE)
 		--crate-type staticlib $(RUST_MLME_EXT_BAND_IE) -o $@
 
 test-band-ie-rust: test_band_ie_rust
-	./test_band_ie_rust
+	./test_band_ie_rust band_ie_vectors.json
 
 test_band_ie_rust: test_band_ie.c librust_mlme_ext_band_ie.a $(BAND_IE_SHIM) \
-		$(BAND_IE_RATE_ORACLE) $(WLAN_UTIL_ORACLE)
+		$(BAND_IE_RATE_ORACLE) $(WLAN_UTIL_ORACLE) $(HOST_JSON)
 	$(CC) $(BAND_IE_CFLAGS) -DRUST_MLME_EXT_BAND_IE_ORACLE -o $@ test_band_ie.c \
 		$(BAND_IE_SHIM) $(BAND_IE_RATE_ORACLE) $(WLAN_UTIL_ORACLE) \
-		librust_mlme_ext_band_ie.a
+		$(HOST_JSON) librust_mlme_ext_band_ie.a
 
 test_band_ie: test_band_ie.c $(MLME_EXT_REST_SRC) $(BAND_IE_SHIM) $(BAND_IE_RATE_ORACLE) \
-		$(WLAN_UTIL_ORACLE)
+		$(WLAN_UTIL_ORACLE) $(HOST_JSON)
 	$(CC) $(BAND_IE_CFLAGS) -o $@ test_band_ie.c $(MLME_EXT_REST_SRC) $(BAND_IE_SHIM) \
-		$(BAND_IE_RATE_ORACLE) $(WLAN_UTIL_ORACLE)
+		$(BAND_IE_RATE_ORACLE) $(WLAN_UTIL_ORACLE) $(HOST_JSON)
 
 test-join-cmd: test_join_cmd
 	./test_join_cmd mlme_ext_join_cmd_vectors.json

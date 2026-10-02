@@ -97,8 +97,7 @@ void rtw_remove_bcn_ie(_adapter *padapter, WLAN_BSSID_EX *pnetwork, u8 index)
 	pnetwork->IELength = (uint)(p - pie) + tail_len;
 }
 
-/* Placeholder: kernel rtw_vht_ies_attach() (core/rtw_vht.c) appends via rtw_set_ie
- * at pnetwork->IELength; VHT vectors deferred until W3-72 follow-up. */
+/* Host stub for kernel rtw_vht_ies_attach() (core/rtw_vht.c); deterministic IE bytes. */
 void rtw_vht_ies_attach(_adapter *a, WLAN_BSSID_EX *n)
 {
 	static const u8 ext[8] = {1}, cap[4] = {0xaa, 0xbb, 0xcc, 0xdd}, op[3] = {1, 2, 3};

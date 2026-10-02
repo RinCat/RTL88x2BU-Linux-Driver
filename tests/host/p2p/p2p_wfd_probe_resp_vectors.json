@@ -1,0 +1,8 @@
+{
+  "vectors": [
+    {"name": "probe_resp_miracast_off", "fn": "probe_resp", "miracast": 0, "role": 3, "session_avail": 1, "wfd_tdls": 0, "asoc": 0, "clients": 0, "wfd_type": 1, "rtsp_port": 554, "expect_len": 0, "expect_ie": ""},
+    {"name": "probe_resp_go_idle_sess", "fn": "probe_resp", "miracast": 1, "role": 3, "session_avail": 1, "wfd_tdls": 0, "asoc": 0, "clients": 0, "wfd_type": 1, "rtsp_port": 554, "expect_len": 37, "expect_ie": "dd23506f9a0a0000060151022a012c01000600000000000006000700000000000000090000"},
+    {"name": "probe_resp_go_busy_hdcp", "fn": "probe_resp", "miracast": 1, "role": 3, "session_avail": 1, "wfd_tdls": 0, "asoc": 0, "clients": 1, "wfd_type": 1, "rtsp_port": 7236, "expect_len": 37, "expect_ie": "dd23506f9a0a00000601411c44012c01000600000000000006000700000000000000090000"},
+    {"name": "probe_resp_device_tdls", "fn": "probe_resp", "miracast": 1, "role": 1, "session_avail": 1, "wfd_tdls": 1, "asoc": 1, "clients": 0, "wfd_type": 1, "rtsp_port": 8080, "assoc_bssid": "11:22:33:44:55:66", "expect_len": 34, "expect_ie": "dd20506f9a0a00000601d11f90012c01000611223344556606000700000000000000"}
+  ]
+}

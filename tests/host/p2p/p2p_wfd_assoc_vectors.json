@@ -1,0 +1,9 @@
+{
+  "vectors": [
+    {"name": "assoc_req_p2p_none", "fn": "assoc_req", "miracast": 1, "role": 1, "p2p_state": 0, "wfd_tdls": 0, "asoc": 0, "clients": 0, "wfd_type": 1, "rtsp_port": 554, "expect_len": 0, "expect_ie": ""},
+    {"name": "assoc_req_p2p_idle", "fn": "assoc_req", "miracast": 1, "role": 1, "p2p_state": 1, "wfd_tdls": 0, "asoc": 0, "clients": 0, "wfd_type": 1, "rtsp_port": 554, "expect_len": 0, "expect_ie": ""},
+    {"name": "assoc_req_listen", "fn": "assoc_req", "miracast": 1, "role": 1, "p2p_state": 2, "wfd_tdls": 0, "asoc": 1, "clients": 0, "wfd_type": 1, "rtsp_port": 554, "assoc_bssid": "aa:bb:cc:dd:ee:01", "expect_len": 34, "expect_ie": "dd20506f9a0a0000060051022a012c010006aabbccddee0106000700000000000000"},
+    {"name": "assoc_resp_basic", "fn": "assoc_resp", "miracast": 1, "role": 3, "wfd_tdls": 0, "asoc": 0, "clients": 0, "wfd_type": 1, "rtsp_port": 7236, "expect_len": 34, "expect_ie": "dd20506f9a0a00000600511c44012c01000600000000000006000700000000000000"},
+    {"name": "assoc_resp_miracast_off", "fn": "assoc_resp", "miracast": 0, "role": 3, "wfd_tdls": 0, "asoc": 0, "clients": 0, "wfd_type": 1, "rtsp_port": 554, "expect_len": 0, "expect_ie": ""}
+  ]
+}

@@ -2639,6 +2639,7 @@ ccflags-y += -DCONFIG_RUST_MLME_EXT_MGNT_ATTRIB
 ccflags-y += -DCONFIG_RUST_MLME_EXT_PEER_ALIVE
 ccflags-y += -DCONFIG_RUST_MLME_EXT_SCAN
 ccflags-y += -DCONFIG_RUST_MLME_EXT_PICK_CH
+ccflags-y += -DCONFIG_RUST_MLME_EXT_SITESURVEY_CMD
 ccflags-y += -DCONFIG_RUST_MLME_EXT_BAND_IE
 ccflags-y += -DCONFIG_RUST_MLME_HT_RESTRUCTURE
 ccflags-y += -DCONFIG_80211D
@@ -2686,6 +2687,7 @@ rustflags-y += --cfg rust_mlme_ext_mgnt_attrib
 rustflags-y += --cfg rust_mlme_ext_peer_alive
 rustflags-y += --cfg rust_mlme_ext_scan --cfg config_scan_sparse_miracast
 rustflags-y += --cfg rust_mlme_ext_pick_ch
+rustflags-y += --cfg rust_mlme_ext_sitesurvey_cmd
 rustflags-y += --cfg rust_mlme_ext_band_ie
 ifneq ($(shell grep -Eq '^\s*#\s*define\s+CONFIG_RTW_MESH' $(src)/include/autoconf.h 2>/dev/null && echo y),)
 rustflags-y += --cfg config_rtw_mesh
@@ -2868,6 +2870,7 @@ $(MODULE_NAME)-y += rust/rtw_mlme_ext_mgnt_attrib.o
 $(MODULE_NAME)-y += rust/rtw_mlme_ext_peer_alive.o
 $(MODULE_NAME)-y += rust/rtw_mlme_ext_scan.o
 $(MODULE_NAME)-y += rust/rtw_mlme_ext_pick_ch.o
+$(MODULE_NAME)-y += rust/rtw_mlme_ext_sitesurvey_cmd.o
 $(MODULE_NAME)-y += rust/rtw_mlme_ext_band_ie.o
 $(MODULE_NAME)-y += rust/rtw_cmd_rest.o
 endif
@@ -3666,6 +3669,31 @@ rust-objects-rtw-mlme-ext-pick-ch-c:
 rust-check-symbols-rtw-mlme-ext-pick-ch: rust-objects-rtw-mlme-ext-pick-ch-c rust-objects-rtw-mlme-ext-pick-ch
 	$(MAKE) rust-check-symbols OLD=tests/host/mlme_ext/pick_ch_c_ref.o NEW=rust/rtw_mlme_ext_pick_ch.o \
 		ALLOWLIST=docs/rust-migration/scripts/rtw_mlme_ext_pick_ch.allow
+
+# W3-90 follow-up (#839): sitesurvey_cmd_hdl L1 (host C oracle vs kbuild Rust object).
+rust-objects-rtw-mlme-ext-sitesurvey-cmd:
+	@test -n "$(KDIR)" || { echo "Usage: make KDIR=… LLVM=1 rust-objects-rtw-mlme-ext-sitesurvey-cmd"; exit 1; }
+	$(MAKE) $(KBUILD_OPTS) -C $(KSRC) M=$(shell pwd) rust/rtw_mlme_ext_sitesurvey_cmd.o
+rust-objects-rtw-mlme-ext-sitesurvey-cmd-c:
+	gcc -c -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unused-const-variable -O2 \
+		-I$(shell pwd)/tests/host/include -I$(shell pwd)/core -I$(shell pwd)/include \
+		-include $(shell pwd)/tests/host/include/host_autoconf.h \
+		-DHOST_MLME_EXT_SITESURVEY_CMD_TEST -DCONFIG_SCAN_BACKOP \
+		-o tests/host/mlme_ext/sitesurvey_cmd_c_ref_shim.o \
+		tests/host/mlme_ext/host_mlme_ext_sitesurvey_cmd_shim.c
+	gcc -c -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unused-const-variable -O2 \
+		-I$(shell pwd)/tests/host/include -I$(shell pwd)/core -I$(shell pwd)/include \
+		-include $(shell pwd)/tests/host/include/host_autoconf.h \
+		-DHOST_MLME_EXT_SITESURVEY_CMD_TEST -DCONFIG_SCAN_BACKOP \
+		-o tests/host/mlme_ext/sitesurvey_cmd_c_ref_oracle.o \
+		tests/host/mlme_ext/sitesurvey_cmd_host_oracle.c
+	ld -r -o tests/host/mlme_ext/sitesurvey_cmd_c_ref.o \
+		tests/host/mlme_ext/sitesurvey_cmd_c_ref_oracle.o \
+		tests/host/mlme_ext/sitesurvey_cmd_c_ref_shim.o
+
+rust-check-symbols-rtw-mlme-ext-sitesurvey-cmd: rust-objects-rtw-mlme-ext-sitesurvey-cmd-c rust-objects-rtw-mlme-ext-sitesurvey-cmd
+	$(MAKE) rust-check-symbols OLD=tests/host/mlme_ext/sitesurvey_cmd_c_ref_oracle.o NEW=rust/rtw_mlme_ext_sitesurvey_cmd.o \
+		ALLOWLIST=docs/rust-migration/scripts/rtw_mlme_ext_sitesurvey_cmd.allow
 
 # W3-72 PR5: band_ie L1 (host C oracle vs kbuild Rust object).
 rust-objects-rtw-mlme-ext-band-ie:

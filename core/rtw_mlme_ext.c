@@ -13302,7 +13302,11 @@ static int rtw_scan_ch_decision(_adapter *padapter, struct rtw_ieee80211_channel
 	return j;
 }
 
+#if defined(CONFIG_RUST) && defined(CONFIG_RUST_MLME_EXT_SITESURVEY_CMD)
+void sitesurvey_res_reset(_adapter *adapter, struct sitesurvey_parm *parm)
+#else
 static void sitesurvey_res_reset(_adapter *adapter, struct sitesurvey_parm *parm)
+#endif
 {
 	struct ss_res *ss = &adapter->mlmeextpriv.sitesurvey_res;
 	RT_CHANNEL_INFO *chset = adapter_to_chset(adapter);
@@ -13748,6 +13752,7 @@ void generate_quickss(_adapter *padapter)
 }
 #endif
 
+#if (!defined(CONFIG_RUST) || !defined(CONFIG_RUST_MLME_EXT_SITESURVEY_CMD))
 u8 sitesurvey_cmd_hdl(_adapter *padapter, u8 *pbuf)
 {
 	struct sitesurvey_parm	*pparm = (struct sitesurvey_parm *)pbuf;
@@ -14165,6 +14170,7 @@ operation_by_state:
 
 	return H2C_SUCCESS;
 }
+#endif /* !CONFIG_RUST || !CONFIG_RUST_MLME_EXT_SITESURVEY_CMD */
 
 u8 setauth_hdl(_adapter *padapter, unsigned char *pbuf)
 {

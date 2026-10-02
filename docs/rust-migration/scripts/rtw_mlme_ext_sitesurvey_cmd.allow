@@ -1,0 +1,21 @@
+# L1 allowlist for W3-90 follow-up (#839): Rust FFI helpers in core/rtw_mlme_ext_rest.c.
+drop rtw_rust_ss_state
+drop rtw_rust_ss_set_state
+drop rtw_rust_ss_next_state
+drop rtw_rust_ss_set_next_state
+drop rtw_rust_ss_bump_channel_idx
+drop rtw_rust_ss_rx_ampdu_accept
+drop rtw_rust_ss_rx_ampdu_size
+drop rtw_rust_ss_scan_ch_ms
+drop rtw_rust_ss_backop_flags
+drop rtw_rust_ss_backop_ms
+drop rtw_rust_ss_backop_time
+drop rtw_rust_ss_set_backop_time
+drop rtw_rust_ss_scan_abort
+drop rtw_rust_ss_cur_channel
+drop rtw_rust_ss_cur_bwmode
+drop rtw_rust_ss_cur_ch_offset
+drop rtw_rust_ss_set_survey_timer
+drop rtw_rust_sitesurvey_phydm_backup
+drop rtw_rust_sitesurvey_phydm_restore
+drop rtw_rust_sitesurvey_phydm_offchannel

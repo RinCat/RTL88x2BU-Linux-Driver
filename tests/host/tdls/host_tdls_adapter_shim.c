@@ -72,3 +72,40 @@ void rtw_set_tdls_enable(PADAPTER padapter, u8 enable)
 	padapter->registrypriv.en_tdls = enable;
 	RTW_INFO("en_tdls = %d\n", rtw_is_tdls_enabled(padapter));
 }
+
+int is_client_associated_to_ap(PADAPTER padapter)
+{
+	struct mlme_ext_info *pmlmeinfo;
+
+	if (!padapter)
+		return _FAIL;
+	pmlmeinfo = &padapter->mlmeextpriv.mlmext_info;
+	if ((pmlmeinfo->state & WIFI_FW_ASSOC_SUCCESS) &&
+	    ((pmlmeinfo->state & 0x03) == WIFI_FW_STATION_STATE))
+		return _TRUE;
+	return _FAIL;
+}
+
+u8 rtw_tdls_is_setup_allowed(PADAPTER padapter)
+{
+	struct tdls_info *ptdlsinfo = &padapter->tdlsinfo;
+
+	if (is_client_associated_to_ap(padapter) == _FALSE)
+		return _FALSE;
+	if (ptdlsinfo->ap_prohibited == _TRUE)
+		return _FALSE;
+	return _TRUE;
+}
+
+#ifdef CONFIG_TDLS_CH_SW
+u8 rtw_tdls_is_chsw_allowed(PADAPTER padapter)
+{
+	struct tdls_info *ptdlsinfo = &padapter->tdlsinfo;
+
+	if (ptdlsinfo->ch_switch_prohibited == _TRUE)
+		return _FALSE;
+	if (padapter->registrypriv.wifi_spec == 0)
+		return _FALSE;
+	return _TRUE;
+}
+#endif

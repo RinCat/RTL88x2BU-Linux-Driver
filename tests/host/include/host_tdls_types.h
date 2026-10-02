@@ -7,8 +7,11 @@
 #define _TRUE 1
 #define _FALSE 0
 #define _SUCCESS 0
+#define _FAIL 0
 
 #define BIT(x) (1U << (x))
+#define WIFI_FW_STATION_STATE 0x02
+#define WIFI_FW_ASSOC_SUCCESS 0x00004000
 #define TDLS_STATE_NONE 0x00000000U
 #define TDLS_CH_SWITCH_ON_STATE BIT(16)
 #define TDLS_PEER_AT_OFF_STATE BIT(17)
@@ -25,6 +28,14 @@ struct registry_priv {
 
 struct mlme_priv {
 	u8 _pad;
+};
+
+struct mlme_ext_info {
+	u32 state;
+};
+
+struct mlme_ext_priv {
+	struct mlme_ext_info mlmext_info;
 };
 
 struct tdls_ch_switch {
@@ -58,6 +69,7 @@ struct tdls_info {
 struct _adapter {
 	struct registry_priv registrypriv;
 	struct mlme_priv mlmepriv;
+	struct mlme_ext_priv mlmeextpriv;
 	struct tdls_info tdlsinfo;
 };
 
@@ -84,5 +96,8 @@ int rtw_init_tdls_info(PADAPTER padapter);
 void rtw_free_tdls_info(struct tdls_info *ptdlsinfo);
 u8 rtw_is_tdls_enabled(PADAPTER padapter);
 void rtw_set_tdls_enable(PADAPTER padapter, u8 enable);
+int is_client_associated_to_ap(PADAPTER padapter);
+u8 rtw_tdls_is_setup_allowed(PADAPTER padapter);
+u8 rtw_tdls_is_chsw_allowed(PADAPTER padapter);
 
 #endif /* HOST_TDLS_TYPES_H */

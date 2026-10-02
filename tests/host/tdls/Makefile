@@ -17,4 +17,4 @@ test_tdls_lifecycle: test_tdls_lifecycle.c $(SHIM) $(HOST_JSON)
 	$(CC) $(CFLAGS) -o $@ test_tdls_lifecycle.c $(SHIM) $(HOST_JSON)
 
 clean:
-	rm -f test_tdls_lifecycle
+	rm -f test_tdls_lifecycle test_tdls_lifecycle_rust librust_tdls.a

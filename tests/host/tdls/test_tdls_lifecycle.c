@@ -14,7 +14,10 @@ struct vector {
 	char frame_hex[64];
 	int pkt_len;
 	u32 tdls_state;
+	u32 mlme_state;
 	int wifi_spec;
+	int ap_prohibited;
+	int ch_switch_prohibited;
 	int en_tdls;
 	int set_enable;
 	int expect_int;
@@ -37,7 +40,11 @@ static int parse_vec(const char *obj, size_t len, void *vv)
 				  sizeof(v->frame_hex));
 	host_json_parse_int_in(obj, len, "pkt_len", &v->pkt_len);
 	host_json_parse_int_in(obj, len, "tdls_state", (int *)&v->tdls_state);
+	host_json_parse_int_in(obj, len, "mlme_state", (int *)&v->mlme_state);
 	host_json_parse_int_in(obj, len, "wifi_spec", &v->wifi_spec);
+	host_json_parse_int_in(obj, len, "ap_prohibited", &v->ap_prohibited);
+	host_json_parse_int_in(obj, len, "ch_switch_prohibited",
+			      &v->ch_switch_prohibited);
 	host_json_parse_int_in(obj, len, "en_tdls", &v->en_tdls);
 	host_json_parse_int_in(obj, len, "set_enable", &v->set_enable);
 	host_json_parse_int_in(obj, len, "expect_int", &v->expect_int);
@@ -53,6 +60,9 @@ static int run_vec(struct vector *v)
 	memset(&g_adapter, 0, sizeof(g_adapter));
 	g_adapter.registrypriv.wifi_spec = (u8)v->wifi_spec;
 	g_adapter.registrypriv.en_tdls = (u8)v->en_tdls;
+	g_adapter.mlmeextpriv.mlmext_info.state = v->mlme_state;
+	g_adapter.tdlsinfo.ap_prohibited = (u8)v->ap_prohibited;
+	g_adapter.tdlsinfo.ch_switch_prohibited = (u8)v->ch_switch_prohibited;
 
 	if (v->frame_hex[0] &&
 	    host_hex_decode(v->frame_hex, frame, sizeof(frame), &frame_len))
@@ -86,7 +96,13 @@ static int run_vec(struct vector *v)
 		if (v->set_enable >= 0)
 			rtw_set_tdls_enable(&g_adapter, (u8)v->set_enable);
 		got = rtw_is_tdls_enabled(&g_adapter);
-	} else
+	} else if (!strcmp(v->op, "setup_allowed"))
+		got = rtw_tdls_is_setup_allowed(&g_adapter);
+#ifdef CONFIG_TDLS_CH_SW
+	else if (!strcmp(v->op, "chsw_allowed"))
+		got = rtw_tdls_is_chsw_allowed(&g_adapter);
+#endif
+	else
 		return 1;
 
 	if (got == v->expect_int) {

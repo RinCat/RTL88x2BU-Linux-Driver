@@ -68,6 +68,39 @@
       "en_tdls": 0,
       "set_enable": 1,
       "expect_int": 1
+    },
+    {
+      "name": "setup_not_associated",
+      "op": "setup_allowed",
+      "mlme_state": 0,
+      "expect_int": 0
+    },
+    {
+      "name": "setup_ap_prohibited",
+      "op": "setup_allowed",
+      "mlme_state": 16386,
+      "ap_prohibited": 1,
+      "expect_int": 0
+    },
+    {
+      "name": "setup_allowed",
+      "op": "setup_allowed",
+      "mlme_state": 16386,
+      "expect_int": 1
+    },
+    {
+      "name": "chsw_blocked",
+      "op": "chsw_allowed",
+      "wifi_spec": 1,
+      "ch_switch_prohibited": 1,
+      "expect_int": 0
+    },
+    {
+      "name": "chsw_allowed",
+      "op": "chsw_allowed",
+      "wifi_spec": 1,
+      "ch_switch_prohibited": 0,
+      "expect_int": 1
     }
   ]
 }

@@ -16,6 +16,7 @@
 #define WFD_ATTR_COUPLED_SINK_INFO 0x06
 #define WFD_DEVINFO_SESSION_AVAIL 0x0010
 #define WFD_DEVINFO_WSD 0x0040
+#define WFD_DEVINFO_PC_TDLS 0x0080
 #define RTW_PUT_BE16(a, val) \
 	do { \
 		(a)[0] = (u8)(((u16)(val) >> 8) & 0xff); \

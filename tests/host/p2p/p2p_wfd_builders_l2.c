@@ -6,7 +6,7 @@
 
 typedef struct {
 	char name[48], fn[16], assoc_bssid[24], expect_hex[512];
-	int miracast, role, asoc, clients, wfd_type, rtsp_port;
+	int miracast, role, wfd_tdls, asoc, clients, wfd_type, rtsp_port;
 	u32 expect_len;
 } vector_t;
 
@@ -37,6 +37,7 @@ static int init_adapter(vector_t *v, struct _adapter *a)
 	a->wdinfo.padapter = a;
 	a->wdinfo.wfd_info = &a->wfd_info;
 	a->wdinfo.role = (u8)v->role;
+	a->wdinfo.wfd_tdls_enable = (u8)v->wfd_tdls;
 	if (v->asoc) {
 		a->mlmepriv.fwstate = WIFI_ASOC_STATE;
 		if (*v->assoc_bssid && parse_mac(v->assoc_bssid, a->mlmepriv.assoc_bssid))
@@ -72,6 +73,7 @@ static int parse_vec(const char *o, size_t l, void *vv)
 #define I(k, f) host_json_parse_int_in(o, l, k, &v->f)
 	I("miracast", miracast);
 	I("role", role);
+	I("wfd_tdls", wfd_tdls);
 	I("asoc", asoc);
 	I("clients", clients);
 	I("wfd_type", wfd_type);

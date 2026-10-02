@@ -6,8 +6,9 @@ RUSTC := rustc
 CC := gcc
 CFLAGS := -Wall -Wextra -Werror -O2 -I$(HOST_INC)
 
-.PHONY: all test test-c test-rust test-ie-build test-ie-build-rust test-wfd-beacon clean
-all test: test-c test-rust test-ie-build test-ie-build-rust test-wfd-beacon
+.PHONY: all test test-c test-rust test-ie-build test-ie-build-rust test-wfd-beacon \
+	test-wfd-probe clean
+all test: test-c test-rust test-ie-build test-ie-build-rust test-wfd-beacon test-wfd-probe
 
 test-c: test_p2p_channel
 	./test_p2p_channel p2p_channel_pure_vectors.json
@@ -47,7 +48,11 @@ test-wfd-beacon: p2p_wfd_builders_l2.c host_p2p_wfd_oracle.c $(HOST_JSON)
 	$(CC) $(CFLAGS) -I. -o test_p2p_wfd_beacon p2p_wfd_builders_l2.c host_p2p_wfd_oracle.c $(HOST_JSON)
 	./test_p2p_wfd_beacon p2p_wfd_beacon_vectors.json
 
+test-wfd-probe: p2p_wfd_builders_l2.c host_p2p_wfd_oracle.c $(HOST_JSON)
+	$(CC) $(CFLAGS) -I. -DHOST_P2P_WFD_PROBE -o test_p2p_wfd_probe p2p_wfd_builders_l2.c host_p2p_wfd_oracle.c $(HOST_JSON)
+	./test_p2p_wfd_probe p2p_wfd_probe_vectors.json
+
 clean:
 	rm -f test_p2p_channel test_p2p_channel_rust test_p2p_ie_builders \
-		test_p2p_ie_builders_rust test_p2p_wfd_beacon \
+		test_p2p_ie_builders_rust test_p2p_wfd_beacon test_p2p_wfd_probe \
 		librust_p2p.a librust_p2p_ie.a

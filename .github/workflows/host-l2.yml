@@ -224,3 +224,7 @@ jobs:
         if: steps.filter.outputs.l2 == 'true'
         run: make -C tests/host/roch test
 
+      - name: Host p2p WFD IE builders parity (L2)
+        if: steps.filter.outputs.l2 == 'true'
+        run: make -C tests/host/p2p test-wfd-beacon test-wfd-probe
+

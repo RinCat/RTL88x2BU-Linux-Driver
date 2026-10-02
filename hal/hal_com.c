@@ -13328,7 +13328,7 @@ void rtw_var_set_basic_rate(PADAPTER padapter, u8 *val) {
 	PHAL_DATA_TYPE	pHalData = GET_HAL_DATA(padapter);
 	struct mlme_ext_info *mlmext_info = &padapter->mlmeextpriv.mlmext_info;
 	u16 input_b = 0, masked = 0, ioted = 0, BrateCfg = 0;
-	u16 rrsr_2g_force_mask = RRSR_CCK_RATES;
+	u16 rrsr_2g_force_mask = (RRSR_CCK_RATES | RRSR_6M | RRSR_12M | RRSR_24M);
 	u16 rrsr_2g_allow_mask = (RRSR_24M | RRSR_12M | RRSR_6M | RRSR_CCK_RATES);
 	#if CONFIG_IEEE80211_BAND_5GHZ
 	u16 rrsr_5g_force_mask = (RRSR_6M);

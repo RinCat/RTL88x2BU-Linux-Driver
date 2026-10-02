@@ -2679,6 +2679,7 @@ ccflags-y += -DCONFIG_RUST_RF_KFREE_TX_GAIN_SET
 ccflags-y += -DCONFIG_RUST_CMD_PRIV
 ccflags-y += -DCONFIG_RUST_CMD_PRIV_EVT
 ccflags-y += -DCONFIG_RUST_CMD_QUEUE
+ccflags-y += -DCONFIG_RUST_RECV_STA
 ifneq ($(shell grep -Eq '^\s*#\s*define\s+CONFIG_EVENT_THREAD_MODE' $(src)/include/autoconf.h 2>/dev/null && echo y),)
 rustflags-y += --cfg event_thread_mode
 endif
@@ -2861,6 +2862,8 @@ $(MODULE_NAME)-y += rust/rtw_rf_op_class_dump.o
 $(MODULE_NAME)-y += rust/rtw_rf_dump_txpwr_lmt.o
 $(MODULE_NAME)-y += rust/rtw_rf_kfree_tx_gain.o
 $(MODULE_NAME)-y += rust/rtw_recv.o
+$(MODULE_NAME)-y += rust/rtw_recv_sta_count.o
+$(MODULE_NAME)-y += rust/rtw_recv_sta_validate.o
 $(MODULE_NAME)-y += rust/rtw_xmit.o
 $(MODULE_NAME)-y += rust/rtw_xmit_update_attrib_kern.o
 $(MODULE_NAME)-y += rust/rtw_iol_rest.o
@@ -3871,7 +3874,7 @@ rust-objects-rtw-recv-sta-count-c:
 		-o tests/host/recv/recv_sta_count_c_ref.o core/rtw_recv_sta_rest.c
 
 rust-objects-rtw-recv-sta-count-rust-ref:
-	rustc --edition 2021 -C opt-level=2 -C overflow-checks=on \
+	rustc --edition 2021 -C opt-level=2 -C overflow-checks=on --cfg host_recv_sta_test \
 		--emit=obj=tests/host/recv/recv_sta_count_rust_ref.o \
 		--crate-type lib rust/rtw_recv_sta_count.rs
 
@@ -3886,11 +3889,26 @@ rust-objects-rtw-recv-sta-validate-c:
 		-DHOST_RECV_STA_TEST -DHOST_RECV_STA_RUST_COUNT \
 		-o tests/host/recv/recv_sta_validate_c_ref.o core/rtw_recv_sta_rest.c
 rust-objects-rtw-recv-sta-validate-rust-ref:
-	rustc --edition 2021 -C opt-level=2 -C overflow-checks=on \
+	rustc --edition 2021 -C opt-level=2 -C overflow-checks=on --cfg host_recv_sta_test \
 		--emit=obj=tests/host/recv/recv_sta_validate_rust_ref.o \
 		--crate-type lib rust/rtw_recv_sta_validate.rs
 rust-check-symbols-rtw-recv-sta-validate: rust-objects-rtw-recv-sta-validate-c rust-objects-rtw-recv-sta-validate-rust-ref
 	$(MAKE) rust-check-symbols OLD=tests/host/recv/recv_sta_validate_c_ref.o NEW=tests/host/recv/recv_sta_validate_rust_ref.o \
+		ALLOWLIST=docs/rust-migration/scripts/rtw_recv_sta_count.allow ALLOW_VACUOUS=1
+
+# W3-85 PR3: kernel object L1 (host C ref vs kbuild Rust).
+rust-objects-rtw-recv-sta-count-kern:
+	@test -n "$(KDIR)" || { echo "Usage: make KDIR=… LLVM=1 rust-objects-rtw-recv-sta-count-kern"; exit 1; }
+	$(MAKE) $(KBUILD_OPTS) -C $(KSRC) M=$(shell pwd) rust/rtw_recv_sta_count.o
+rust-check-symbols-rtw-recv-sta-count-kern: rust-objects-rtw-recv-sta-count-c rust-objects-rtw-recv-sta-count-kern
+	$(MAKE) rust-check-symbols OLD=tests/host/recv/recv_sta_count_c_ref.o NEW=rust/rtw_recv_sta_count.o \
+		ALLOWLIST=docs/rust-migration/scripts/rtw_recv_sta_count.allow ALLOW_VACUOUS=1
+
+rust-objects-rtw-recv-sta-validate-kern:
+	@test -n "$(KDIR)" || { echo "Usage: make KDIR=… LLVM=1 rust-objects-rtw-recv-sta-validate-kern"; exit 1; }
+	$(MAKE) $(KBUILD_OPTS) -C $(KSRC) M=$(shell pwd) rust/rtw_recv_sta_validate.o
+rust-check-symbols-rtw-recv-sta-validate-kern: rust-objects-rtw-recv-sta-validate-c rust-objects-rtw-recv-sta-validate-kern
+	$(MAKE) rust-check-symbols OLD=tests/host/recv/recv_sta_validate_c_ref.o NEW=rust/rtw_recv_sta_validate.o \
 		ALLOWLIST=docs/rust-migration/scripts/rtw_recv_sta_count.allow ALLOW_VACUOUS=1
 
 # W3-40: host C oracle xmit_rest vs rust/rtw_xmit.o.

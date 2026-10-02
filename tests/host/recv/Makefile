@@ -57,7 +57,7 @@ test_recv_sta: $(RECV_STA_DEPS)
 	$(CC) $(STA_CFLAGS) -o $@ $(RECV_STA_DEPS)
 
 librust_recv_sta_count.a: $(RUST_RECV_STA_COUNT)
-	$(RUSTC) -C opt-level=2 -C overflow-checks=on \
+	$(RUSTC) --edition 2021 -C opt-level=2 -C overflow-checks=on --cfg host_recv_sta_test \
 		--crate-type staticlib $(RUST_RECV_STA_COUNT) -o $@
 
 test-sta-count-rust: test_recv_sta_count_rust
@@ -68,7 +68,7 @@ test_recv_sta_count_rust: test_recv_sta.c librust_recv_sta_count.a $(RECV_STA_SH
 		$(RECV_STA_REST_SRC)
 
 librust_recv_sta_validate.a: $(RUST_RECV_STA_VALIDATE)
-	$(RUSTC) -C opt-level=2 -C overflow-checks=on \
+	$(RUSTC) --edition 2021 -C opt-level=2 -C overflow-checks=on --cfg host_recv_sta_test \
 		--crate-type staticlib $(RUST_RECV_STA_VALIDATE) -o $@
 
 test-sta-rust: test_recv_sta_rust

@@ -1,1 +1,32 @@
-# L1 allowlist for W3-85 PR1 count_rx_stats host oracle.
+# L1 allowlist for W3-85 count_rx_stats / validate_hdr (host + kernel).
+drop rtw_rust_recv_sta_frame_len
+drop rtw_rust_recv_sta_frame_rx_data
+drop rtw_rust_recv_sta_frame_psta
+drop rtw_rust_recv_sta_recvpriv_rx_bytes
+drop rtw_rust_recv_sta_link_rx_ok
+drop rtw_rust_recv_sta_link_rx_unicast_ok
+drop rtw_rust_recv_sta_attrib_dst
+drop rtw_rust_recv_sta_attrib_ra
+drop rtw_rust_recv_sta_attrib_priority
+drop rtw_rust_recv_sta_attrib_data_rate
+drop rtw_rust_recv_sta_stat_last_rx_time
+drop rtw_rust_recv_sta_stat_rx_data_pkts
+drop rtw_rust_recv_sta_stat_rx_bytes
+drop rtw_rust_recv_sta_stat_rx_data_bc_pkts
+drop rtw_rust_recv_sta_stat_rx_bc_bytes
+drop rtw_rust_recv_sta_stat_rx_data_mc_pkts
+drop rtw_rust_recv_sta_stat_rx_mc_bytes
+drop rtw_rust_recv_sta_stat_rxratecnt
+drop rtw_rust_recv_sta_stat_rx_data_qos_pkts
+drop rtw_rust_recv_sta_attrib_to_fr_ds
+drop rtw_rust_recv_sta_attrib_amsdu
+drop rtw_rust_recv_sta_attrib_set_eth
+drop rtw_rust_recv_sta_attrib_eth_eq
+drop rtw_rust_recv_sta_attrib_get_eth
+drop rtw_rust_recv_sta_mlme_fw_state
+drop rtw_rust_recv_sta_adapter_mac
+drop rtw_rust_recv_sta_stapriv
+drop rtw_rust_recv_sta_radar_detected
+drop rtw_rust_recv_sta_out_sta
+drop rtw_rust_recv_sta_get_current_time
+drop rtw_rust_recv_sta_get_passing_time_ms

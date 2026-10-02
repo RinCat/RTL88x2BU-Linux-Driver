@@ -2431,6 +2431,7 @@ endif
 rtk_core :=	core/rtw_cmd.o \
 		core/rtw_cmd_queue.o \
 		core/rtw_cmd_priv.o \
+		core/rtw_cmd_thread.o \
 		core/rtw_debug.o \
 		core/rtw_io.o \
 		core/rtw_io_rest.o \

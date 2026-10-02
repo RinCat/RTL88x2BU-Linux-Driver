@@ -17,7 +17,7 @@ CFLAGS_CMD_JOINBSS := $(CFLAGS) -DHOST_CMD_JOINBSS_TEST -I$(HOST_INC)
 CFLAGS_CMD_TRAFFIC_LPS := $(CFLAGS) -DHOST_CMD_TRAFFIC_LPS_TEST \
 	-DCONFIG_CONCURRENT_MODE -I$(HOST_INC)
 
-CMD_THREAD_ORACLE := cmd_thread_host_oracle.c
+CMD_THREAD_SRC := $(CORE)/rtw_cmd_thread.c
 CMD_DRVEXTRA_ORACLE := drvextra_cmd_host_oracle.c
 CMD_TRAFFIC_LPS_ORACLE := traffic_lps_watchdog_host_oracle.c
 .PHONY: all test test-c test-rust test-cmd-queue test-cmd-thread test-cmd-drvextra \
@@ -40,9 +40,9 @@ test_cmd_priv: test_cmd_priv.c host_cmd_priv_shim.c $(CORE)/rtw_cmd_priv.c $(HOS
 test-cmd-thread: test_cmd_thread
 	./test_cmd_thread cmd_thread_vectors.json
 
-test_cmd_thread: test_cmd_thread.c host_cmd_thread_shim.c $(CMD_THREAD_ORACLE) $(HOST_JSON)
+test_cmd_thread: test_cmd_thread.c host_cmd_thread_shim.c $(CMD_THREAD_SRC) $(HOST_JSON)
 	$(CC) $(CFLAGS_CMD_THREAD) -o $@ test_cmd_thread.c host_cmd_thread_shim.c \
-		$(CMD_THREAD_ORACLE) $(HOST_JSON)
+		$(CMD_THREAD_SRC) $(HOST_JSON)
 
 test-cmd-drvextra: test_drvextra_cmd
 	./test_drvextra_cmd drvextra_cmd_vectors.json

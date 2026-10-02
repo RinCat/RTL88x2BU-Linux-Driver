@@ -38,6 +38,36 @@
       "op": "check_ch_state",
       "tdls_state": 2293760,
       "expect_int": 2
+    },
+    {
+      "name": "reset_non_wifi_spec",
+      "op": "reset",
+      "wifi_spec": 0,
+      "expect_int": 1
+    },
+    {
+      "name": "reset_wifi_spec",
+      "op": "reset",
+      "wifi_spec": 1,
+      "expect_int": 0
+    },
+    {
+      "name": "init_ok",
+      "op": "init",
+      "wifi_spec": 0,
+      "expect_int": 0
+    },
+    {
+      "name": "free_zeroes",
+      "op": "free",
+      "expect_int": 1
+    },
+    {
+      "name": "set_enable_on",
+      "op": "is_enabled",
+      "en_tdls": 0,
+      "set_enable": 1,
+      "expect_int": 1
     }
   ]
 }

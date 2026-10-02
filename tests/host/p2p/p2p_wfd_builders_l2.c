@@ -4,6 +4,15 @@
 #include "host_p2p_wfd_build.h"
 #include "host_vector_json.h"
 
+#ifdef HOST_P2P_RUST_WFD_BUILD
+void p2p_ps_wk_cmd(struct _adapter *a, u8 c, u8 e)
+{
+	(void)a;
+	(void)c;
+	(void)e;
+}
+#endif
+
 typedef struct {
 	char name[48], fn[16], assoc_bssid[24], expect_hex[512];
 	int miracast, role, wfd_tdls, asoc, clients, wfd_type, rtsp_port;

@@ -633,3 +633,174 @@ mod ie_build_probe {
         total
     }
 }
+
+#[cfg(host_p2p_wfd_build)]
+mod wfd_build {
+    use std::os::raw::c_uchar;
+
+    const VS_IE: u8 = 221;
+    const P2P_ROLE_GO: u8 = 3;
+    const WIFI_ASOC: u32 = 1;
+    const WFD_ATTR_DEVICE_INFO: u8 = 0x00;
+    const WFD_ATTR_ASSOC_BSSID: u8 = 0x01;
+    const WFD_ATTR_COUPLED_SINK: u8 = 0x06;
+    const WFD_SESS: u16 = 0x0010;
+    const WFD_WSD: u16 = 0x0040;
+    const WFD_TDLS: u16 = 0x0080;
+
+    #[repr(C)]
+    pub struct WifiDisplayInfo {
+        pub rtsp_ctrlport: u16,
+        pub wfd_device_type: u8,
+    }
+
+    #[repr(C)]
+    pub struct MlmePriv {
+        pub assoc_bssid: [u8; 6],
+        pub fwstate: u32,
+    }
+
+    #[repr(C)]
+    pub struct StaPriv {
+        pub asoc_list_cnt: i32,
+    }
+
+    #[repr(C)]
+    pub struct WifidirectInfoWfd {
+        pub padapter: *mut AdapterWfd,
+        pub role: u8,
+        pub wfd_tdls_enable: u8,
+        pub wfd_info: *mut WifiDisplayInfo,
+    }
+
+    #[repr(C)]
+    pub struct AdapterWfd {
+        pub wdinfo: WifidirectInfoWfd,
+        pub wfd_info: WifiDisplayInfo,
+        pub mlmepriv: MlmePriv,
+        pub stapriv: StaPriv,
+        pub miracast_enabled: u8,
+    }
+
+    fn put_be16(b: &mut [u8], v: u16) {
+        b[0] = (v >> 8) as u8;
+        b[1] = (v & 0xff) as u8;
+    }
+
+    fn set_ie(pbuf: *mut u8, len: u32, src: &[u8], frlen: *mut u32) {
+        if pbuf.is_null() {
+            return;
+        }
+        unsafe {
+            let p = std::slice::from_raw_parts_mut(pbuf, (len + 2) as usize);
+            p[0] = VS_IE;
+            p[1] = len as u8;
+            p[2..2 + len as usize].copy_from_slice(src);
+            if !frlen.is_null() {
+                *frlen += len + 2;
+            }
+        }
+    }
+
+    fn wrap_wfd(m: &MlmePriv, wfdie: &mut [u8], mut off: usize, pbuf: *mut u8) -> u32 {
+        wfdie[off] = WFD_ATTR_ASSOC_BSSID;
+        off += 1;
+        put_be16(&mut wfdie[off..], 0x0006);
+        off += 2;
+        if m.fwstate & WIFI_ASOC != 0 {
+            wfdie[off..off + 6].copy_from_slice(&m.assoc_bssid);
+        }
+        off += 6;
+        wfdie[off] = WFD_ATTR_COUPLED_SINK;
+        off += 1;
+        put_be16(&mut wfdie[off..], 0x0007);
+        off += 2;
+        off += 7;
+        let mut total = 0u32;
+        set_ie(pbuf, off as u32, &wfdie[..off], &mut total);
+        total
+    }
+
+    fn devinfo_beacon(w: &WifidirectInfoWfd, wfd: &WifiDisplayInfo, a: &AdapterWfd) -> u16 {
+        if w.role == P2P_ROLE_GO {
+            if a.stapriv.asoc_list_cnt > 0 {
+                return u16::from(wfd.wfd_device_type) | WFD_WSD;
+            }
+            return u16::from(wfd.wfd_device_type) | WFD_SESS | WFD_WSD;
+        }
+        u16::from(wfd.wfd_device_type) | WFD_SESS | WFD_WSD
+    }
+
+    fn fill_wfd_header(
+        wfdie: &mut [u8],
+        off: &mut usize,
+        devinfo: u16,
+        wfd: &WifiDisplayInfo,
+    ) -> usize {
+        wfdie[*off] = 0x50;
+        *off += 1;
+        wfdie[*off] = 0x6F;
+        *off += 1;
+        wfdie[*off] = 0x9A;
+        *off += 1;
+        wfdie[*off] = 0x0A;
+        *off += 1;
+        wfdie[*off] = WFD_ATTR_DEVICE_INFO;
+        *off += 1;
+        put_be16(&mut wfdie[*off..], 0x0006);
+        *off += 2;
+        put_be16(&mut wfdie[*off..], devinfo);
+        *off += 2;
+        put_be16(&mut wfdie[*off..], wfd.rtsp_ctrlport);
+        *off += 2;
+        put_be16(&mut wfdie[*off..], 300);
+        *off += 2;
+        *off
+    }
+
+    #[no_mangle]
+    pub extern "C" fn build_beacon_wfd_ie(
+        pwdinfo: *mut WifidirectInfoWfd,
+        pbuf: *mut c_uchar,
+    ) -> u32 {
+        if pwdinfo.is_null() || pbuf.is_null() {
+            return 0;
+        }
+        let w = unsafe { &*pwdinfo };
+        let a = unsafe { &*w.padapter };
+        if a.miracast_enabled == 0 {
+            return 0;
+        }
+        let wfd = unsafe { &*w.wfd_info };
+        let mut wfdie = [0u8; 128];
+        let mut off = 0usize;
+        let di = devinfo_beacon(w, wfd, a);
+        off = fill_wfd_header(&mut wfdie, &mut off, di, wfd);
+        wrap_wfd(&a.mlmepriv, &mut wfdie, off, pbuf as *mut u8)
+    }
+
+    #[cfg(host_p2p_wfd_probe)]
+    #[no_mangle]
+    pub extern "C" fn build_probe_req_wfd_ie(
+        pwdinfo: *mut WifidirectInfoWfd,
+        pbuf: *mut c_uchar,
+    ) -> u32 {
+        if pwdinfo.is_null() || pbuf.is_null() {
+            return 0;
+        }
+        let w = unsafe { &*pwdinfo };
+        let a = unsafe { &*w.padapter };
+        if a.miracast_enabled == 0 {
+            return 0;
+        }
+        let wfd = unsafe { &*w.wfd_info };
+        let mut di = u16::from(wfd.wfd_device_type) | WFD_SESS | WFD_WSD;
+        if w.wfd_tdls_enable == 1 {
+            di |= WFD_TDLS;
+        }
+        let mut wfdie = [0u8; 128];
+        let mut off = 0usize;
+        off = fill_wfd_header(&mut wfdie, &mut off, di, wfd);
+        wrap_wfd(&a.mlmepriv, &mut wfdie, off, pbuf as *mut u8)
+    }
+}

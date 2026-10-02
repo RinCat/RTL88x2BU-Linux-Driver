@@ -4,5 +4,8 @@ test_p2p_ie_builders
 test_p2p_ie_builders_rust
 test_p2p_wfd_beacon
 test_p2p_wfd_probe
+test_p2p_wfd_beacon_rust
+test_p2p_wfd_probe_rust
+librust_p2p_wfd.a
 librust_p2p_ie.a
 librust_p2p.a

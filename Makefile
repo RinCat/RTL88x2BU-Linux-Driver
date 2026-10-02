@@ -3438,6 +3438,22 @@ rust-check-symbols-rtw-ap-bcn-update: rust-objects-rtw-ap-bcn-update-c rust-obje
 	$(MAKE) rust-check-symbols OLD=tests/host/ap/ap_bcn_update_c_ref.o NEW=rust/rtw_ap_bcn_update_kern.o \
 		ALLOWLIST=docs/rust-migration/scripts/rtw_ap_bcn_update.allow
 
+# W3-75 follow-up (#830): beacon IE add/remove L1 (host C ref vs kbuild Rust object).
+rust-objects-rtw-ap-bcn-ie-c:
+	gcc -c -Wall -Wextra -Werror -Wno-unused-parameter -Wno-sign-compare -Wno-pointer-sign -O2 \
+		-I$(shell pwd)/tests/host/include -I$(shell pwd)/core -I$(shell pwd)/include \
+		-include $(shell pwd)/tests/host/include/host_autoconf.h \
+		-DHOST_AP_BCN_IE_TEST \
+		-o tests/host/ap/ap_bcn_ie_c_ref.o core/rtw_ap_bcn_ie.c
+
+rust-objects-rtw-ap-bcn-ie:
+	@test -n "$(KDIR)" || { echo "Usage: make KDIR=… LLVM=1 rust-objects-rtw-ap-bcn-ie"; exit 1; }
+	$(MAKE) $(KBUILD_OPTS) -C $(KSRC) M=$(shell pwd) rust/rtw_ap_bcn_ie.o
+
+rust-check-symbols-rtw-ap-bcn-ie: rust-objects-rtw-ap-bcn-ie-c rust-objects-rtw-ap-bcn-ie
+	$(MAKE) rust-check-symbols OLD=tests/host/ap/ap_bcn_ie_c_ref.o NEW=rust/rtw_ap_bcn_ie.o \
+		ALLOWLIST=docs/rust-migration/scripts/rtw_ap_bcn_ie.allow
+
 rust-objects-rtw-ap-sta-info-c:
 	gcc -c -Wall -Wextra -Werror -Wno-unused-parameter -O2 \
 		-I$(shell pwd)/tests/host/include -I$(shell pwd)/core -I$(shell pwd)/include \

@@ -1,4 +1,2 @@
-# L1 allowlist for W3-75 beacon IE update object swap.
-update_BCNTIM
-rtw_add_bcn_ie
-rtw_remove_bcn_ie
+# L1 allowlist for W3-75 beacon IE object swap (update_BCNTIM, rtw_add/remove_bcn_ie).
+# Host C ref and kbuild Rust object export the same three globals — no drops.

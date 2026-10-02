@@ -126,6 +126,12 @@ for path in "${changed[@]}"; do
 		add_target rust-check-symbols-rtw-sta-mgt-stctl
 		add_target rust-check-symbols-rtw-sta-mgt-lookup
 		;;
+	rust/rtw_ap_bcn_ie.rs \
+	| core/rtw_ap_bcn_ie.c \
+	| core/rtw_ap_bcn_ie_rust_acc.c \
+	| tests/host/ap/ap_bcn_ie*)
+		add_target rust-check-symbols-rtw-ap-bcn-ie
+		;;
 	rust/rtw_ap_rest.rs \
 	| rust/rtw_ap_sta_alive.rs \
 	| rust/rtw_ap_expire_asoc.rs \

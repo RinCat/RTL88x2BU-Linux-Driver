@@ -11,6 +11,8 @@ struct vector {
 	char name[64];
 	u8 reg_bw_mode, hal_bw_cap, hal_max_bw, ldpc_cap, stbc_cap, sgi_80m, rx_stbc_nss;
 	u8 mcs_map[2], vht_highest_rate, ampdu_factor;
+	u16 beamform_cap;
+	u8 beamformer_rf_num, beamformee_rf_num;
 	u32 rx_packet_offset, max_recvbuf_sz;
 	u8 expect_cap[VHT_CAP_IE_LEN];
 };
@@ -29,9 +31,15 @@ static int parse_vector_object(const char *obj, size_t len, void *vvoid)
 	    P8("reg_bw_mode", reg_bw_mode) || P8("hal_bw_cap", hal_bw_cap) || P8("hal_max_bw", hal_max_bw) ||
 	    PU32("rx_packet_offset", rx_packet_offset) || PU32("max_recvbuf_sz", max_recvbuf_sz) ||
 	    P8("ldpc_cap", ldpc_cap) || P8("stbc_cap", stbc_cap) || P8("sgi_80m", sgi_80m) ||
-	    P8("rx_stbc_nss", rx_stbc_nss) || P8("vht_highest_rate", vht_highest_rate) ||
+	    P8("rx_stbc_nss", rx_stbc_nss) || 	    P8("vht_highest_rate", vht_highest_rate) ||
 	    P8("ampdu_factor", ampdu_factor))
 		return -1;
+	if (host_json_parse_int_in(obj, len, "beamform_cap", pi) == 0)
+		v->beamform_cap = (u16)t;
+	if (host_json_parse_int_in(obj, len, "beamformer_rf_num", pi) == 0)
+		v->beamformer_rf_num = (u8)t;
+	if (host_json_parse_int_in(obj, len, "beamformee_rf_num", pi) == 0)
+		v->beamformee_rf_num = (u8)t;
 #undef P8
 #undef PU32
 	if (host_json_parse_string_in(obj, len, "mcs_map", hex, sizeof(hex)) ||
@@ -60,6 +68,9 @@ static void load_vec(struct vector *v)
 	host_vht_build_adapter.mlmepriv.vhtpriv.stbc_cap = v->stbc_cap;
 	host_vht_build_adapter.mlmepriv.vhtpriv.sgi_80m = v->sgi_80m;
 	host_vht_build_adapter.mlmepriv.vhtpriv.vht_highest_rate = v->vht_highest_rate;
+	host_vht_build_adapter.mlmepriv.vhtpriv.beamform_cap = v->beamform_cap;
+	host_vht_build_adapter.host_fixture.beamformer_rf_num = v->beamformer_rf_num;
+	host_vht_build_adapter.host_fixture.beamformee_rf_num = v->beamformee_rf_num;
 }
 
 int main(int argc, char **argv)

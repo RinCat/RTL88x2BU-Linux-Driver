@@ -75,7 +75,27 @@ typedef u8 BOOLEAN;
 #define REGSTY_BW_5G(r) BW_MODE_5G((r)->bw_mode)
 #define REGSTY_IS_BW_5G_SUPPORT(regsty, bw) (REGSTY_BW_5G((regsty)) >= (bw))
 
-typedef enum { HAL_DEF_MAX_RECVBUF_SZ = 3, HAL_DEF_RX_PACKET_OFFSET = 4, HAL_DEF_RX_STBC = 15 } HAL_DEF_VARIABLE;
+#ifdef CONFIG_BEAMFORMING
+#define BEAMFORMING_VHT_BEAMFORMER_ENABLE BIT0
+#define BEAMFORMING_VHT_BEAMFORMEE_ENABLE BIT1
+#define BEAMFORMING_VHT_MU_MIMO_AP_ENABLE BIT(2)
+#define BEAMFORMING_VHT_MU_MIMO_STA_ENABLE BIT(3)
+#define SET_VHT_CAPABILITY_ELE_SU_BFER(p, v) SET_BITS_TO_LE_1BYTE((p) + 1, 3, 1, v)
+#define SET_VHT_CAPABILITY_ELE_SU_BFEE(p, v) SET_BITS_TO_LE_1BYTE((p) + 1, 4, 1, v)
+#define SET_VHT_CAPABILITY_ELE_BFER_ANT_SUPP(p, v) SET_BITS_TO_LE_1BYTE((p) + 1, 5, 3, v)
+#define SET_VHT_CAPABILITY_ELE_SOUNDING_DIMENSIONS(p, v) SET_BITS_TO_LE_1BYTE((p) + 2, 0, 3, v)
+#define SET_VHT_CAPABILITY_ELE_MU_BFER(p, v) SET_BITS_TO_LE_1BYTE((p) + 2, 3, 1, v)
+#define SET_VHT_CAPABILITY_ELE_MU_BFEE(p, v) SET_BITS_TO_LE_1BYTE((p) + 2, 4, 1, v)
+#define HT_IOT_PEER_BROADCOM 3
+#endif
+
+typedef enum {
+	HAL_DEF_MAX_RECVBUF_SZ = 3,
+	HAL_DEF_RX_PACKET_OFFSET = 4,
+	HAL_DEF_RX_STBC = 15,
+	HAL_DEF_BEAMFORMER_CAP = 20,
+	HAL_DEF_BEAMFORMEE_CAP = 21,
+} HAL_DEF_VARIABLE;
 
 struct registry_priv { u8 bw_mode; u8 ampdu_factor; };
 struct vht_priv {
@@ -87,6 +107,7 @@ struct vht_priv {
 	u8 vht_highest_rate;
 	u8 ampdu_len;
 	u16 beamform_cap;
+	struct { u8 is_mu_bfer; u8 su_sound_dim; } ap_bf_cap;
 	BOOLEAN vht_option;
 };
 struct mlme_ext_info { u8 assoc_AP_vendor; u8 VHT_enable; };
@@ -105,6 +126,8 @@ struct host_vht_build_fixture {
 	u8 rx_nss;
 	u8 hal_max_bw;
 	u8 hal_bw_support[5];
+	u8 beamformer_rf_num;
+	u8 beamformee_rf_num;
 };
 
 typedef struct {

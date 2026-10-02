@@ -64,6 +64,12 @@ void rtw_hal_get_def_var(_adapter *padapter, HAL_DEF_VARIABLE variable, void *va
 	case HAL_DEF_RX_STBC:
 		*(u8 *)value = padapter->host_fixture.rx_stbc_nss;
 		break;
+	case HAL_DEF_BEAMFORMER_CAP:
+		*(u8 *)value = padapter->host_fixture.beamformer_rf_num;
+		break;
+	case HAL_DEF_BEAMFORMEE_CAP:
+		*(u8 *)value = padapter->host_fixture.beamformee_rf_num;
+		break;
 	default:
 		break;
 	}

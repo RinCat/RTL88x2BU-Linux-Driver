@@ -2446,6 +2446,7 @@ rtk_core :=	core/rtw_cmd.o \
 		core/rtw_wlan_util.o \
 		core/rtw_vht.o \
 		core/rtw_vht_build.o \
+		core/rtw_vht_build_rust_acc.o \
 		core/rtw_vht_rest.o \
 		core/rtw_pwrctrl.o \
 		core/rtw_rf.o \
@@ -2666,6 +2667,7 @@ ccflags-y += -DCONFIG_RUST_AP_EXPIRE_TIMEOUT
 ccflags-y += -DCONFIG_RUST_AP_REST
 ccflags-y += -DCONFIG_RUST_AP_BCN_IE
 ccflags-y += -DCONFIG_RUST_AP_BMC_UPDATE
+ccflags-y += -DCONFIG_RUST_VHT_BUILD
 ccflags-y += -DCONFIG_RUST_AP_BCN_UPDATE
 ccflags-y += -DCONFIG_RUST_AP_BCN_DISPATCH
 ccflags-y += -DCONFIG_RUST_RF_OP_CLASS_PREF
@@ -2841,6 +2843,7 @@ $(MODULE_NAME)-y += rust/rtw_ap_sta_ie_sec.o
 $(MODULE_NAME)-y += rust/rtw_ap_rest.o
 $(MODULE_NAME)-y += rust/rtw_ap_bcn_ie.o
 $(MODULE_NAME)-y += rust/rtw_ap_bmc_update_kern.o
+$(MODULE_NAME)-y += rust/rtw_vht_build_kern.o
 $(MODULE_NAME)-y += rust/rtw_ap_bcn_update_kern.o
 $(MODULE_NAME)-y += rust/rtw_ap_bcn_dispatch.o
 $(MODULE_NAME)-y += rust/rtw_ap_sta_alive.o
@@ -3312,6 +3315,21 @@ rust-objects-rtw-vht-mcs-rate-rust-ref:
 rust-check-symbols-rtw-vht-mcs-rate: rust-objects-rtw-vht-mcs-rate-c rust-objects-rtw-vht-mcs-rate-rust-ref
 	$(MAKE) rust-check-symbols OLD=tests/host/vht/vht_mcs_rate_c_ref.o NEW=tests/host/vht/vht_mcs_rate_rust_ref.o \
 		ALLOWLIST=docs/rust-migration/scripts/rtw_vht_mcs_rate.allow
+
+# W3-84 PR8: host C cap IE vs kernel Rust (cap only).
+rust-objects-rtw-vht-build-cap-c:
+	gcc -c -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unused-const-variable -O2 \
+		-I$(shell pwd)/tests/host/include -I$(shell pwd)/core -I$(shell pwd)/include \
+		-include $(shell pwd)/tests/host/include/host_autoconf.h \
+		-DHOST_VHT_BUILD_TEST \
+		-o tests/host/vht/vht_build_cap_c_ref.o core/rtw_vht_build.c
+
+rust-objects-rtw-vht-build-cap-kern:
+	@test -n "$(KDIR)" || { echo "Usage: make KDIR=… LLVM=1 rust-objects-rtw-vht-build-cap-kern"; exit 1; }
+	$(MAKE) $(KBUILD_OPTS) -C $(KSRC) M=$(shell pwd) rust/rtw_vht_build_kern.o
+rust-check-symbols-rtw-vht-build-cap: rust-objects-rtw-vht-build-cap-c rust-objects-rtw-vht-build-cap-kern
+	$(MAKE) rust-check-symbols OLD=tests/host/vht/vht_build_cap_c_ref.o NEW=rust/rtw_vht_build_kern.o \
+		ALLOWLIST=docs/rust-migration/scripts/rtw_vht_build.allow ALLOW_VACUOUS=1
 
 # W3-37: compare host C oracle (rtw_sta_mgt_rest.c) against host Rust oracle.
 rust-objects-rtw-sta-mgt-c:

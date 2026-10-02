@@ -42,12 +42,30 @@ const STBC_VHT_ENABLE_TX: u8 = 1 << 1;
 const STBC_VHT_CAP_TX: u8 = 1 << 3;
 const LDPC_VHT_CAP_TX: u8 = 1 << 3;
 const MGN_VHT1SS_MCS0: u8 = 0xA0;
+
+#[cfg(config_beamforming)]
+const BEAMFORMING_VHT_BEAMFORMER_ENABLE: u16 = 1;
+#[cfg(config_beamforming)]
+const BEAMFORMING_VHT_BEAMFORMEE_ENABLE: u16 = 2;
+#[cfg(config_beamforming)]
+const BEAMFORMING_VHT_MU_MIMO_AP_ENABLE: u16 = 4;
+#[cfg(config_beamforming)]
+const BEAMFORMING_VHT_MU_MIMO_STA_ENABLE: u16 = 8;
+
+#[cfg(all(config_beamforming, config_80211ac_vht))]
+const HT_IOT_PEER_BROADCOM: u8 = 3;
 const MGN_VHT1SS_MCS7: u8 = 0xA7;
 
 #[repr(C)]
 pub struct RegistryPriv {
     pub bw_mode: u8,
     pub ampdu_factor: u8,
+}
+
+#[repr(C)]
+pub struct VhtBfCap {
+    pub is_mu_bfer: u8,
+    pub su_sound_dim: u8,
 }
 
 #[repr(C)]
@@ -60,6 +78,7 @@ pub struct VhtPriv {
     pub vht_highest_rate: u8,
     pub ampdu_len: u8,
     pub beamform_cap: u16,
+    pub ap_bf_cap: VhtBfCap,
     pub vht_option: u8,
 }
 
@@ -80,6 +99,8 @@ pub struct HostVhtBuildFixture {
     pub rx_nss: u8,
     pub hal_max_bw: u8,
     pub hal_bw_support: [u8; 5],
+    pub beamformer_rf_num: u8,
+    pub beamformee_rf_num: u8,
 }
 
 #[repr(C)]
@@ -120,6 +141,11 @@ fn test_flag(v: u8, f: u8) -> bool {
     (v & f) != 0
 }
 
+#[cfg(config_beamforming)]
+fn test_flag_u16(v: u16, f: u16) -> bool {
+    (v & f) != 0
+}
+
 #[repr(C)]
 pub struct Ndis80211Configuration {
     pub length: u32,
@@ -155,6 +181,8 @@ mod host {
             MaxRecvbufSz = 3,
             RxPacketOffset = 4,
             RxStbc = 15,
+            BeamformerCap = 20,
+            BeamformeeCap = 21,
         }
 
         extern "C" {
@@ -353,6 +381,45 @@ mod host {
                         &mut rx_stbc_nss as *mut u8 as *mut core::ffi::c_void,
                     );
                     set_bits_le_1byte(&mut pcap[1..2], 0, 3, rx_stbc_nss);
+                }
+
+                #[cfg(config_beamforming)]
+                {
+                    let beamform_cap = pvhtpriv.beamform_cap;
+                    let mut rf_num: u8 = 0;
+                    let mlmext = &padapter_ref.mlmeextpriv.mlmext_info;
+                    if test_flag_u16(beamform_cap, BEAMFORMING_VHT_BEAMFORMER_ENABLE) {
+                        set_bits_le_1byte(&mut pcap[1..2], 3, 1, 1);
+                        rtw_hal_get_def_var(
+                            padapter,
+                            HalDefVariable::BeamformerCap,
+                            &mut rf_num as *mut u8 as *mut core::ffi::c_void,
+                        );
+                        set_bits_le_1byte(&mut pcap[2..3], 0, 3, rf_num);
+                        if test_flag_u16(beamform_cap, BEAMFORMING_VHT_MU_MIMO_AP_ENABLE) {
+                            set_bits_le_1byte(&mut pcap[2..3], 3, 1, 1);
+                        }
+                    }
+                    if test_flag_u16(beamform_cap, BEAMFORMING_VHT_BEAMFORMEE_ENABLE) {
+                        set_bits_le_1byte(&mut pcap[1..2], 4, 1, 1);
+                        rtw_hal_get_def_var(
+                            padapter,
+                            HalDefVariable::BeamformeeCap,
+                            &mut rf_num as *mut u8 as *mut core::ffi::c_void,
+                        );
+                        #[cfg(config_80211ac_vht)]
+                        if mlmext.assoc_AP_vendor == HT_IOT_PEER_BROADCOM
+                            && pvhtpriv.ap_bf_cap.is_mu_bfer == 0
+                            && pvhtpriv.ap_bf_cap.su_sound_dim == 2
+                            && rf_num >= 2
+                        {
+                            rf_num = 2;
+                        }
+                        set_bits_le_1byte(&mut pcap[1..2], 5, 3, rf_num);
+                        if test_flag_u16(beamform_cap, BEAMFORMING_VHT_MU_MIMO_STA_ENABLE) {
+                            set_bits_le_1byte(&mut pcap[2..3], 4, 1, 1);
+                        }
+                    }
                 }
 
                 set_bits_le_1byte(&mut pcap[2..3], 5, 1, 0);

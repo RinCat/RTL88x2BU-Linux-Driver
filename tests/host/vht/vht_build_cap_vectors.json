@@ -15,6 +15,24 @@
       "vht_highest_rate": 167,
       "ampdu_factor": 5,
       "expect_cap_hex": "0200c002ffaa2501ffaa2501"
+    },
+    {
+      "name": "su_bfer_rf2",
+      "reg_bw_mode": 32,
+      "hal_bw_cap": 16,
+      "hal_max_bw": 2,
+      "rx_packet_offset": 0,
+      "max_recvbuf_sz": 12000,
+      "ldpc_cap": 0,
+      "stbc_cap": 0,
+      "sgi_80m": 0,
+      "rx_stbc_nss": 0,
+      "mcs_map": "ffaa",
+      "vht_highest_rate": 167,
+      "ampdu_factor": 5,
+      "beamform_cap": 1,
+      "beamformer_rf_num": 2,
+      "expect_cap_hex": "0208c202ffaa2501ffaa2501"
     }
   ]
 }

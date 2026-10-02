@@ -33,6 +33,7 @@ VHT_BUILD_SRC := $(CORE)/rtw_vht_build.c
 VHT_BUILD_SHIM := host_vht_build_shim.c
 VHT_IES_ATTACH_SHIM := host_vht_ies_attach_shim.c
 BUILD_CFLAGS := $(BASE_CFLAGS) -DHOST_VHT_BUILD_TEST
+BUILD_CAP_CFLAGS := $(BUILD_CFLAGS) -DCONFIG_BEAMFORMING
 IES_ATTACH_CFLAGS := $(BASE_CFLAGS) -DHOST_VHT_BUILD_TEST -DHOST_VHT_IES_ATTACH_TEST
 
 RUST_VHT_BUILD := $(ROOT)/rust/rtw_vht_build.rs
@@ -128,6 +129,7 @@ test_vht_build_operation: test_vht_build_operation.c $(VHT_BUILD_SRC) $(VHT_BUIL
 
 librust_vht_build.a: $(RUST_VHT_BUILD)
 	rustc -C opt-level=2 -C overflow-checks=on --cfg host_vht_build_test \
+		--cfg config_beamforming --cfg config_80211ac_vht \
 		--crate-type staticlib $(RUST_VHT_BUILD) -o $@
 
 test-build-operation-rust: test_vht_build_operation_rust
@@ -140,14 +142,14 @@ test-build-cap: test_vht_build_cap
 	./test_vht_build_cap vht_build_cap_vectors.json
 
 test_vht_build_cap: test_vht_build_cap.c $(VHT_BUILD_SRC) $(VHT_BUILD_SHIM) $(VHT_MCS_RATE_ORACLE) $(HOST_JSON)
-	$(CC) $(BUILD_CFLAGS) -o $@ test_vht_build_cap.c $(VHT_BUILD_SRC) $(VHT_BUILD_SHIM) \
+	$(CC) $(BUILD_CAP_CFLAGS) -o $@ test_vht_build_cap.c $(VHT_BUILD_SRC) $(VHT_BUILD_SHIM) \
 		$(VHT_MCS_RATE_ORACLE) $(HOST_JSON)
 
 test-build-cap-rust: test_vht_build_cap_rust
 	./test_vht_build_cap_rust vht_build_cap_vectors.json
 
 test_vht_build_cap_rust: test_vht_build_cap.c librust_vht_build.a $(VHT_BUILD_SHIM) $(HOST_JSON)
-	$(CC) $(BUILD_CFLAGS) -o $@ test_vht_build_cap.c $(VHT_BUILD_SHIM) $(HOST_JSON) librust_vht_build.a
+	$(CC) $(BUILD_CAP_CFLAGS) -o $@ test_vht_build_cap.c $(VHT_BUILD_SHIM) $(HOST_JSON) librust_vht_build.a
 
 test-caps-handler: test_vht_caps_handler
 	./test_vht_caps_handler vht_caps_handler_vectors.json

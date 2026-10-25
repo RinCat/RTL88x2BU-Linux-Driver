@@ -7690,7 +7690,12 @@ static s32 cfg80211_rtw_remain_on_channel(struct wiphy *wiphy,
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 8, 0))
 	enum nl80211_channel_type channel_type,
 #endif
-	unsigned int duration, u64 *cookie
+	unsigned int duration,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 3, 0))
+	u64 cookie_stack
+#else // if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 3, 0))
+	u64 *cookie
+#endif // if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 3, 0))
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 2, 0))
 	, const u8 *rx_addr
 #endif  // if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 2, 0))
@@ -7707,6 +7712,9 @@ static s32 cfg80211_rtw_remain_on_channel(struct wiphy *wiphy,
 	u8 is_p2p_find = _FALSE;
 #endif
 #endif
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 3, 0))
+	u64 *cookie = &cookie_stack;
+#endif // if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 3, 0))
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0))
 	#if defined(RTW_DEDICATED_P2P_DEVICE)
@@ -8282,7 +8290,12 @@ static int cfg80211_rtw_mgmt_tx(struct wiphy *wiphy,
 #else
 	struct cfg80211_mgmt_tx_params *params,
 #endif
-	u64 *cookie)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 3, 0))
+	u64 cookie_stack
+#else // if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 3, 0))
+	u64 *cookie
+#endif // if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 3, 0))
+)
 {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)) || defined(COMPAT_KERNEL_RELEASE)
 	struct ieee80211_channel *chan = params->chan;
@@ -8293,6 +8306,9 @@ static int cfg80211_rtw_mgmt_tx(struct wiphy *wiphy,
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 2, 0))
 	bool no_cck = 0;
 #endif
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 3, 0))
+	u64 *cookie = &cookie_stack;
+#endif // if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 3, 0))
 	int ret = 0;
 	u8 tx_ret;
 	int wait_ack = 1;

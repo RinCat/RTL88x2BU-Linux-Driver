@@ -3026,11 +3026,7 @@ static void rtw_mpath_tx_queue_flush(_adapter *adapter)
 }
 
 #ifdef PLATFORM_LINUX /* 3.10 ~ 4.13 checked */
-#if defined(CONFIG_SLUB)
-#include <linux/slub_def.h>
-#elif defined(CONFIG_SLAB)
-#include <linux/slab_def.h>
-#endif
+#include <linux/slab.h>
 typedef struct kmem_cache rtw_mcache;
 #endif
 
@@ -3074,7 +3070,7 @@ static void _rtw_mcache_free(rtw_mcache *cachep, void *objp)
 inline void *dbg_rtw_mcache_alloc(rtw_mcache *cachep, const enum mstat_f flags, const char *func, const int line)
 {
 	void *p;
-	u32 sz = cachep->size;
+	u32 sz = kmem_cache_size(cachep);
 
 	if (match_mstat_sniff_rules(flags, sz))
 		RTW_INFO("DBG_MEM_ALLOC %s:%d %s(%u)\n", func, line, __func__, sz);
@@ -3092,7 +3088,7 @@ inline void *dbg_rtw_mcache_alloc(rtw_mcache *cachep, const enum mstat_f flags, 
 
 inline void dbg_rtw_mcache_free(rtw_mcache *cachep, void *pbuf, const enum mstat_f flags, const char *func, const int line)
 {
-	u32 sz = cachep->size;
+	u32 sz = kmem_cache_size(cachep);
 
 	if (match_mstat_sniff_rules(flags, sz))
 		RTW_INFO("DBG_MEM_ALLOC %s:%d %s(%u)\n", func, line, __func__, sz);

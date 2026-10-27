@@ -1099,7 +1099,7 @@ void rtw_mesh_rx_path_sel_frame(_adapter *adapter, union recv_frame *rframe)
 			/* Right now we support just 1 destination and no AE */
 			return;
 		path_metric = rtw_hwmp_route_info_get(adapter, frame_hdr, elems.preq,
-						  MPATH_PREQ);
+						  RTW_MPATH_PREQ);
 		if (path_metric)
 			rtw_hwmp_preq_frame_process(adapter, frame_hdr, elems.preq,
 						path_metric);
@@ -1109,7 +1109,7 @@ void rtw_mesh_rx_path_sel_frame(_adapter *adapter, union recv_frame *rframe)
 			/* Right now we support no AE */
 			return;
 		path_metric = rtw_hwmp_route_info_get(adapter, frame_hdr, elems.prep,
-						  MPATH_PREP);
+						  RTW_MPATH_PREP);
 		if (path_metric)
 			rtw_hwmp_prep_frame_process(adapter, frame_hdr, elems.prep,
 						path_metric);
@@ -1379,8 +1379,9 @@ void rtw_mesh_path_tx_root_frame(_adapter *adapter)
 					   interval, 0, 0, adapter);
 		break;
 	case RTW_IEEE80211_PROACTIVE_PREQ_WITH_PREP:
-		flags |= RTW_IEEE80211_PREQ_PROACTIVE_PREP_FLAG;
 	case RTW_IEEE80211_PROACTIVE_PREQ_NO_PREP:
+		if (mshcfg->dot11MeshHWMPRootMode == RTW_IEEE80211_PROACTIVE_PREQ_WITH_PREP)
+			flags |= RTW_IEEE80211_PREQ_PROACTIVE_PREP_FLAG;
 		interval = mshcfg->dot11MeshHWMPactivePathToRootTimeout;
 		target_flags |= RTW_IEEE80211_PREQ_TO_FLAG |
 				RTW_IEEE80211_PREQ_USN_FLAG;

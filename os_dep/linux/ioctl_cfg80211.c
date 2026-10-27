@@ -8832,8 +8832,9 @@ static int cfg80211_rtw_tdls_oper(struct wiphy *wiphy,
 #if defined(CONFIG_RTW_MESH) && (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38))
 
 #if DBG_RTW_CFG80211_MESH_CONF
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0))
 #define LEGACY_RATES_STR_LEN (RTW_G_RATES_NUM * 5 + 1)
-int get_legacy_rates_str(struct wiphy *wiphy, enum nl80211_band band, u32 mask, char *buf)
+static int get_legacy_rates_str(struct wiphy *wiphy, enum nl80211_band band, u32 mask, char *buf)
 {
 	int i;
 	int cnt = 0;
@@ -8850,8 +8851,9 @@ int get_legacy_rates_str(struct wiphy *wiphy, enum nl80211_band band, u32 mask, 
 
 	return cnt;
 }
+#endif
 
-void dump_mesh_setup(void *sel, struct wiphy *wiphy, const struct mesh_setup *setup)
+static void dump_mesh_setup(void *sel, struct wiphy *wiphy, const struct mesh_setup *setup)
 {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0))
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
@@ -8876,7 +8878,7 @@ void dump_mesh_setup(void *sel, struct wiphy *wiphy, const struct mesh_setup *se
 #endif
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 0, 0))
 	if (setup->ie && setup->ie_len) {
-		RTW_PRINT_SEL(sel, "ie:%p, len:%u\n", setup->ie, setup->ie_len);
+		RTW_PRINT_SEL(sel, "ie:%p, len:%zu\n", setup->ie, (size_t)setup->ie_len);
 		dump_ies(RTW_DBGDUMP, setup->ie, setup->ie_len);
 	}
 #else
@@ -8962,7 +8964,7 @@ void dump_mesh_setup(void *sel, struct wiphy *wiphy, const struct mesh_setup *se
 #endif
 }
 
-void dump_mesh_config(void *sel, const struct mesh_config *conf)
+static void dump_mesh_config(void *sel, const struct mesh_config *conf)
 {
 	RTW_PRINT_SEL(sel, "dot11MeshRetryTimeout:%u\n", conf->dot11MeshRetryTimeout);
 	RTW_PRINT_SEL(sel, "dot11MeshConfirmTimeout:%u\n", conf->dot11MeshConfirmTimeout);
